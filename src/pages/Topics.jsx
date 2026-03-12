@@ -1,50 +1,43 @@
-import { useState } from "react";
-
-/* ─── DATA (Simulating Backend with Formatting) ─────────── */
-const topics = [
-  {
-    id: 1, icon: "🌾", label: "Sustainable Farming",
-    reads: "142K", color: "#e8f5e9", accent: "#059669",
-    subtopics: ["Composting", "Cover Crops", "No-Till Farming", "Organic Methods", "Water Conservation"],
-    desc: `**The Future of Agriculture**\n\nEco-friendly practices and regenerative agriculture techniques are no longer optional; they are essential for long-term soil health. Sustainable farming focuses on producing long-term crops and livestock while having minimal effects on the environment.\n\n**Core Principles:**\nFarmers practicing sustainable agriculture seek to integrate three main objectives into their work: a healthy environment, economic profitability, and social and economic equity.\n\n**Why It Matters:**\nBy adopting these methods, we significantly reduce water runoff, prevent topsoil depletion, and build a resilient food system that can withstand climate shifts.`,
-  },
-  {
-    id: 2, icon: "🚜", label: "AgriTech & Innovation",
-    reads: "98.5K", color: "#e0f2fe", accent: "#0284c7",
-    subtopics: ["IoT Sensors", "Drone Farming", "AI in Agriculture", "Precision Farming", "Smart Irrigation"],
-    desc: `**Digital Transformation in Fields**\n\nCutting-edge technology is fundamentally transforming how we grow, monitor, and distribute food. From self-driving tractors to satellite imagery, technology is maximizing yields while minimizing inputs.\n\n**Current Innovations:**\nAI algorithms are now capable of identifying plant diseases from a simple smartphone photo, allowing for micro-targeted pesticide application.\n\n**The Data Advantage:**\nModern farms are data-rich environments. Gathering analytics on soil moisture, weather patterns, and crop growth rates allows farmers to make highly informed, predictive decisions rather than reactive ones.`,
-  },
-  {
-    id: 3, icon: "🐄", label: "Livestock Management",
-    reads: "84K", color: "#fef3c7", accent: "#d97706",
-    subtopics: ["Rotational Grazing", "Animal Welfare", "Dairy Farming", "Poultry", "Aquaculture"],
-    desc: `**Ethical & Productive Husbandry**\n\nModern livestock management balances animal welfare practices with sustainable, high-yield systems. Managing livestock correctly is vital for both meat/dairy production and the health of the pasture.\n\n**Rotational Grazing:**\nBy moving herds frequently between segmented pastures, farmers mimic natural herd behaviors. This prevents overgrazing, allows root systems to recover, and naturally fertilizes the land.\n\n**Health & Nutrition:**\nAdvanced monitoring systems now track individual animal health metrics, ensuring rapid response to illness and optimizing feed ratios for maximum nutritional efficiency.`,
-  },
-  {
-    id: 4, icon: "🌽", label: "Crop Science",
-    reads: "215K", color: "#fce7f3", accent: "#be185d",
-    subtopics: ["Seed Science", "Plant Breeding", "Hydroponics", "Companion Planting", "Soil Nutrition"],
-    desc: `**The Biology of Better Yields**\n\nCrop science combines plant genetics, physiology, and modern cultivation techniques to optimize yield strategies. As the global population grows, maximizing the caloric and nutritional output per acre is paramount.\n\n**Genetic Advancements:**\nTechniques like CRISPR allow scientists to breed drought-resistant and nutrient-dense crop varieties much faster than traditional cross-pollination methods.\n\n**Controlled Environments:**\nHydroponic and aeroponic systems are pushing the boundaries of crop science, allowing for year-round harvesting without the need for arable land.`,
-  },
-  {
-    id: 5, icon: "🌿", label: "Plant Pathology",
-    reads: "56.2K", color: "#ecfdf5", accent: "#047857",
-    subtopics: ["Fungal Diseases", "Pest Control", "Biological Control", "Chemical Management", "Diagnostics"],
-    desc: `**Protecting Our Harvests**\n\nPlant pathology focuses on disease identification, prevention, and integrated pest management solutions. Crop loss due to pathogens remains a massive global economic burden.\n\n**Integrated Pest Management (IPM):**\nRather than blanket chemical applications, IPM relies on biological controls—like introducing natural predators—combined with highly targeted, minimal chemical interventions.\n\n**The Threat of Fungi:**\nFungal infections account for the vast majority of agricultural plant diseases. Rapid diagnostic tools are currently revolutionizing how quickly farmers can respond to outbreaks.`,
-  },
-  {
-    id: 6, icon: "🌍", label: "Global Agriculture",
-    reads: "112K", color: "#e0f2fe", accent: "#0369a1",
-    subtopics: ["Food Security", "Climate Adaptation", "Traditional Farming", "Agroforestry", "Trade Policy"],
-    desc: `**Feeding the World**\n\nGlobal agriculture studies worldwide farming trends, food security challenges, and cross-cultural practices. It examines how international policies and local realities intersect.\n\n**Food Security:**\nEnsuring that all populations have physical and economic access to sufficient, safe, and nutritious food is the core challenge of our generation.\n\n**Climate Adaptation:**\nDifferent regions are facing unique climate challenges. Sharing traditional wisdom combined with modern science across borders is essential for adapting to shifting weather patterns.`,
-  }
-];
+import { useState, useEffect } from "react";
 
 /* ─── COMPONENT ─────────────────────────────────────────── */
 export default function Topics() {
+  const [topics, setTopics] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
   const [selected,  setSelected]  = useState(null);
   const [search,    setSearch]    = useState("");
   const [hovered,   setHovered]   = useState(null);
+
+  // 🟢 FETCH TOPICS FROM SQLITE DATABASE
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/topics");
+        const dbTopics = await res.json();
+        
+        // Map database columns to what the UI expects
+        const formattedTopics = dbTopics.map(t => ({
+          id: t.id,
+          icon: t.icon,
+          label: t.label,
+          reads: (t.reads_count / 1000).toFixed(1) + "K", // Formats 142000 into "142.0K"
+          color: t.color,
+          accent: t.accent,
+          subtopics: t.subtopics || [],
+          desc: t.description
+        }));
+        
+        setTopics(formattedTopics);
+      } catch (err) {
+        console.error("Failed to load topics:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchTopics();
+  }, []);
 
   const filtered = topics.filter((t) =>
     t.label.toLowerCase().includes(search.toLowerCase()) ||
@@ -213,44 +206,7 @@ export default function Topics() {
           font-size: 26px; color: var(--accent-color, #059669); margin-top: 10px;
           line-height: 1.2; letter-spacing: -0.02em;
         }
-
-        /* Navbar */
-        .nav-bar {
-          position: fixed; top: 0; left: 0; right: 0; z-index: 500; height: 72px;
-          background: rgba(255,255,255,0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-          border-bottom: 1px solid rgba(255,255,255,0.5);
-          display: flex; align-items: center; justify-content: space-between;
-          padding: 0 48px; transition: all 0.3s;
-        }
-        .nav-lk {
-          color: #475569; text-decoration: none;
-          font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 600;
-          transition: color .2s; position: relative; padding-bottom: 4px;
-        }
-        .nav-lk:hover { color: #059669; }
-        .nav-lk.active { color: #059669; }
-        .nav-lk.active::after {
-          content: ''; position: absolute; bottom: 0; left: 0;
-          width: 100%; height: 2px; background: #059669; border-radius: 2px;
-        }
       `}</style>
-
-      {/* ══ NAVBAR ══ */}
-      <nav className="nav-bar">
-        <a href="/" style={{ display:"flex", alignItems:"center", gap:12, textDecoration:"none" }}>
-          <div style={{ width:40, height:40, borderRadius:"12px", background:"linear-gradient(135deg, #10b981, #047857)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, color: "white", boxShadow: "0 4px 10px rgba(16,185,129,0.3)" }}>🌿</div>
-          <span className="fr" style={{ fontSize:22, fontWeight:800, color:"#0f172a", letterSpacing: "-0.5px" }}>Horti<span style={{ color:"#059669" }}>Verse</span></span>
-        </a>
-        <div style={{ display:"flex", gap:36 }}>
-          {[["Home","/"],["Stories","/stories"],["Topics","/topics"]].map(([n,h]) => (
-            <a key={n} href={h} className={`nav-lk ${n==="Topics"?"active":""}`}>{n}</a>
-          ))}
-        </div>
-        <div style={{ display:"flex", gap:12 }}>
-          <a href="#" className="btn-ghost">Log in</a>
-          <a href="#" className="btn-green">Join Free</a>
-        </div>
-      </nav>
 
       {/* ══ PAGE HEADER ══ */}
       <div style={{ paddingTop: 72, background: "transparent" }}>
@@ -281,59 +237,65 @@ export default function Topics() {
       {/* ══ TOPICS GRID ══ */}
       <main style={{ maxWidth: 1200, margin: "0 auto", padding: "100px 48px 100px", position: "relative", zIndex: 5 }}>
         
-        {/* Result Header */}
-        {search && (
-          <p className="jk" style={{ fontSize: 16, color: "#475569", marginBottom: 32, fontWeight: 600, background: "rgba(255,255,255,0.6)", padding: "8px 16px", borderRadius: "12px", display: "inline-block" }}>
-            Found <strong style={{ color: "#0f172a" }}>{filtered.length}</strong> topics for "{search}"
-          </p>
-        )}
-
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))", gap: 32 }}>
-          {filtered.map((t) => (
-            <article key={t.id} className="topic-card" onClick={() => setSelected(t)}
-              onMouseEnter={() => setHovered(t.id)} onMouseLeave={() => setHovered(null)}>
-              
-              <div className="glow" style={{ background: t.accent }} />
-
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
-                <div style={{ width: 60, height: 60, borderRadius: "16px", background: hovered === t.id ? t.color : "#f8faf9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, transition: "all .3s" }}>
-                  {t.icon}
-                </div>
-              </div>
-
-              <h3 className="fr" style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", marginBottom: 12, lineHeight: 1.2 }}>{t.label}</h3>
-              
-              {/* Preview stripping out markdown characters */}
-              <p className="jk" style={{ fontSize: 15, color: "#475569", lineHeight: 1.6, fontWeight: 500, marginBottom: 24, flexGrow: 1, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                {t.desc.replace(/\*\*(.*?)\*\*/g, "")}
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>Loading topics from database...</div>
+        ) : (
+          <>
+            {/* Result Header */}
+            {search && (
+              <p className="jk" style={{ fontSize: 16, color: "#475569", marginBottom: 32, fontWeight: 600, background: "rgba(255,255,255,0.6)", padding: "8px 16px", borderRadius: "12px", display: "inline-block" }}>
+                Found <strong style={{ color: "#0f172a" }}>{filtered.length}</strong> topics for "{search}"
               </p>
+            )}
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
-                {t.subtopics && t.subtopics.slice(0,3).map((s) => (
-                  <span key={s} className="subtopic-tag">{s}</span>
-                ))}
-                {t.subtopics && t.subtopics.length > 3 && (
-                  <span className="subtopic-tag" style={{ background: "transparent", color: "#94a3b8" }}>+{t.subtopics.length-3}</span>
-                )}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))", gap: 32 }}>
+              {filtered.map((t) => (
+                <article key={t.id} className="topic-card" onClick={() => setSelected(t)}
+                  onMouseEnter={() => setHovered(t.id)} onMouseLeave={() => setHovered(null)}>
+                  
+                  <div className="glow" style={{ background: t.accent }} />
+
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+                    <div style={{ width: 60, height: 60, borderRadius: "16px", background: hovered === t.id ? t.color : "#f8faf9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, transition: "all .3s" }}>
+                      {t.icon}
+                    </div>
+                  </div>
+
+                  <h3 className="fr" style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", marginBottom: 12, lineHeight: 1.2 }}>{t.label}</h3>
+                  
+                  {/* Preview stripping out markdown characters */}
+                  <p className="jk" style={{ fontSize: 15, color: "#475569", lineHeight: 1.6, fontWeight: 500, marginBottom: 24, flexGrow: 1, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                    {t.desc.replace(/\*\*(.*?)\*\*/g, "")}
+                  </p>
+
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
+                    {t.subtopics && t.subtopics.slice(0,3).map((s) => (
+                      <span key={s} className="subtopic-tag">{s}</span>
+                    ))}
+                    {t.subtopics && t.subtopics.length > 3 && (
+                      <span className="subtopic-tag" style={{ background: "transparent", color: "#94a3b8" }}>+{t.subtopics.length-3}</span>
+                    )}
+                  </div>
+
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 20, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+                    <div style={{ display: "flex", gap: 16 }}>
+                      <span className="jk" style={{ fontSize: 13, color: "#64748b", fontWeight: 600 }}>👀 {t.reads} Reads</span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {/* Empty State */}
+            {filtered.length === 0 && (
+              <div style={{ textAlign: "center", padding: "100px 0" }}>
+                <div style={{ fontSize: 64, marginBottom: 20 }}>🔍</div>
+                <h3 className="fr" style={{ fontSize: 28, color: "#0f172a", fontWeight: 800 }}>No topics found</h3>
+                <p className="jk" style={{ color: "#64748b", marginTop: 10, fontSize: 16 }}>We couldn't find anything matching your search.</p>
+                <button className="btn-ghost" style={{ marginTop: 24, background:"rgba(255,255,255,0.8)" }} onClick={() => setSearch("")}>Clear Search</button>
               </div>
-
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 20, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
-                <div style={{ display: "flex", gap: 16 }}>
-                  <span className="jk" style={{ fontSize: 13, color: "#64748b", fontWeight: 600 }}>👀 {t.reads} Reads</span>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {filtered.length === 0 && (
-          <div style={{ textAlign: "center", padding: "100px 0" }}>
-            <div style={{ fontSize: 64, marginBottom: 20 }}>🔍</div>
-            <h3 className="fr" style={{ fontSize: 28, color: "#0f172a", fontWeight: 800 }}>No topics found</h3>
-            <p className="jk" style={{ color: "#64748b", marginTop: 10, fontSize: 16 }}>We couldn't find anything matching your search.</p>
-            <button className="btn-ghost" style={{ marginTop: 24, background:"rgba(255,255,255,0.8)" }} onClick={() => setSearch("")}>Clear Search</button>
-          </div>
+            )}
+          </>
         )}
       </main>
 

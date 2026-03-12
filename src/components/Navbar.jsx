@@ -15,7 +15,7 @@ export default function Navbar() {
     { label: "Home",      path: "/"        },
     { label: "Stories",   path: "/stories" },
     { label: "Topics",    path: "/topics"  },
-    { label: "Community", path: "/community" },
+    { label: "Community", path: "/UnderDevelopment" },
     { label: "Resources", path: "/resources" },
   ];
 
@@ -120,7 +120,7 @@ export default function Navbar() {
         {/* ── Actions ── */}
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <Link to="/login" className="btn-nav-outline">Login</Link>
-          <Link to="/join"  className="btn-nav-solid">
+          <Link to="/UnderDevelopment"  className="btn-nav-solid">
             Join Community <span style={{ fontSize: 13 }}>›</span>
           </Link>
         </div>
