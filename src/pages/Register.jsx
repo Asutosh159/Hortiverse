@@ -922,7 +922,7 @@ export default function Register() {
         .clay-bg {
           position: fixed;
           inset: 0;
-          background: #0f172a;
+          background: #0cad9d;
           overflow: hidden;
         }
 
