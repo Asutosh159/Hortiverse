@@ -2,14 +2,172 @@ import { useState, useEffect } from "react";
 
 const avatarColors = ["#059669","#047857","#10b981","#34d399","#065f46","#064e3b"];
 
-/* ─── COMPONENT ─────────────────────────────────────────── */
+/* ─── UPLOAD MODAL ──────────────────────────────────────── */
+function UploadStoryModal({ onClose, onSuccess, user }) {
+  const [title,   setTitle]   = useState("");
+  const [excerpt, setExcerpt] = useState("");
+  const [content, setContent] = useState("");
+  const [tag,     setTag]     = useState("Agriculture");
+  const [imgUrl,  setImgUrl]  = useState("");
+  const [author,  setAuthor]  = useState(user ? user.full_name : "");
+  
+  const [error,   setError]   = useState("");
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!title.trim() || !content.trim() || !excerpt.trim()) {
+      setError("Please fill out the title, short excerpt, and full story content.");
+      return;
+    }
+    
+    setError("");
+    setLoading(true);
+    
+    const payload = {
+      title: title.trim(),
+      author: author.trim() || "Community Member",
+      excerpt: excerpt.trim(),
+      content: content.trim(),
+      tag: tag,
+      image_url: imgUrl.trim() || "https://images.unsplash.com/photo-1592982537447-6f2a6a0c5c4f?auto=format&fit=crop&w=800&q=80",
+      read_time: Math.max(1, Math.ceil(content.split(" ").length / 200)) + " min read"
+    };
+
+    try {
+      const res = await fetch("http://localhost:5000/api/stories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        setLoading(false);
+        setSuccess(true);
+        // We use Math.random() as a temporary ID until the page is refreshed so it works instantly in the UI
+        onSuccess({ id: Date.now(), ...payload, likes: 0, comments: 0, has_liked: 0 });
+        setTimeout(onClose, 1800);
+      } else {
+        throw new Error(data.error || "Failed to upload story");
+      }
+    } catch (err) {
+      setError("Failed to upload story. Please try again.");
+      setLoading(false);
+    }
+  };
+
+  const handleOverlay = (e) => { if (e.target === e.currentTarget) onClose(); };
+
+  const LABEL = {
+    display:"block", fontFamily:"'Plus Jakarta Sans',sans-serif",
+    fontSize:12, fontWeight:700, color:"#334155", 
+    letterSpacing:".05em", textTransform:"uppercase", marginBottom:8,
+  };
+
+  return (
+    <div onClick={handleOverlay} className="modal-overlay">
+      <div className="modal-box" style={{ maxWidth: 640 }}>
+        <button className="modal-close-btn" onClick={onClose}>✕</button>
+
+        <div className="modal-scroll-area" style={{ padding: "40px 48px" }}>
+          {success ? (
+            <div style={{ textAlign:"center", padding:"40px 0", animation:"popIn .35s ease" }}>
+              <div style={{ fontSize:64, marginBottom:20 }}>📖</div>
+              <h3 className="fr" style={{ fontSize:32, color:"#0f172a", marginBottom:12, fontWeight:800 }}>
+                Story Published!
+              </h3>
+              <p className="jk" style={{ fontSize:16, color:"#64748b", lineHeight:1.7, fontWeight:500 }}>
+                Your story is now live. Thank you for inspiring the community!
+              </p>
+            </div>
+          ) : (
+            <>
+              <div style={{ marginBottom: 32 }}>
+                <span className="tag-badge" style={{ background:"rgba(5,150,105,0.1)", color:"#059669", marginBottom:12 }}>Community Story</span>
+                <h2 className="fr" style={{ fontSize: "clamp(28px, 4vw, 36px)", fontWeight:900, color:"#0f172a", lineHeight:1.1, marginBottom:8 }}>
+                  Share your <span style={{ color:"#059669" }}>Experience</span>
+                </h2>
+              </div>
+
+              {error && (
+                <div style={{ fontSize:14, color:"#dc2626", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:12, padding:"12px 16px", marginBottom:24, display:"flex", gap:8, alignItems:"center", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:600 }}>
+                  <span>⚠</span> {error}
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: 20, marginBottom: 20 }}>
+                <div style={{ flex: 2 }}>
+                  <label style={LABEL}>Title <span style={{ color:"#ef4444" }}>*</span></label>
+                  <input className="input-modern" placeholder="Give your story a catchy title…"
+                    value={title} onChange={e=>{setTitle(e.target.value);setError("");}}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={LABEL}>Topic Tag</label>
+                  <select className="input-modern" value={tag} onChange={e=>setTag(e.target.value)} style={{ appearance: "none" }}>
+                    <option value="Agriculture">Agriculture</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Sustainability">Sustainability</option>
+                    <option value="Research">Research</option>
+                    <option value="Livestock">Livestock</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 20, marginBottom: 20 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={LABEL}>Author Name</label>
+                  <input className="input-modern" placeholder="Your name…"
+                    value={author} onChange={e=>setAuthor(e.target.value)}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={LABEL}>Cover Image URL <span style={{ color:"#94a3b8", fontWeight:500, textTransform:"none", letterSpacing:0 }}>(optional)</span></label>
+                  <input className="input-modern" placeholder="https://example.com/image.jpg"
+                    value={imgUrl} onChange={e=>setImgUrl(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom:20 }}>
+                <label style={LABEL}>Short Excerpt <span style={{ color:"#ef4444" }}>*</span></label>
+                <textarea className="input-modern" style={{ resize:"vertical", lineHeight:1.6, minHeight: "80px" }}
+                  placeholder="Write a 1-2 sentence summary to hook readers…"
+                  value={excerpt} onChange={e=>setExcerpt(e.target.value)}
+                />
+              </div>
+
+              <div style={{ marginBottom:32 }}>
+                <label style={LABEL}>Full Story Content <span style={{ color:"#ef4444" }}>*</span></label>
+                <textarea className="input-modern" style={{ resize:"vertical", lineHeight:1.6, minHeight: "200px" }}
+                  placeholder="Write your full story here. You can use double asterisks like **this** to make text bold."
+                  value={content} onChange={e=>setContent(e.target.value)}
+                />
+              </div>
+
+              <button className="btn-green" onClick={handleSubmit} disabled={loading} style={{ width: "100%", justifyContent: "center", padding: "16px", fontSize: 16 }}>
+                {loading ? "Publishing..." : "✍️ Publish Story"}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+/* ─── MAIN COMPONENT ─────────────────────────────────────────── */
 export default function Stories() {
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedStory, setSelectedStory] = useState(null);
   const [searchQuery,   setSearchQuery]   = useState("");
+  const [showUpload,    setShowUpload]    = useState(false); // 🟢 Controls the upload modal
 
-  // 🟢 NEW: Comments State
+  // Comments State
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
@@ -17,7 +175,7 @@ export default function Stories() {
 
   // Get the unique ID we generated in App.js
   const visitorId = localStorage.getItem("hv_visitor_id") || "guest_fallback";
-  // Check if a real user is logged in
+  // 🟢 Check if a real user is logged in
   const loggedInUser = JSON.parse(localStorage.getItem("hv_user"));
 
   // Fetch stories on mount
@@ -102,7 +260,6 @@ export default function Stories() {
     } catch (err) { console.error("Failed to save like:", err); }
   };
 
-  // 🟢 NEW: Handle fetching comments when the Discussion button is clicked
   const loadComments = async (storyId) => {
     if (!showComments) {
       try {
@@ -114,7 +271,6 @@ export default function Stories() {
     setShowComments(!showComments);
   };
 
-  // 🟢 NEW: Handle posting a new comment
   const submitComment = async () => {
     if (!newComment.trim()) return;
     
@@ -130,17 +286,31 @@ export default function Stories() {
       });
       
       if (res.ok) {
-        // Refresh comments list from DB
         const freshRes = await fetch(`http://localhost:5000/api/stories/${selectedStory.id}/comments`);
         const freshData = await freshRes.json();
         setComments(freshData);
-        setNewComment(""); // Clear the input box
+        setNewComment(""); 
         
-        // Instantly update the comment count on the screen
         setStories(prev => prev.map(s => s.id === selectedStory.id ? {...s, comments: s.comments + 1} : s));
         setSelectedStory(prev => ({...prev, comments: prev.comments + 1}));
       }
     } catch(err) { console.error("Failed to post comment:", err); }
+  };
+
+  // 🟢 NEW: Instantly show the new story when uploaded
+  const handleNewStory = (newStory) => {
+    const initials = newStory.author.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    
+    const formattedNewStory = {
+      ...newStory,
+      img: newStory.image_url,    // Fix: mapping to what the card expects
+      readTime: newStory.read_time, // Fix: mapping to what the card expects
+      initials: initials,
+      ago: "Just now",
+      hasLiked: false
+    };
+    
+    setStories(prev => [formattedNewStory, ...prev]);
   };
 
   return (
@@ -175,6 +345,14 @@ export default function Stories() {
         .search-box:focus { border-color: #10b981; background: #ffffff; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15); }
         .search-icon { position: absolute; left: 28px; top: 50%; transform: translateY(-50%); font-size: 22px; color: #10b981; pointer-events: none; }
 
+        .input-modern {
+          width: 100%; padding: 14px 18px; background: #f8faf9;
+          border: 1px solid #e2e8f0; border-radius: 12px; outline: none;
+          font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; color: #111827;
+          transition: all 0.2s; font-weight: 500;
+        }
+        .input-modern:focus { background: #fff; border-color: #059669; box-shadow: 0 0 0 4px rgba(5,150,105,0.1); }
+
         .btn-green { background: #059669; color: #fff; border: none; cursor: pointer; border-radius: 50px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 14px; padding: 12px 28px; transition: all .2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
         .btn-green:hover { background: #047857; transform: translateY(-1px); box-shadow: 0 8px 16px rgba(5, 150, 105, 0.25); }
 
@@ -185,7 +363,6 @@ export default function Stories() {
         .like-btn:hover { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }
         .like-btn.liked { background: #fef2f2; border-color: #fecaca; color: #ef4444; }
 
-        /* 🟢 NEW: Input styling for comments */
         .c-input { padding: 14px 18px; border-radius: 12px; border: 1px solid #e2e8f0; outline: none; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; width: 100%; transition: border .2s; background: #ffffff; }
         .c-input:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
 
@@ -218,7 +395,20 @@ export default function Stories() {
             Stay updated with the latest developments in agriculture and horticulture, including sustainable farming innovations and newly released crop varieties from leading institutes worldwide.
           </p>
 
-          <div className="search-container">
+          {/* 🟢 ADDED: Upload Button (Only shows if user is logged in) */}
+          {loggedInUser && (
+            <div style={{ marginTop: "24px", animation: "fadeIn 0.5s ease" }}>
+              <button 
+                onClick={() => setShowUpload(true)} 
+                className="btn-green"
+                style={{ padding: "14px 32px", fontSize: "16px", boxShadow: "0 8px 20px rgba(5, 150, 105, 0.3)" }}
+              >
+                <span style={{ fontSize: "20px" }}>✍️</span> Share Your Story
+              </button>
+            </div>
+          )}
+
+          <div className="search-container" style={{ marginTop: loggedInUser ? "30px" : "0px" }}>
             <span className="search-icon">🔍</span>
             <input 
               className="search-box" 
@@ -250,7 +440,7 @@ export default function Stories() {
                 return (
                   <article key={s.id} className="story-card" onClick={() => { 
                     setSelectedStory(s); 
-                    setShowComments(false); // Reset comments when opening a new story
+                    setShowComments(false);
                     setComments([]); 
                   }}>
                     <div style={{ height: 220, overflow: "hidden", position: "relative", flexShrink: 0 }}>
@@ -301,10 +491,13 @@ export default function Stories() {
         )}
       </main>
 
-      {/* ══════════════════════════════════════
-          STORY MODAL / POP-UP READER
-      ══════════════════════════════════════ */}
-      {selectedStory && (
+      {/* ════ UPLOAD MODAL ════ */}
+      {showUpload && (
+        <UploadStoryModal onClose={() => setShowUpload(false)} onSuccess={handleNewStory} user={loggedInUser} />
+      )}
+
+      {/* ════ STORY READER MODAL ════ */}
+      {selectedStory && !showUpload && (
         <div className="modal-overlay" onClick={() => setSelectedStory(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close-btn" onClick={() => setSelectedStory(null)}>✕</button>
@@ -344,7 +537,6 @@ export default function Stories() {
                     >
                       {selectedStory.hasLiked ? "❤️ Loved it" : "🤍 Applaud"} · {selectedStory.likes}
                     </button>
-                    {/* 🟢 NEW: Triggers the comments to load */}
                     <button className="btn-ghost" onClick={() => loadComments(selectedStory.id)}>
                       💬 Discussion ({selectedStory.comments})
                     </button>
@@ -357,12 +549,11 @@ export default function Stories() {
                   ))}
                 </div>
 
-                {/* 🟢 NEW: THE DISCUSSION PANEL */}
+                {/* DISCUSSION PANEL */}
                 {showComments && (
                   <div style={{ marginTop: 40, paddingTop: 40, borderTop: "2px dashed #e2e8f0", animation: "fadeIn .4s" }}>
                     <h3 className="fr" style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", marginBottom: 24 }}>Join the Conversation</h3>
                     
-                    {/* Add Comment Box */}
                     <div style={{ background: "#f8faf9", padding: 24, borderRadius: 16, marginBottom: 32, border: "1px solid #e2e8f0" }}>
                       {!loggedInUser && (
                         <input 
@@ -385,7 +576,6 @@ export default function Stories() {
                       </div>
                     </div>
 
-                    {/* List of Comments */}
                     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                       {comments.length === 0 ? (
                         <div className="jk" style={{ textAlign: "center", color: "#94a3b8", padding: "40px 0" }}>Be the first to share your thoughts!</div>

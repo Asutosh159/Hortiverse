@@ -237,7 +237,8 @@ export default function Home() {
 
         <div style={{ position:"absolute", inset:0, zIndex:2, background:"linear-gradient(110deg, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.52) 45%, rgba(0,0,0,0.18) 75%, rgba(0,0,0,0.05) 100%)" }} />
         <div style={{ position:"absolute", top:0, left:0, bottom:0, width:"48%", zIndex:2, backdropFilter:"blur(3px)", maskImage:"linear-gradient(to right, black 55%, transparent 100%)" }} />
-        <div style={{ position:"absolute", bottom:0, left:0, right:0, height:160, zIndex:3, background:"linear-gradient(to top, rgba(248,253,248,0.3), transparent)" }} />
+        
+        {/* THIS IS THE LINE I REMOVED. THE WHITE GRADIENT IS GONE. */}
 
         <div style={{ position:"relative", zIndex:4, height:"100%", maxWidth:1200, margin:"0 auto", padding:"0 52px", display:"flex", alignItems:"center", paddingTop:68 }}>
           <div style={{ maxWidth:700 }}>

@@ -16,12 +16,16 @@ const isDriveLink = (url) =>
   (url.includes("drive.google.com") || url.includes("docs.google.com"));
 
 /* ─── UPLOAD MODAL ──────────────────────────────────────── */
-function UploadModal({ onClose, onSuccess }) {
+// 🟢 Notice we now pass the 'user' as a prop
+function UploadModal({ onClose, onSuccess, user }) {
   const [type,    setType]    = useState("Research Paper");
   const [title,   setTitle]   = useState("");
   const [desc,    setDesc]    = useState("");
   const [link,    setLink]    = useState("");
-  const [author,  setAuthor]  = useState("");
+  
+  // 🟢 Pre-fill the author name if the user is logged in
+  const [author,  setAuthor]  = useState(user ? user.full_name : "");
+  
   const [error,   setError]   = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -40,13 +44,12 @@ function UploadModal({ onClose, onSuccess }) {
       author: author.trim() || "Community Member",
       institution: "HortiVerse Community",
       year: new Date().getFullYear(),
-      tags: [], // Could add a tag input field later!
+      tags: [], 
       desc: desc.trim() || "No description provided.",
       drive_link: link.trim(),
     };
 
     try {
-      // 🟢 Send the new resource to the Backend Database
       const res = await fetch("http://localhost:5000/api/resources", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -58,7 +61,6 @@ function UploadModal({ onClose, onSuccess }) {
       if (res.ok) {
         setLoading(false);
         setSuccess(true);
-        // Instantly add it to the UI grid using the new DB ID
         onSuccess({ id: data.id, ...payload });
         setTimeout(onClose, 1800);
       } else {
@@ -196,9 +198,19 @@ export default function Resources() {
   const [activeSort,   setActiveSort]   = useState("Most Recent");
   const [search,       setSearch]       = useState("");
   const [showUpload,   setShowUpload]   = useState(false);
+  
+  // 🟢 ADDED: User state to check if logged in
+  const [user, setUser] = useState(null);
 
-  // 🟢 FETCH RESOURCES ON LOAD
+  // 🟢 FETCH USER & RESOURCES ON LOAD
   useEffect(() => {
+    // Check login status
+    const storedUser = localStorage.getItem("hv_user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+
+    // Fetch resources
     const fetchResources = async () => {
       try {
         const res = await fetch("http://localhost:5000/api/resources");
@@ -233,7 +245,6 @@ export default function Resources() {
   }, {});
 
   const handleNewResource = (newRes) => {
-    // Instantly show the new resource at the top of the list!
     setResources(prev => [newRes, ...prev]);
   };
 
@@ -400,44 +411,8 @@ export default function Resources() {
 
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         @keyframes slideUp { from{opacity:0;transform:translateY(40px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
-
-        /* Navbar */
-        .nav-bar {
-          position: fixed; top: 0; left: 0; right: 0; z-index: 500; height: 72px;
-          background: rgba(255,255,255,0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-          border-bottom: 1px solid rgba(255,255,255,0.5);
-          display: flex; align-items: center; justify-content: space-between;
-          padding: 0 48px; transition: all 0.3s;
-        }
-        .nav-lk {
-          color: #475569; text-decoration: none;
-          font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 600;
-          transition: color .2s; position: relative; padding-bottom: 4px;
-        }
-        .nav-lk:hover { color: #059669; }
-        .nav-lk.active { color: #059669; }
-        .nav-lk.active::after {
-          content: ''; position: absolute; bottom: 0; left: 0;
-          width: 100%; height: 2px; background: #059669; border-radius: 2px;
-        }
       `}</style>
 
-      {/* ══ NAVBAR ══ */}
-      <nav className="nav-bar">
-        <a href="/" style={{ display:"flex", alignItems:"center", gap:12, textDecoration:"none" }}>
-          <div style={{ width:40, height:40, borderRadius:"12px", background:"linear-gradient(135deg, #10b981, #047857)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, color: "white", boxShadow: "0 4px 10px rgba(16,185,129,0.3)" }}>🌿</div>
-          <span className="fr" style={{ fontSize:22, fontWeight:800, color:"#0f172a", letterSpacing: "-0.5px" }}>Horti<span style={{ color:"#059669" }}>Verse</span></span>
-        </a>
-        <div style={{ display:"flex", gap:36 }}>
-          {[["Home","/"],["Stories","/stories"],["Topics","/topics"],["Resources","/resources"]].map(([n,h]) => (
-            <a key={n} href={h} className={`nav-lk ${n==="Resources"?"active":""}`}>{n}</a>
-          ))}
-        </div>
-        <div style={{ display:"flex", gap:12 }}>
-          <a href="#" className="btn-ghost">Log in</a>
-          <button onClick={() => setShowUpload(true)} className="btn-green">Upload Resource</button>
-        </div>
-      </nav>
 
       {/* ══ PAGE HEADER ══ */}
       <div style={{ paddingTop: 72, background: "transparent" }}>
@@ -452,7 +427,20 @@ export default function Resources() {
             Access academic papers, guidebooks, and community-uploaded tools. Everything a horticulture student needs.
           </p>
 
-          <div className="search-container">
+          {/* 🟢 ADDED: Upload Button (Only shows if user is logged in) */}
+          {user && (
+            <div style={{ marginTop: "24px", animation: "fadeIn 0.5s ease" }}>
+              <button 
+                onClick={() => setShowUpload(true)} 
+                className="btn-green"
+                style={{ padding: "14px 32px", fontSize: "16px", boxShadow: "0 8px 20px rgba(5, 150, 105, 0.3)" }}
+              >
+                <span style={{ fontSize: "20px" }}>➕</span> Share a Resource
+              </button>
+            </div>
+          )}
+
+          <div className="search-container" style={{ marginTop: user ? "30px" : "0px" }}>
             <span className="search-icon">🔍</span>
             <input 
               className="search-box" 
@@ -570,8 +558,9 @@ export default function Resources() {
       </main>
 
       {/* ════ UPLOAD MODAL ════ */}
+      {/* 🟢 Notice we pass user={user} into the modal */}
       {showUpload && (
-        <UploadModal onClose={() => setShowUpload(false)} onSuccess={handleNewResource} />
+        <UploadModal onClose={() => setShowUpload(false)} onSuccess={handleNewResource} user={user} />
       )}
     </div>
   );
