@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../apiConfig';
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
@@ -13,7 +14,7 @@ const REGISTER_API = {
   },
   async register({ name, email, password }) {
     // 🟢 REAL DATABASE CALL
-    const res = await fetch("http://localhost:5000/api/register", {
+    const res = await fetch("https://hortiverse-backend.onrender.com/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../apiConfig';
 import { useState, useEffect, useRef } from "react";
 
 /* ══════════════════════════════════════════════════
@@ -8,7 +9,7 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 const API = {
   async getSlides() {
     try {
-      const res = await fetch("http://localhost:5000/api/slides");
+      const res = await fetch("https://hortiverse-backend.onrender.com/api/slides");
       const dbSlides = await res.json();
       return dbSlides.map(s => ({
         id: s.id,
@@ -24,7 +25,7 @@ const API = {
 
   async getStories() { 
     try {
-      const res = await fetch("http://localhost:5000/api/stories");
+      const res = await fetch("https:/hortiverse-backend.onrender.com/api/stories");
       const dbStories = await res.json();
       return dbStories.map(s => {
         const initials = s.author ? s.author.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : "HV";
@@ -38,7 +39,7 @@ const API = {
 
   async getTopics()  { 
     try {
-      const res = await fetch("http://localhost:5000/api/topics");
+      const res = await fetch("https://hortiverse-backend.onrender.com/api/topics");
       const dbTopics = await res.json();
       return dbTopics.map(t => ({
         id: t.id, 

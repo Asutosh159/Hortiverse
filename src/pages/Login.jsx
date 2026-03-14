@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../apiConfig';
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
@@ -22,7 +23,7 @@ export default function Login() {
 
     try {
       // 🟢 REAL DATABASE CALL
-      const res = await fetch("http://localhost:5000/api/login", {
+      const res = await fetch("https://hortiverse-backend.onrender.com/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../apiConfig';
 import { useState, useEffect } from "react";
 
 export default function SuperAdmin() {
@@ -21,12 +22,12 @@ export default function SuperAdmin() {
     setLoading(true);
     try {
       const [uRes, stRes, tRes, rRes, sRes, slRes] = await Promise.all([
-        fetch("http://localhost:5000/api/admin/users"),
-        fetch("http://localhost:5000/api/stories"),
-        fetch("http://localhost:5000/api/topics"),
-        fetch("http://localhost:5000/api/resources"),
-        fetch("http://localhost:5000/api/stats"),
-        fetch("http://localhost:5000/api/slides")
+        fetch("https://hortiverse-backend.onrender.com/api/admin/users"),
+        fetch("https://hortiverse-backend.onrender.com/api/stories"),
+        fetch("https://lhortiverse-backend.onrender.com/api/topics"),
+        fetch("https://hortiverse-backend.onrender.com/api/resources"),
+        fetch("https://hortiverse-backend.onrender.com/api/stats"),
+        fetch("https://hortiverse-backend.onrender.com/api/slides")
       ]);
 
       const uData = await uRes.json();
@@ -53,7 +54,7 @@ export default function SuperAdmin() {
 
   const deleteItem = async (type, id) => {
     if (!window.confirm(`Delete this ${type}?`)) return;
-    const res = await fetch(`http://localhost:5000/api/admin/${type}/${id}`, { method: 'DELETE' });
+    const res = await fetch(`https://hortiverse-backend.onrender.com/api/admin/${type}/${id}`, { method: 'DELETE' });
     if (res.ok) fetchData();
   };
 
@@ -63,7 +64,7 @@ export default function SuperAdmin() {
     // 🟢 FIXED: Ensures "story" becomes "stories", "topic" becomes "topics"
     const endpoint = type === 'story' ? 'stories' : type === 'topic' ? 'topics' : 'resources';
     
-    const res = await fetch(`http://localhost:5000/api/admin/${endpoint}/${data.id}`, {
+    const res = await fetch(`https://hortiverse-backend.onrender.com/api/admin/${endpoint}/${data.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -74,7 +75,7 @@ export default function SuperAdmin() {
   const addSlide = async () => {
     if(!newSlide.url.trim()) return alert("Please enter an image URL first!");
     
-    const res = await fetch("http://localhost:5000/api/slides", {
+    const res = await fetch("https://hortiverse-backend.onrender.com/api/slides", {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 

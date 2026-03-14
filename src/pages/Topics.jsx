@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../apiConfig';
 import { useState, useEffect } from "react";
 import Footer from '../components/Footer'; // Adjust this path if your folder structure is different!
 
@@ -50,7 +51,7 @@ function UploadTopicModal({ onClose, onSuccess }) {
     };
 
     try {
-      const res = await fetch("http://localhost:5000/api/topics", {
+      const res = await fetch("https://hortiverse-backend.onrender.com/api/topics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -192,7 +193,7 @@ export default function Topics() {
   useEffect(() => {
     const fetchTopics = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/topics");
+        const res = await fetch("https://hortiverse-backend.onrender.com/api/topics");
         const dbTopics = await res.json();
         
         const formattedTopics = dbTopics.map(t => ({

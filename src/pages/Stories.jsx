@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../apiConfig';
 import { useState, useEffect } from "react";
 import Footer from '../components/Footer'; // Adjust this path if your folder structure is different!
 
@@ -36,7 +37,7 @@ function UploadStoryModal({ onClose, onSuccess, user }) {
     };
 
     try {
-      const res = await fetch("http://localhost:5000/api/stories", {
+      const res = await fetch("https://hortiverse-backend.onrender.com/api/stories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -183,7 +184,7 @@ export default function Stories() {
   useEffect(() => {
     const fetchStories = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/stories?visitorId=${visitorId}`);
+        const res = await fetch(`https://hortiverse-backend.onrender.com/api/stories?visitorId=${visitorId}`);
         const dbStories = await res.json();
         
         const formattedStories = dbStories.map(s => {
@@ -266,7 +267,7 @@ export default function Stories() {
 
     // 2. Send the actual request to the backend
     try {
-      await fetch(`http://localhost:5000/api/stories/${id}/like`, {
+      await fetch(`https://hortiverse-backend.onrender.com/api/stories/${id}/like`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ visitorId })
@@ -277,7 +278,7 @@ export default function Stories() {
   const loadComments = async (storyId) => {
     if (!showComments) {
       try {
-        const res = await fetch(`http://localhost:5000/api/stories/${storyId}/comments`);
+        const res = await fetch(`https://hortiverse-backend.onrender.com/api/stories/${storyId}/comments`);
         const data = await res.json();
         setComments(data);
       } catch(err) { console.error("Failed to load comments:", err); }
@@ -295,12 +296,12 @@ export default function Stories() {
     };
 
     try {
-      const res = await fetch(`http://localhost:5000/api/stories/${selectedStory.id}/comments`, {
+      const res = await fetch(`https://hortiverse-backend.onrender.com/api/stories/${selectedStory.id}/comments`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
       });
       
       if (res.ok) {
-        const freshRes = await fetch(`http://localhost:5000/api/stories/${selectedStory.id}/comments`);
+        const freshRes = await fetch(`https://hortiverse-backend.onrender.com/api/stories/${selectedStory.id}/comments`);
         const freshData = await freshRes.json();
         setComments(freshData);
         setNewComment(""); 
