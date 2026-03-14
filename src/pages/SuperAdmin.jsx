@@ -10,10 +10,7 @@ export default function SuperAdmin() {
   const [slides, setSlides] = useState([]);
   const [activeSection, setActiveSection] = useState("overview"); 
   const [loading, setLoading] = useState(true);
-
   const [editingItem, setEditingItem] = useState(null); 
-  
-  // 🟢 NEW: Advanced Slider State
   const [newSlide, setNewSlide] = useState({ url: "", caption: "", sub_text: "" });
 
   useEffect(() => { fetchData(); }, []);
@@ -21,61 +18,76 @@ export default function SuperAdmin() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // 🟢 Standardized all fetches to use API_BASE_URL and match your backend routes
       const [uRes, stRes, tRes, rRes, sRes, slRes] = await Promise.all([
-        fetch("https://hortiverse-backend.onrender.com/api/admin/users"),
-        fetch("https://hortiverse-backend.onrender.com/api/stories"),
-        fetch("https://lhortiverse-backend.onrender.com/api/topics"),
-        fetch("https://hortiverse-backend.onrender.com/api/resources"),
-        fetch("https://hortiverse-backend.onrender.com/api/stats"),
-        fetch("https://hortiverse-backend.onrender.com/api/slides")
+        fetch(`${API_BASE_URL}/api/admin/users`),
+        fetch(`${API_BASE_URL}/api/stories`), // Fetches all stories
+        fetch(`${API_BASE_URL}/api/topics`),  // Fetches all topics
+        fetch(`${API_BASE_URL}/api/resources`),
+        fetch(`${API_BASE_URL}/api/stats`),
+        fetch(`${API_BASE_URL}/api/slides`)
       ]);
 
-      const uData = await uRes.json();
-      const stData = await stRes.json();
-      const tData = await tRes.json();
-      const rData = await rRes.json();
-      const sData = await sRes.json();
-      const slData = await slRes.json();
+      const uData = uRes.ok ? await uRes.json() : [];
+      const stData = stRes.ok ? await stRes.json() : [];
+      const tData = tRes.ok ? await tRes.json() : [];
+      const rData = rRes.ok ? await rRes.json() : [];
+      const sData = sRes.ok ? await sRes.json() : { users: 0, stories: 0, topics: 0, resources: 0 };
+      const slData = slRes.ok ? await slRes.json() : [];
 
-      setUsers(uData || []);
-      setStories(stData || []);
-      setTopics(tData || []);
-      setResources(rData || []);
-      setSlides(slData || []);
+      setUsers(uData);
+      setStories(stData);
+      setTopics(tData);
+      setResources(rData);
+      setSlides(slData);
       
       setStats({
-        users: uData.length,
-        stories: stData.length,
-        topics: tData.length,
-        resources: rData.length
+        users: sData.users || uData.length,
+        stories: sData.stories || stData.length,
+        topics: sData.topics || tData.length,
+        resources: sData.resources || rData.length
       });
-    } catch (err) { console.error(err); } finally { setLoading(false); }
+    } catch (err) { 
+      console.error("Fetch failed:", err); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const deleteItem = async (type, id) => {
     if (!window.confirm(`Delete this ${type}?`)) return;
-    const res = await fetch(`https://hortiverse-backend.onrender.com/api/admin/${type}/${id}`, { method: 'DELETE' });
+    // 🟢 Matches your backend DELETE /api/admin/:type/:id
+    const res = await fetch(`${API_BASE_URL}/api/admin/${type}/${id}`, { method: 'DELETE' });
     if (res.ok) fetchData();
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
     const { type, data } = editingItem;
-    // 🟢 FIXED: Ensures "story" becomes "stories", "topic" becomes "topics"
-    const endpoint = type === 'story' ? 'stories' : type === 'topic' ? 'topics' : 'resources';
     
-    const res = await fetch(`https://hortiverse-backend.onrender.com/api/admin/${endpoint}/${data.id}`, {
+    // 🟢 Mapping singular type to the plural endpoints in your server.js
+    let endpoint = 'resources';
+    if (type === 'story') endpoint = 'stories';
+    if (type === 'topic') endpoint = 'topics';
+    
+    const res = await fetch(`${API_BASE_URL}/api/admin/${endpoint}/${data.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    if (res.ok) { setEditingItem(null); fetchData(); }
+
+    if (res.ok) { 
+      setEditingItem(null); 
+      fetchData(); 
+    } else {
+      alert("Update failed. Check your server logs.");
+    }
   };
 
   const addSlide = async () => {
     if(!newSlide.url.trim()) return alert("Please enter an image URL first!");
     
-    const res = await fetch("https://hortiverse-backend.onrender.com/api/slides", {
+    const res = await fetch(`${API_BASE_URL}/api/slides`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -88,7 +100,7 @@ export default function SuperAdmin() {
       setNewSlide({ url: "", caption: "", sub_text: "" }); 
       fetchData(); 
     } else {
-      alert("Failed to add slide. Ensure your database table is set up.");
+      alert("Failed to add slide.");
     }
   };
 
@@ -103,44 +115,33 @@ export default function SuperAdmin() {
       <style>{`
         .fr { font-family: 'Fraunces', serif; }
         .jk { font-family: 'Plus Jakarta Sans', sans-serif; }
-        
         .sidebar { width: 280px; background: #ffffff; border-right: 1px solid #e2e8f0; padding: 40px 24px; position: fixed; top: 72px; bottom: 0; z-index: 10; display: flex; flex-direction: column; gap: 8px; }
         .nav-item { padding: 14px 20px; border-radius: 12px; color: #64748b; cursor: pointer; transition: all 0.2s ease; font-weight: 600; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; }
         .nav-item:hover { background: #f1f5f9; color: #0f172a; }
         .nav-item.active { background: #ecfdf5; color: #059669; font-weight: 700; }
-        
         .main-content { margin-left: 280px; padding: 60px; flex: 1; background: #f8faf9; min-height: 100vh; }
-        
-        /* 🟢 COLORFUL STAT CARDS */
         .stat-card { border-radius: 24px; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); color: white; position: relative; overflow: hidden; transition: transform 0.2s ease; }
         .stat-card:hover { transform: translateY(-4px); }
         .bg-users { background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); }
         .bg-stories { background: linear-gradient(135deg, #E11D48 0%, #db2777 100%); }
         .bg-topics { background: linear-gradient(135deg, #059669 0%, #10B981 100%); }
         .bg-resources { background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%); }
-        
         table { width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; margin-top: 20px; }
         th { text-align: left; padding: 18px 24px; background: #f8faf9; color: #64748b; font-size: 12px; text-transform: uppercase; font-weight: 800; border-bottom: 1px solid #e2e8f0; letter-spacing: 0.5px; }
         td { padding: 18px 24px; border-bottom: 1px solid #f1f5f9; font-size: 15px; color: #334155; font-family: 'Plus Jakarta Sans', sans-serif; }
-        
         .badge { display: inline-block; padding: 6px 12px; border-radius: 50px; font-size: 12px; font-weight: 800; text-transform: uppercase; }
         .badge-admin { background: #ecfdf5; color: #059669; }
         .badge-user { background: #f1f5f9; color: #64748b; }
-        
         .btn-act { padding: 8px 16px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; font-size: 13px; margin-right: 8px; transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; }
         .btn-edit { background: #eff6ff; color: #2563eb; }
         .btn-edit:hover { background: #dbeafe; }
         .btn-del { background: #fef2f2; color: #dc2626; }
         .btn-del:hover { background: #fee2e2; }
-        
         .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 2000; display: flex; align-items: center; justify-content: center; }
         .edit-card { background: #ffffff; width: 100%; max-width: 650px; border-radius: 24px; padding: 48px; position: relative; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
-        
         .form-label { display: block; font-size: 12px; font-weight: 800; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 20px; }
         .form-input { width: 100%; padding: 14px 18px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; color: #0f172a; transition: border-color 0.2s; outline: none; }
         .form-input:focus { border-color: #059669; box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1); }
-        
-        /* 🟢 BEAUTIFUL SLIDER PREVIEW */
         .slide-preview { position: relative; border-radius: 16px; overflow: hidden; height: 180px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         .slide-preview img { width: 100%; height: 100%; object-fit: cover; }
         .slide-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 20px; }
@@ -205,15 +206,12 @@ export default function SuperAdmin() {
           </table>
         )}
 
-        {/* 🟢 FIXED: Safe Delete Mapping */}
         {['stories', 'topics', 'resources'].includes(activeSection) && (
           <table>
             <thead><tr><th>Content Title</th><th>Actions</th></tr></thead>
             <tbody>
               {(activeSection === 'stories' ? stories : activeSection === 'topics' ? topics : resources).map(item => {
-                // Properly convert plural to singular for the delete route
                 const itemType = activeSection === 'stories' ? 'story' : activeSection === 'topics' ? 'topic' : 'resource';
-                
                 return (
                   <tr key={item.id}>
                     <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.title || item.label}</td>
@@ -228,12 +226,10 @@ export default function SuperAdmin() {
           </table>
         )}
 
-        {/* 🟢 NEW: Enhanced Slider UI */}
         {activeSection === 'settings' && (
           <div>
             <div style={{ background: '#ffffff', padding: 32, borderRadius: 24, boxShadow: '0 4px 10px rgba(0,0,0,0.03)', border: '1px solid #e2e8f0', marginBottom: 40 }}>
               <h3 className="fr" style={{ color: '#0f172a', fontSize: 24, marginTop: 0, marginBottom: 24 }}>Upload New Background</h3>
-              
               <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
                 <div style={{ flex: 2 }}>
                   <label className="form-label" style={{ marginTop: 0 }}>Image URL (Direct Link)</label>
@@ -250,15 +246,8 @@ export default function SuperAdmin() {
                   <input className="form-input" placeholder="e.g., The best agriculture hub" value={newSlide.sub_text} onChange={e => setNewSlide({...newSlide, sub_text: e.target.value})} />
                 </div>
               </div>
-              
-              <button 
-                onClick={addSlide} 
-                style={{ marginTop: 16, width: '100%', padding: '16px', background: 'linear-gradient(135deg, #059669 0%, #10B981 100%)', color: 'white', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: 16, fontFamily: 'Plus Jakarta Sans', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.3)' }}
-              >
-                + Add Slide to Homepage
-              </button>
+              <button onClick={addSlide} style={{ marginTop: 16, width: '100%', padding: '16px', background: 'linear-gradient(135deg, #059669 0%, #10B981 100%)', color: 'white', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: 16, cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.3)' }}>+ Add Slide to Homepage</button>
             </div>
-
             <h3 className="fr" style={{ fontSize: 24, marginBottom: 20 , color:"black"}}>Active Slider Preview</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
               {slides.map(s => (
@@ -271,24 +260,18 @@ export default function SuperAdmin() {
                   </div>
                 </div>
               ))}
-              {slides.length === 0 && <p style={{ color: '#64748b' }}>No slides added yet.</p>}
             </div>
           </div>
         )}
       </main>
 
-      {/* 🟢 EDIT MODAL */}
       {editingItem && (
         <div className="modal-overlay">
           <div className="edit-card">
             <h2 className="fr" style={{ fontSize: 32, color: '#0f172a', marginTop: 0, marginBottom: 32 }}>Edit Content</h2>
             <form onSubmit={handleUpdate}>
               <label className="form-label">Title / Label</label>
-              <input 
-                className="form-input" 
-                value={editingItem.data.title || editingItem.data.label || ""} 
-                onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, [editingItem.data.label ? 'label' : 'title']: e.target.value}})} 
-              />
+              <input className="form-input" value={editingItem.data.title || editingItem.data.label || ""} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, [editingItem.data.label ? 'label' : 'title']: e.target.value}})} />
               
               {editingItem.type === 'story' && (
                 <>
@@ -303,18 +286,14 @@ export default function SuperAdmin() {
                 <>
                   <label className="form-label">Icon (Emoji)</label>
                   <input className="form-input" value={editingItem.data.icon} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, icon: e.target.value}})} />
-                  <label className="form-label">Description (Skeleton Structure)</label>
-                  <textarea className="form-input" rows="6" value={editingItem.data.description} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, description: e.target.value}})} style={{ fontFamily: 'monospace', fontSize: 13 }} />
+                  <label className="form-label">Description</label>
+                  <textarea className="form-input" rows="6" value={editingItem.data.description} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, description: e.target.value}})} />
                 </>
               )}
 
               <div style={{ display: 'flex', gap: 16, marginTop: 16 }}>
-                <button type="submit" style={{ flex: 2, padding: 16, background: '#059669', color: 'white', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: 'Plus Jakarta Sans' }}>
-                  Save Changes
-                </button>
-                <button type="button" onClick={() => setEditingItem(null)} style={{ flex: 1, background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: 'Plus Jakarta Sans' }}>
-                  Cancel
-                </button>
+                <button type="submit" style={{ flex: 2, padding: 16, background: '#059669', color: 'white', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>Save Changes</button>
+                <button type="button" onClick={() => setEditingItem(null)} style={{ flex: 1, background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>Cancel</button>
               </div>
             </form>
           </div>
