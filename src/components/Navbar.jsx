@@ -35,7 +35,7 @@ export default function Navbar() {
   }
 
   const getInitials = (name) => {
-    if (!name) return "U";
+    if (!name) return "A"; // Changed to A for Admin fallback
     return name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
   };
 
@@ -85,7 +85,9 @@ export default function Navbar() {
               {getInitials(user.full_name)}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={styles.welcomeText}>Hi, {user.full_name.split(" ")[0]}</span>
+              {/* 🟢 FIXED: Safe fallback if full_name is missing */}
+              <span style={styles.welcomeText}>Hi, {user.full_name ? user.full_name.split(" ")[0] : "Admin"}</span>
+              
               {user.role === 'admin' && (
                 <span style={{ fontSize: '10px', color: '#2e7d32', fontWeight: 'bold', textTransform: 'uppercase' }}>Super Admin</span>
               )}

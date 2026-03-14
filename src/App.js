@@ -9,6 +9,9 @@ import Community from "./pages/UnderDevelopment";
 import Login     from "./pages/Login";
 import Register  from "./pages/Register";
 import SuperAdmin from "./pages/SuperAdmin"; // 🟢 Added Import
+import About from './pages/About';
+import Help from './pages/Help';
+import Privacy from './pages/Privacy';
 
 function App() {
 
@@ -37,6 +40,9 @@ function App() {
               <Route path="/resources"  element={<Resources />} />
               <Route path="/admin"      element={<SuperAdmin />} /> {/* 🟢 Added Route */}
               <Route path="/UnderDevelopment" element={<Community />} />
+              <Route path="/About" element={<About />} />
+              <Route path="/Help" element={<Help />} />
+              <Route path="/Privacy" element={<Privacy />} />
             </Routes>
           </>
         } />

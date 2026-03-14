@@ -1,8 +1,12 @@
+/* 🟢 1. LOAD FONTS GLOBALLY SO THEY NEVER DISAPPEAR */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,wght@0,400;0,700;0,900;1,400;1,700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-* {
+/* 🟢 2. GLOBAL CSS RESET (Fixes Navbar Spacing Bugs) */
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -12,19 +16,35 @@ html {
   scroll-behavior: smooth;
 }
 
+/* 🟢 3. HORTIVERSE LIGHT THEME BASE */
 body {
-  background: #0a1a0b;
-  color: #e8f0e0;
+  background-color: #f8faf9;
+  color: #0f172a;
   overflow-x: hidden;
+  font-family: 'Plus Jakarta Sans', sans-serif; /* Sets your brand font globally! */
+  -webkit-font-smoothing: antialiased;
 }
 
+/* 🟢 4. CUSTOM PREMIUM SCROLLBAR */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px; 
 }
+
 ::-webkit-scrollbar-track {
-  background: #0a1a0b;
+  background: transparent; 
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #2a4a2a;
-  border-radius: 3px;
+  background: rgba(16, 185, 129, 0.4); 
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.8); 
+}
+
+/* 🟢 5. CUSTOM TEXT HIGHLIGHT COLOR */
+::selection {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #047857; 
 }

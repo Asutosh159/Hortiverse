@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Footer from '../components/Footer'; // Adjust this path if your folder structure is different!
 
 // Pre-defined themes
 const THEMES = [
@@ -7,6 +8,13 @@ const THEMES = [
   { name: "Amber",   bg: "#fef3c7", accent: "#d97706" },
   { name: "Purple",  bg: "#f3e8ff", accent: "#7e22ce" },
   { name: "Rose",    bg: "#fce7f3", accent: "#be185d" }
+];
+
+// 🟢 NEW: PRE-DEFINED ICON PACK FOR USERS TO CHOOSE FROM
+const ICON_PACK = [
+  "🌱", "🌿", "🚜", "🌾", "🍎", "🌻", "💧", "☀️", 
+  "🐄", "🐑", "🐓", "🐝", "🥕", "🍅", "🥦", "🌲", 
+  "🍄", "🌍", "🔬", "📚", "⚙️", "🌤️", "🔥", "📊"
 ];
 
 /* ─── UPLOAD MODAL ──────────────────────────────────────── */
@@ -93,7 +101,7 @@ function UploadTopicModal({ onClose, onSuccess }) {
                 </div>
               )}
 
-              <div style={{ display: "flex", gap: 20, marginBottom: 20 }}>
+              <div style={{ display: "flex", gap: 20, marginBottom: 16 }}>
                 <div style={{ width: "80px" }}>
                   <label style={LABEL}>Icon</label>
                   <input className="input-modern" style={{ textAlign: "center", fontSize: "24px", padding: "8px" }} value={icon} onChange={e=>setIcon(e.target.value)} maxLength={2} />
@@ -104,11 +112,36 @@ function UploadTopicModal({ onClose, onSuccess }) {
                 </div>
               </div>
 
+              {/* 🟢 NEW: ICON PACK SELECTION AREA */}
+              <div style={{ marginBottom: 24 }}>
+                <label style={LABEL}>Quick Icon Select</label>
+                <div style={{ 
+                  display: "flex", gap: 8, flexWrap: "wrap", background: "#f8faf9", 
+                  padding: "16px", borderRadius: "16px", border: "1px solid #e2e8f0",
+                }}>
+                  {ICON_PACK.map(ico => (
+                    <button 
+                      key={ico} 
+                      type="button"
+                      onClick={() => setIcon(ico)} 
+                      style={{
+                        width: "42px", height: "42px", fontSize: "20px", borderRadius: "12px",
+                        background: icon === ico ? "rgba(16,185,129,0.15)" : "#ffffff",
+                        border: `1px solid ${icon === ico ? "#059669" : "#e2e8f0"}`,
+                        cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "center", justifyContent: "center",
+                        boxShadow: icon === ico ? "0 0 0 1px #059669" : "0 2px 4px rgba(0,0,0,0.02)"
+                      }}>
+                      {ico}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div style={{ marginBottom:24 }}>
                 <label style={LABEL}>Color Theme</label>
                 <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                   {THEMES.map(theme => (
-                    <button key={theme.name} onClick={() => setSelectedTheme(theme)} style={{
+                    <button type="button" key={theme.name} onClick={() => setSelectedTheme(theme)} style={{
                       padding: "8px 16px", borderRadius: "50px", border: `2px solid ${selectedTheme.name === theme.name ? theme.accent : 'transparent'}`,
                       background: theme.bg, color: theme.accent, fontWeight: 700, cursor: "pointer", transition: "all .2s"
                     }}>
@@ -133,7 +166,7 @@ function UploadTopicModal({ onClose, onSuccess }) {
                 <input className="input-modern" placeholder="e.g., Soil, Greenhouse, Seeds" value={subtopics} onChange={e=>setSubtopics(e.target.value)} />
               </div>
 
-              <button className="btn-green" onClick={handleSubmit} disabled={loading} style={{ width: "100%", justifyContent: "center", padding: "16px", fontSize: 16 }}>
+              <button type="button" className="btn-green" onClick={handleSubmit} disabled={loading} style={{ width: "100%", justifyContent: "center", padding: "16px", fontSize: 16 }}>
                 {loading ? "Creating..." : "🌿 Launch Topic"}
               </button>
             </>
@@ -183,6 +216,18 @@ export default function Topics() {
     fetchTopics();
   }, []);
 
+  // PREVENT BACKGROUND SCROLLING WHEN MODAL IS OPEN
+  useEffect(() => {
+    if (selected || showUpload) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [selected, showUpload]);
+
   const filtered = topics.filter((t) =>
     (t.label || "").toLowerCase().includes(search.toLowerCase()) ||
     (t.desc || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -193,12 +238,12 @@ export default function Topics() {
     setTopics(prev => [newTopic, ...prev]);
   };
 
-  // 🟢 NEW: ADVANCED SKELETON PARSER LOGIC
+  // ADVANCED SKELETON PARSER LOGIC
   const renderTopicContent = (text, accentColor) => {
     // If no ## exists, just render normal paragraphs
     if (!text.includes("##")) {
       return text.split("\n\n").map((para, i) => (
-        <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} />
+        <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} style={{ wordBreak: 'break-word' }} />
       ));
     }
 
@@ -206,7 +251,6 @@ export default function Topics() {
     const introText = parts[0].trim();
     const modulesRaw = parts.slice(1);
 
-    // Advanced Parser that captures descriptions under headings and subheadings!
     const modules = modulesRaw.map(modText => {
       const lines = modText.split("\n").filter(l => l.trim() !== "");
       const mainHeading = lines[0].trim();
@@ -214,22 +258,18 @@ export default function Topics() {
       let currentItem = null;
       let mainDesc = [];
 
-      // Loop through all the text lines under a main heading
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
-        // Check if the line is a bullet point or numbered list
         const isBullet = line.match(/^[-*]\s+(.*)/) || line.match(/^[0-9]+\.\s+(.*)/);
         
         if (isBullet) {
-          // If it is a bullet, push the previous bullet into the array and start a new one
           if (currentItem) items.push(currentItem);
           currentItem = { title: isBullet[1], desc: [] };
         } else {
-          // If it is NOT a bullet, it's a description! Attach it to the current subheading
           if (currentItem) {
             currentItem.desc.push(line);
           } else {
-            mainDesc.push(line); // Or attach it to the Main heading if no subheading has started
+            mainDesc.push(line); 
           }
         }
       }
@@ -240,32 +280,30 @@ export default function Topics() {
 
     return (
       <div className="skeleton-container">
-        {introText && <p className="skeleton-intro">{introText}</p>}
+        {introText && <p className="skeleton-intro" style={{ wordBreak: 'break-word' }}>{introText}</p>}
         
         <div className="skeleton-grid">
           {modules.map((mod, idx) => (
-            <div key={idx} className="skeleton-module" style={{ borderTop: `4px solid ${accentColor}` }}>
+            <div key={idx} className="skeleton-module" style={{ borderTop: `3px solid ${accentColor}` }}>
               
               <div className="module-header">
                 <span className="module-number" style={{ color: accentColor }}>{String(idx + 1).padStart(2, '0')}</span>
-                <h4>{mod.mainHeading}</h4>
+                <h4 style={{ wordBreak: 'break-word', margin: 0 }}>{mod.mainHeading}</h4>
               </div>
               
-              {/* Renders description right under the main heading */}
-              {mod.mainDesc && <p className="module-main-desc">{mod.mainDesc}</p>}
+              {mod.mainDesc && <p className="module-main-desc" style={{ wordBreak: 'break-word' }}>{mod.mainDesc}</p>}
               
               {mod.items.length > 0 && (
                 <ul className="module-list">
                   {mod.items.map((item, sIdx) => (
                     <li key={sIdx}>
                       <div className="sub-title">
-                        <span style={{ color: accentColor, marginRight: 8, marginTop: 2 }}>▹</span>
-                        <span>{item.title}</span>
+                        <span style={{ color: accentColor, marginRight: 8, marginTop: 1 }}>▹</span>
+                        <span style={{ wordBreak: 'break-word' }}>{item.title}</span>
                       </div>
                       
-                      {/* Renders the description right under the subheading */}
                       {item.desc.length > 0 && (
-                        <p className="sub-desc">{item.desc.join(" ")}</p>
+                        <p className="sub-desc" style={{ wordBreak: 'break-word' }}>{item.desc.join(" ")}</p>
                       )}
                     </li>
                   ))}
@@ -292,7 +330,7 @@ export default function Topics() {
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&display=swap');
-        
+        @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
         ::-webkit-scrollbar { width: 8px; }
@@ -300,8 +338,8 @@ export default function Topics() {
         ::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.3); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.6); }
         
-        .fr { font-family: 'Fraunces', serif; }
-        .jk { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .fr { font-family: 'Lora', serif; }
+        .jk { font-family: 'Manrope', sans-serif; }
 
         .topic-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 1); border-radius: 20px; padding: 32px 28px; cursor: pointer; position: relative; overflow: hidden; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08); display: flex; flex-direction: column; }
         .topic-card:hover { transform: translateY(-8px); box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.25), 0 0 0 2px rgba(16, 185, 129, 0.1); background: rgba(255, 255, 255, 0.95); }
@@ -327,9 +365,30 @@ export default function Topics() {
         .subtopic-tag { display: inline-block; background: #f1f5f9; color: #475569; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 50px; transition: all .2s; border: 1px solid transparent; }
         .topic-card:hover .subtopic-tag { background: #ffffff; border-color: #e2e8f0; }
 
-        .modal-overlay { position: fixed; top: 72px; left: 0; right: 0; bottom: 0; z-index: 450; background: rgba(15, 23, 42, 0.35); backdrop-filter: blur(24px); display: flex; justify-content: center; align-items: center; padding: 40px 20px; animation: fadeIn .3s ease-out; }
-        .modal-box { background: #ffffff; border-radius: 24px; width: 100%; max-width: 860px; max-height: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255,255,255,0.2); animation: slideUp .4s cubic-bezier(0.16, 1, 0.3, 1); }
-        .modal-scroll-area { overflow-y: auto; flex-grow: 1; width: 100%; }
+        .modal-overlay { position: fixed; top: 72px; left: 0; right: 0; bottom: 0; z-index: 450; background: rgba(15, 23, 42, 0.35); backdrop-filter: blur(24px); display: flex; justify-content: center; align-items: center; padding: 60px 20px; animation: fadeIn .3s ease-out; }
+        
+        .modal-box { 
+          background: #ffffff; 
+          border-radius: 24px; 
+          width: 100%; 
+          max-width: 860px; 
+          max-height: 85vh; 
+          display: flex; 
+          flex-direction: column; 
+          position: relative; 
+          overflow: hidden; 
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255,255,255,0.2); 
+          animation: slideUp .4s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+        
+        .modal-scroll-area { 
+          overflow-y: auto; 
+          overflow-x: hidden; 
+          flex-grow: 1; 
+          width: 100%; 
+          word-break: break-word; 
+          overscroll-behavior: contain; 
+        }
         .modal-scroll-area::-webkit-scrollbar { width: 6px; }
         .modal-scroll-area::-webkit-scrollbar-track { background: transparent; }
         .modal-scroll-area::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.25); border-radius: 4px; }
@@ -341,104 +400,103 @@ export default function Topics() {
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         @keyframes slideUp { from{opacity:0;transform:translateY(40px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
 
-       /* 🟢 UPDATED FULL-WIDTH SKELETON CSS */
-.skeleton-container { 
-  font-family: 'Plus Jakarta Sans', sans-serif; 
-  width: 100%;
-}
+        .skeleton-container { 
+          font-family: 'Plus Jakarta Sans', sans-serif; 
+          width: 100%;
+        }
 
-.skeleton-intro { 
-  font-size: 18px; 
-  color: #475569; 
-  line-height: 1.7; 
-  margin-bottom: 40px; 
-  font-weight: 500; 
-  text-align: center; /* Center intro for better look */
-}
+        .skeleton-intro { 
+          font-size: 15px; 
+          color: #475569; 
+          line-height: 1.6; 
+          margin-bottom: 24px; 
+          font-weight: 500; 
+          text-align: center; 
+        }
 
-/* Changed from 2 columns to 1 full-width column */
-.skeleton-grid { 
-  display: flex;
-  flex-direction: column;
-  gap: 24px; 
-  width: 100%;
-}
+        .skeleton-grid { 
+          display: flex;
+          flex-direction: column;
+          gap: 16px; 
+          width: 100%;
+        }
 
-.skeleton-module {
-  background: #f8faf9; 
-  border: 1px solid #e2e8f0; 
-  border-radius: 20px;
-  padding: 32px; /* Increased padding */
-  transition: transform 0.2s, box-shadow 0.2s;
-  width: 100%; /* Ensure it hits the edges */
-}
+        .skeleton-module {
+          background: #f8faf9; 
+          border: 1px solid #e2e8f0; 
+          border-radius: 16px; 
+          padding: 20px 24px; 
+          transition: transform 0.2s, box-shadow 0.2s;
+          width: 100%; 
+        }
 
-.skeleton-module:hover { 
-  transform: translateY(-2px); 
-  box-shadow: 0 15px 30px -10px rgba(0,0,0,0.08); 
-  background: #ffffff; 
-}
+        .skeleton-module:hover { 
+          transform: translateY(-2px); 
+          box-shadow: 0 15px 30px -10px rgba(0,0,0,0.08); 
+          background: #ffffff; 
+        }
 
-.module-header { 
-  display: flex; 
-  gap: 16px; 
-  align-items: center; /* Better alignment for headings */
-  margin-bottom: 20px; 
-  border-bottom: 1px solid rgba(0,0,0,0.04);
-  padding-bottom: 15px;
-}
+        .module-header { 
+          display: flex; 
+          gap: 12px; 
+          align-items: center; 
+          margin-bottom: 12px; 
+          border-bottom: 1px solid rgba(0,0,0,0.04);
+          padding-bottom: 12px;
+        }
 
-.module-number { 
-  font-family: 'Fraunces', serif; 
-  font-size: 32px; 
-  font-weight: 900; 
-  line-height: 1; 
-  opacity: 0.2; 
-}
+        .module-number { 
+          font-family: 'Fraunces', serif; 
+          font-size: 24px; 
+          font-weight: 900; 
+          line-height: 1; 
+          opacity: 0.2; 
+        }
 
-.module-header h4 { 
-  font-size: 22px; 
-  font-weight: 800; 
-  color: #0f172a; 
-  line-height: 1.2; 
-}
+        .module-header h4 { 
+          font-size: 18px; 
+          font-weight: 800; 
+          color: #0f172a; 
+          line-height: 1.2; 
+        }
 
-.module-main-desc { 
-  font-size: 16px; 
-  color: #334155; 
-  margin-bottom: 24px; 
-  line-height: 1.8; 
-  font-weight: 500;
-}
+        .module-main-desc { 
+          font-size: 14px; 
+          color: #334155; 
+          margin-bottom: 16px; 
+          line-height: 1.6; 
+          font-weight: 500;
+        }
 
-.module-list { 
-  list-style: none; 
-  padding: 0; 
-  margin: 0; 
-  display: flex; 
-  flex-direction: column; 
-  gap: 20px; /* Space out the sub-topics */
-}
+        .module-list { 
+          list-style: none; 
+          padding: 0; 
+          margin: 0; 
+          display: flex; 
+          flex-direction: column; 
+          gap: 12px; 
+        }
 
-.sub-title { 
-  font-size: 17px; 
-  font-weight: 700; 
-  color: #1e293b; 
-  display: flex; 
-  align-items: flex-start; 
-  line-height: 1.4; 
-}
+        .sub-title { 
+          font-size: 15px; 
+          font-weight: 700; 
+          color: #1e293b; 
+          display: flex; 
+          align-items: flex-start; 
+          line-height: 1.4; 
+        }
 
-.sub-desc { 
-  font-size: 15px; 
-  color: #64748b; 
-  line-height: 1.7; 
-  margin-left: 28px; 
-  margin-top: 8px; 
-  font-weight: 500; 
-}
+        .sub-desc { 
+          font-size: 14px; 
+          color: #64748b; 
+          line-height: 1.6; 
+          margin-left: 24px; 
+          margin-top: 4px; 
+          font-weight: 500; 
+        }
       `}</style>
 
+      {/* ══ PAGE HEADER ══ */}
       <div style={{ paddingTop: 72, background: "transparent" }}>
         <div style={{ maxWidth: 800, margin: "0 auto", padding: "80px 24px 0px", textAlign: "center" }}>
           <span style={{ display:"inline-block", background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,1)", color:"#059669", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, fontWeight:800, letterSpacing:".1em", textTransform:"uppercase", padding:"8px 20px", borderRadius:50, marginBottom:24, boxShadow:"0 4px 12px rgba(0,0,0,0.03)" }}>
@@ -487,9 +545,9 @@ export default function Topics() {
                     </div>
                   </div>
 
-                  <h3 className="fr" style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", marginBottom: 12, lineHeight: 1.2 }}>{t.label}</h3>
+                  <h3 className="fr" style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", marginBottom: 12, lineHeight: 1.2, wordBreak: "break-word" }}>{t.label}</h3>
                   
-                  <p className="jk" style={{ fontSize: 15, color: "#475569", lineHeight: 1.6, fontWeight: 500, marginBottom: 24, flexGrow: 1, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                  <p className="jk" style={{ fontSize: 15, color: "#475569", lineHeight: 1.6, fontWeight: 500, marginBottom: 24, flexGrow: 1, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word" }}>
                     {(t.desc || "").replace(/#|[-*]/g, "")}
                   </p>
 
@@ -533,21 +591,21 @@ export default function Topics() {
             <button className="modal-close-btn" onClick={() => setSelected(null)}>✕</button>
             <div className="modal-scroll-area">
               <div style={{ 
-                padding: "64px 48px 40px", background: `linear-gradient(180deg, ${selected.color} 0%, rgba(255,255,255,0) 100%)`, 
+                padding: "48px 32px 24px", 
+                background: `linear-gradient(180deg, ${selected.color} 0%, rgba(255,255,255,0) 100%)`, 
                 textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center"
               }}>
                 <div style={{ 
-                  width: 96, height: 96, borderRadius: "28px", background: "#ffffff", 
+                  width: 72, height: 72, borderRadius: "20px", background: "#ffffff", 
                   display: "flex", alignItems: "center", justifyContent: "center", 
-                  fontSize: 48, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)", marginBottom: 28
+                  fontSize: 36, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)", marginBottom: 20
                 }}>{selected.icon}</div>
-                <h2 className="fr" style={{ fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 900, color: "#0f172a", lineHeight: 1.1, marginBottom: 24 }}>
+                <h2 className="fr" style={{ fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 900, color: "#0f172a", lineHeight: 1.1, marginBottom: 16, wordBreak: "break-word" }}>
                   {selected.label}
                 </h2>
               </div>
-              <div style={{ padding: "0 48px 64px" }}>
+              <div style={{ padding: "0 32px 48px" }}> 
                 <div className="modal-article-content">
-                  {/* 🟢 THIS CALLS THE NEW SKELETON PARSER */}
                   {renderTopicContent(selected.desc || "", selected.accent)}
                 </div>
               </div>
@@ -555,6 +613,7 @@ export default function Topics() {
           </div>
         </div>
       )}
+      <Footer />
     </div>
   );
 }

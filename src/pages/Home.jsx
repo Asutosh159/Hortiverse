@@ -30,7 +30,7 @@ const API = {
         const initials = s.author ? s.author.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : "HV";
         return {
           id: s.id, author: s.author || "Community Member", initials: initials, ago: "Recently", 
-          title: s.title, desc: s.excerpt, tag: s.tag, img: s.image_url
+          title: s.title, desc: s.excerpt, content: s.content, tag: s.tag, img: s.image_url
         };
       });
     } catch (err) { return []; }
@@ -41,13 +41,28 @@ const API = {
       const res = await fetch("http://localhost:5000/api/topics");
       const dbTopics = await res.json();
       return dbTopics.map(t => ({
-        id: t.id, icon: t.icon, label: t.label, desc: t.description
+        id: t.id, 
+        icon: t.icon || "🌿", 
+        label: t.label || "Untitled Topic", 
+        desc: t.description || "",
+        color: t.color || "#f8faf9",
+        accent: t.accent || "#059669",
+        subtopics: t.subtopics || []
       }));
     } catch (err) { return []; }
   },
 };
 
 const AVATAR_COLORS = ["#4caf50","#2e7d32","#66bb6a","#388e3c","#81c784","#1b5e20"];
+
+const TOPIC_THEMES = [
+  { bg: "#ecfdf5", shadow: "rgba(16, 185, 129, 0.18)", text: "#047857" }, // Mint Green
+  { bg: "#e0f2fe", shadow: "rgba(2, 132, 199, 0.15)",  text: "#0369a1" }, // Sky Blue
+  { bg: "#fef3c7", shadow: "rgba(217, 119, 6, 0.15)",  text: "#b45309" }, // Warm Amber
+  { bg: "#f3e8ff", shadow: "rgba(147, 51, 234, 0.15)", text: "#7e22ce" }, // Soft Purple
+  { bg: "#fce7f3", shadow: "rgba(225, 29, 72, 0.15)",  text: "#be185d" }, // Blush Rose
+  { bg: "#e0e7ff", shadow: "rgba(67, 56, 202, 0.15)",  text: "#4338ca" }  // Deep Indigo
+];
 
 /* ── Skeleton loader ── */
 function Skel({ w="100%", h=20, r=8, mb=0, style={} }) {
@@ -63,8 +78,13 @@ export default function Home() {
   const [transitioning,  setTransitioning]  = useState(false);
   const [hoveredTopic,   setHoveredTopic]   = useState(null);
   const [hoveredStory,   setHoveredStory]   = useState(null);
-  const [storiesPage,    setStoriesPage]    = useState(0);        
-  const storiesPerPage   = 3;
+
+  const [activeStoryModal, setActiveStoryModal] = useState(null);
+  const [activeTopicModal, setActiveTopicModal] = useState(null);
+
+  // 🟢 NEW: Newsletter State
+  const [nlEmail, setNlEmail] = useState("");
+  const [nlState, setNlState] = useState("idle"); // 'idle', 'loading', 'success'
 
   /* data */
   const [slides,   setSlides]   = useState([]);
@@ -75,8 +95,6 @@ export default function Home() {
   const [ldSlides,  setLdSlides]  = useState(true);
   const [ldStories, setLdStories] = useState(true);
   const [ldTopics,  setLdTopics]  = useState(true);
-  const [ldMore,    setLdMore]    = useState(false);
-  const [allLoaded, setAllLoaded] = useState(false);
 
   const sectionRefs = useRef({});
   const timerRef    = useRef(null);
@@ -86,11 +104,13 @@ export default function Home() {
   useEffect(() => {
     API.getSlides().then(d  => { setSlides(d);  setLdSlides(false);  });
     API.getStories().then(d => { 
-      setStories(d.slice(0, storiesPerPage)); 
-      if (d.length <= storiesPerPage) setAllLoaded(true);
+      setStories(d.slice(0, 6)); 
       setLdStories(false); 
     });
-    API.getTopics().then(d  => { setTopics(d);  setLdTopics(false);  });
+    API.getTopics().then(d  => { 
+      setTopics(d.slice(0, 6));  
+      setLdTopics(false);  
+    });
   }, []);
 
   /* ── auto-slide ── */
@@ -125,19 +145,6 @@ export default function Home() {
 
   const setRef = (id) => (el) => { sectionRefs.current[id] = el; };
 
-  /* ── load more stories ── */
-  const loadMore = async () => {
-    setLdMore(true);
-    await delay(800);
-    const all = await API.getStories(); 
-    const next = storiesPage + 1;
-    const newBatch = all.slice(0, (next + 1) * storiesPerPage);
-    setStories(newBatch);
-    setStoriesPage(next);
-    if (newBatch.length >= all.length) setAllLoaded(true);
-    setLdMore(false);
-  };
-
   /* ── manual slide with drag ── */
   const dragStart = useRef(null);
   const onDragStart = (e) => { dragStart.current = e.clientX || e.touches?.[0]?.clientX; };
@@ -152,23 +159,118 @@ export default function Home() {
     dragStart.current = null;
   };
 
+  /* PREVENT BACKGROUND SCROLLING WHEN MODAL IS OPEN */
+  useEffect(() => {
+    if (activeStoryModal || activeTopicModal) {
+      document.body.style.overflow = "hidden"; 
+    } else {
+      document.body.style.overflow = "unset"; 
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [activeStoryModal, activeTopicModal]);
+
+  // 🟢 NEW: Handle Newsletter Submission
+  const handleSubscribe = async () => {
+    if (!nlEmail || nlState !== "idle") return;
+    setNlState("loading");
+    await delay(1200); // Simulate network request
+    setNlState("success");
+  };
+
+  const renderTopicContent = (text, accentColor) => {
+    if (!text.includes("##")) {
+      return text.split("\n\n").map((para, i) => (
+        <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} style={{ wordBreak: 'break-word' }} />
+      ));
+    }
+
+    const parts = text.split("## ");
+    const introText = parts[0].trim();
+    const modulesRaw = parts.slice(1);
+
+    const modules = modulesRaw.map(modText => {
+      const lines = modText.split("\n").filter(l => l.trim() !== "");
+      const mainHeading = lines[0].trim();
+      const items = [];
+      let currentItem = null;
+      let mainDesc = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        const isBullet = line.match(/^[-*]\s+(.*)/) || line.match(/^[0-9]+\.\s+(.*)/);
+        
+        if (isBullet) {
+          if (currentItem) items.push(currentItem);
+          currentItem = { title: isBullet[1], desc: [] };
+        } else {
+          if (currentItem) {
+            currentItem.desc.push(line);
+          } else {
+            mainDesc.push(line); 
+          }
+        }
+      }
+      if (currentItem) items.push(currentItem);
+
+      return { mainHeading, mainDesc: mainDesc.join(" "), items };
+    });
+
+    return (
+      <div className="skeleton-container">
+        {introText && <p className="skeleton-intro" style={{ wordBreak: 'break-word' }}>{introText}</p>}
+        
+        <div className="skeleton-grid">
+          {modules.map((mod, idx) => (
+            <div key={idx} className="skeleton-module" style={{ borderTop: `3px solid ${accentColor}` }}>
+              <div className="module-header">
+                <span className="module-number" style={{ color: accentColor }}>{String(idx + 1).padStart(2, '0')}</span>
+                <h4 style={{ wordBreak: 'break-word', margin: 0 }}>{mod.mainHeading}</h4>
+              </div>
+              {mod.mainDesc && <p className="module-main-desc" style={{ wordBreak: 'break-word' }}>{mod.mainDesc}</p>}
+              {mod.items.length > 0 && (
+                <ul className="module-list">
+                  {mod.items.map((item, sIdx) => (
+                    <li key={sIdx}>
+                      <div className="sub-title">
+                        <span style={{ color: accentColor, marginRight: 8, marginTop: 1 }}>▹</span>
+                        <span style={{ wordBreak: 'break-word' }}>{item.title}</span>
+                      </div>
+                      {item.desc.length > 0 && (
+                        <p className="sub-desc" style={{ wordBreak: 'break-word' }}>{item.desc.join(" ")}</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div style={{ fontFamily:"'Georgia',serif", background:"#f8fdf8", color:"#1a2e1a", overflowX:"hidden" }}>
+    <div style={{ fontFamily:"'Georgia',serif", background:"linear-gradient(to bottom, #f8fdf8 0%, #f0fbf0 100%)", color:"#1a2e1a", overflowX:"hidden" }}>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,wght@0,400;0,700;0,900;1,400;1,700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700;800&display=swap');
         *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
         html { scroll-behavior:smooth; }
         ::-webkit-scrollbar { width:6px; }
         ::-webkit-scrollbar-track { background:#f0faf0; }
         ::-webkit-scrollbar-thumb { background:#a8d8a8; border-radius:3px; }
 
-        .fr { font-family:'Fraunces',serif; }
-        .jk { font-family:'Plus Jakarta Sans',sans-serif; }
+        .fr { font-family: 'Lora', serif; }
+        .jk { font-family: 'Manrope', sans-serif; }
 
         @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
         @keyframes pulseDot { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:.6} }
         @keyframes scrollDot { 0%{transform:translateY(0);opacity:1} 100%{transform:translateY(10px);opacity:0} }
+        @keyframes popIn { 0%{opacity:0; transform:scale(0.95)} 100%{opacity:1; transform:scale(1)} }
+        @keyframes bounceTwist { 0%{transform:scale(0.8) rotate(-5deg); opacity:0} 50%{transform:scale(1.1) rotate(3deg); opacity:1} 100%{transform:scale(1) rotate(0deg); opacity:1} }
 
         .reveal { opacity:0; transform:translateY(26px); transition:opacity .75s ease,transform .75s ease; }
         .reveal.on { opacity:1; transform:translateY(0); }
@@ -178,7 +280,7 @@ export default function Home() {
         .slide-img { transition: opacity .6s ease; }
         .slide-img.out { opacity:0; }
 
-        .glass { background:rgba(255,255,255,.62); backdrop-filter:blur(22px); border:1px solid rgba(255,255,255,.88); box-shadow:0 4px 24px rgba(60,140,60,.07); }
+        .glass { background:rgba(255,255,255,.75); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,.9); box-shadow:0 10px 40px rgba(0,0,0,.08); }
 
         .nav-lk { color:#1a3a1a; text-decoration:none; font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; font-weight:600; letter-spacing:.01em; transition:color .2s; position:relative; padding-bottom:2px; }
         .nav-lk::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:linear-gradient(90deg,#4caf50,#81c784); border-radius:2px; transition:width .28s; }
@@ -186,31 +288,76 @@ export default function Home() {
         .nav-lk:hover::after, .nav-lk.active::after { width:100%; }
         .nav-lk.active { color:#43a047; font-weight:700; }
 
-        .btn-solid { background:linear-gradient(135deg,#43a047,#1b5e20); color:#fff; border:none; cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; font-weight:600; font-size:14px; padding:12px 28px; border-radius:50px; display:inline-flex; align-items:center; gap:6px; transition:all .3s; box-shadow:0 4px 18px rgba(67,160,71,.38); text-decoration:none; }
-        .btn-solid:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(67,160,71,.5); filter:brightness(1.06); }
+        /* Standard Buttons */
+        .btn-solid { background:linear-gradient(135deg,#10b981,#047857); color:#fff; border:none; cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:15px; padding:14px 30px; border-radius:50px; display:inline-flex; align-items:center; gap:6px; transition:all .3s; box-shadow:0 4px 20px rgba(16, 185, 129, 0.4); text-decoration:none; }
+        .btn-solid:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(16, 185, 129, 0.55); filter:brightness(1.05); }
+        .btn-solid:disabled { opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: none; }
+        
+        .btn-outline { background:rgba(255,255,255,.8); backdrop-filter:blur(10px); color:#047857; border:2px solid rgba(16, 185, 129, 0.3); cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:15px; text-decoration:none; padding:12px 30px; border-radius:50px; display:inline-flex; align-items:center; gap:6px; transition:all .3s; }
+        .btn-outline:hover { background:rgba(16, 185, 129, 0.1); border-color:#10b981; transform:translateY(-2px); }
 
-        .btn-outline { background:rgba(255,255,255,.75); backdrop-filter:blur(10px); color:#2e7d32; border:1.5px solid rgba(67,160,71,.45); cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; font-weight:600; font-size:14px; text-decoration:none; padding:11px 28px; border-radius:50px; display:inline-flex; align-items:center; gap:6px; transition:all .3s; }
-        .btn-outline:hover { background:rgba(76,175,80,.1); border-color:#4caf50; transform:translateY(-2px); }
+        /* HERO GLASSMORPHISM BUTTONS */
+        .hero-glass-btn { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 16px; padding: 16px 36px; border-radius: 50px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        .hero-glass-btn.primary { background: rgba(16, 185, 129, 0.25); border: 1px solid rgba(16, 185, 129, 0.5); color: #ffffff; box-shadow: 0 8px 32px rgba(16, 185, 129, 0.2); }
+        .hero-glass-btn.primary:hover { background: rgba(16, 185, 129, 0.45); border-color: rgba(16, 185, 129, 0.9); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(16, 185, 129, 0.4); }
+        .hero-glass-btn.secondary { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); color: #ffffff; }
+        .hero-glass-btn.secondary:hover { background: rgba(255, 255, 255, 0.25); border-color: rgba(255, 255, 255, 0.7); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25); }
 
-        .story-card { background:rgba(255,255,255,.75); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.92); box-shadow:0 4px 24px rgba(60,140,60,.08); border-radius:20px; overflow:hidden; transition:all .4s cubic-bezier(.23,1,.32,1); }
-        .story-card:hover { transform:translateY(-8px); box-shadow:0 22px 56px rgba(60,140,60,.18); border-color:rgba(100,180,100,.4); }
+        .story-card { cursor:pointer; background:transparent; border:none; transition:transform .4s ease; display: flex; flex-direction: column; }
+        .story-card:hover { transform:translateY(-8px); }
+        .story-img-wrap { width: 100%; height: 260px; border-radius: 20px; overflow: hidden; position: relative; margin-bottom: 20px; box-shadow:0 10px 30px rgba(0,0,0,0.06); }
+        .story-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s ease; }
+        .story-card:hover .story-img-wrap img { transform: scale(1.06); }
 
-        .topic-card { background:rgba(255,255,255,.68); backdrop-filter:blur(18px); border:1.5px solid rgba(255,255,255,.9); box-shadow:0 4px 20px rgba(60,140,60,.07); border-radius:20px; padding:28px 24px; transition:all .35s cubic-bezier(.23,1,.32,1); cursor:pointer; }
-        .topic-card:hover { background:rgba(255,255,255,.94); border-color:rgba(76,175,80,.5); box-shadow:0 18px 48px rgba(60,140,60,.16); transform:translateY(-5px); }
+        /* COLORFUL CLAYMORPHISM DESIGN FOR TOPICS */
+        .topic-card { cursor: pointer; background: var(--card-bg, #f8fdf8); border: none; padding: 40px 28px; border-radius: 32px; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: 12px 12px 24px var(--card-shadow, rgba(16, 185, 129, 0.06)), -12px -12px 24px rgba(255, 255, 255, 0.8), inset 2px 2px 6px rgba(255, 255, 255, 1), inset -3px -3px 8px var(--card-shadow, rgba(16, 185, 129, 0.03)); }
+        .topic-card:hover { transform: translateY(-8px); box-shadow: 16px 16px 32px var(--card-shadow, rgba(16, 185, 129, 0.08)), -16px -16px 32px rgba(255, 255, 255, 0.9), inset 2px 2px 6px rgba(255, 255, 255, 1), inset -3px -3px 8px var(--card-shadow, rgba(16, 185, 129, 0.04)); }
+        .topic-icon-wrap { width: 80px; height: 80px; border-radius: 26px; background: rgba(255, 255, 255, 0.6); color: var(--card-text, #047857); display: flex; align-items: center; justify-content: center; font-size: 38px; margin-bottom: 24px; transition: all .4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: inset 4px 4px 8px rgba(255, 255, 255, 0.9), inset -4px -4px 8px var(--card-shadow, rgba(16, 185, 129, 0.15)), 4px 4px 12px var(--card-shadow, rgba(16, 185, 129, 0.04)); }
+        .topic-card:hover .topic-icon-wrap { transform: scale(1.1) translateY(-4px); color: var(--card-text, #10b981); background: rgba(255,255,255,0.9); box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 0.9), inset -2px -2px 4px var(--card-shadow, rgba(16, 185, 129, 0.1)), 8px 8px 16px var(--card-shadow, rgba(16, 185, 129, 0.1)); }
 
-        .chip { display:inline-block; background:rgba(76,175,80,.1); color:#2e7d32; border:1px solid rgba(76,175,80,.25); font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; padding:6px 18px; border-radius:50px; margin-bottom:16px; }
-        .tag { background:rgba(0,0,0,.45); backdrop-filter:blur(8px); color:#fff; font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; padding:4px 12px; border-radius:20px; }
+        .chip { display:inline-block; background:rgba(16, 185, 129, 0.12); color:#047857; font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:8px 20px; border-radius:50px; margin-bottom:16px; }
+        .tag { background:rgba(255,255,255,.95); backdrop-filter:blur(8px); color:#047857; font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; padding:6px 16px; border-radius:50px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:13px; color:#fff; flex-shrink:0; }
 
-        .nl-input { flex:1; min-width:0; background:rgba(255,255,255,.85); backdrop-filter:blur(12px); border:1.5px solid rgba(255,255,255,.95); color:#1a2e1a; padding:14px 22px; border-radius:50px 0 0 50px; font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; outline:none; transition:border-color .3s; }
-        .nl-input::placeholder { color:#9aba9a; }
-        .nl-input:focus { border-color:rgba(76,175,80,.6); }
-
-        .spinner { width:20px; height:20px; border:2px solid rgba(76,175,80,.2); border-top-color:#4caf50; border-radius:50%; animation:spin .7s linear infinite; }
+        .nl-input { flex:1; min-width:0; background:rgba(255,255,255,.9); backdrop-filter:blur(12px); border:1.5px solid rgba(255,255,255,.95); color:#1a2e1a; padding:16px 24px; border-radius:50px 0 0 50px; font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; outline:none; transition:all .3s; font-weight: 500; }
+        .nl-input::placeholder { color:#94a3b8; }
+        .nl-input:focus { border-color:rgba(16, 185, 129, 0.6); }
+        
+        .spinner { width:20px; height:20px; border:2px solid rgba(255, 255, 255, 0.3); border-top-color:#ffffff; border-radius:50%; animation:spin .7s linear infinite; }
         @keyframes spin { to{transform:rotate(360deg)} }
 
-        .slide-dot { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.45); transition:all .3s; cursor:pointer; border:none; }
-        .slide-dot.on { width:24px; border-radius:4px; background:#fff; }
+        .slide-dot { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.5); transition:all .3s; cursor:pointer; border:none; margin: 0 4px; }
+        .slide-dot.on { width:26px; border-radius:4px; background:#fff; box-shadow: 0 0 10px rgba(255,255,255,0.8); }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.7); backdrop-filter: blur(8px); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 60px 20px; animation: popIn .3s ease-out; }
+        
+        .modal-box { background: #ffffff; width: 100%; max-width: 860px; max-height: 85vh; display: flex; flex-direction: column; position: relative; overflow: hidden; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.2); animation: slideUp .4s cubic-bezier(0.16, 1, 0.3, 1); }
+        
+        .modal-scroll-area { overflow-y: auto; overflow-x: hidden; flex-grow: 1; width: 100%; word-break: break-word; overscroll-behavior: contain; }
+        .modal-scroll-area::-webkit-scrollbar { width: 8px; }
+        .modal-scroll-area::-webkit-scrollbar-track { background: transparent; }
+        .modal-scroll-area::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.3); border-radius: 4px; }
+        
+        .modal-close-btn { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.4); width: 40px; height: 40px; border-radius: 50%; font-size: 18px; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 100; }
+        .modal-close-btn:hover { background: #ffffff; color: #0f172a; transform: scale(1.1); }
+        .modal-close-btn.dark { background: rgba(0,0,0,0.05); color: #0f172a; border-color: transparent; }
+        .modal-close-btn.dark:hover { background: rgba(0,0,0,0.1); color: #dc2626; }
+
+        .modal-content-text p { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; line-height: 1.8; color: #475569; margin-bottom: 24px; word-break: break-word; }
+        .modal-content-text strong { color: #0f172a; font-weight: 800; }
+
+        .skeleton-container { font-family: 'Plus Jakarta Sans', sans-serif; width: 100%; }
+        .skeleton-intro { font-size: 15px; color: #475569; line-height: 1.6; margin-bottom: 24px; font-weight: 500; text-align: center; }
+        .skeleton-grid { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+        .skeleton-module { background: #f8faf9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px 24px; transition: transform 0.2s, box-shadow 0.2s; width: 100%; }
+        .skeleton-module:hover { transform: translateY(-2px); box-shadow: 0 15px 30px -10px rgba(0,0,0,0.08); background: #ffffff; }
+        .module-header { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.04); padding-bottom: 12px; }
+        .module-number { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 900; line-height: 1; opacity: 0.2; }
+        .module-header h4 { font-size: 18px; font-weight: 800; color: #0f172a; line-height: 1.2; margin: 0; }
+        .module-main-desc { font-size: 14px; color: #334155; margin-bottom: 16px; line-height: 1.6; font-weight: 500; }
+        .module-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+        .sub-title { font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: flex-start; line-height: 1.4; }
+        .sub-desc { font-size: 14px; color: #64748b; line-height: 1.6; margin-left: 24px; margin-top: 4px; font-weight: 500; }
       `}</style>
 
       {/* ══ HERO ══ */}
@@ -228,41 +375,43 @@ export default function Home() {
               position:"absolute", inset:0, zIndex: i === slideIdx ? 1 : 0,
               backgroundImage:`url(${sl.url})`,
               backgroundSize:"cover", backgroundPosition:"center",
-              filter:"brightness(0.48)",
+              filter:"brightness(0.45)",
               transition:"opacity .65s ease",
               opacity: i === slideIdx ? 1 : 0,
             }}
           />
         ))}
 
-        <div style={{ position:"absolute", inset:0, zIndex:2, background:"linear-gradient(110deg, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.52) 45%, rgba(0,0,0,0.18) 75%, rgba(0,0,0,0.05) 100%)" }} />
-        <div style={{ position:"absolute", top:0, left:0, bottom:0, width:"48%", zIndex:2, backdropFilter:"blur(3px)", maskImage:"linear-gradient(to right, black 55%, transparent 100%)" }} />
+        <div style={{ position:"absolute", inset:0, zIndex:2, background:"linear-gradient(110deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 45%, rgba(0,0,0,0.15) 75%, transparent 100%)" }} />
         
-        {/* THIS IS THE LINE I REMOVED. THE WHITE GRADIENT IS GONE. */}
+        <div style={{ position:"relative", zIndex:4, height:"80%", width: "100%", maxWidth:1200, margin:"0 auto", padding:"0px 74px", display:"flex", alignItems:"center", paddingTop:68 }}>
+          
+          <div style={{ display: "flex", width: "100%", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "40px" }}>
+            
+            <div style={{ maxWidth:750 }}>
+              <div className="glass" style={{ display:"inline-flex", alignItems:"center", gap:10, padding:"8px 20px", borderRadius:50, marginBottom:30 }}>
+                <span style={{ width:10, height:10, borderRadius:"50%", background:"#10b981", display:"block", animation:"pulseDot 1.4s ease-in-out infinite", boxShadow: "0 0 10px #10b981" }} />
+                <span className="jk" style={{ fontSize:13, color:"#0f172a", fontWeight:800, letterSpacing:".1em", textTransform: "uppercase" }}>
+                  {ldSlides ? "Loading…" : slides[slideIdx]?.caption}
+                </span>
+              </div>
 
-        <div style={{ position:"relative", zIndex:4, height:"100%", maxWidth:1200, margin:"0 auto", padding:"0 52px", display:"flex", alignItems:"center", paddingTop:68 }}>
-          <div style={{ maxWidth:700 }}>
-            <div className="glass" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"7px 18px", borderRadius:50, marginBottom:26 }}>
-              <span style={{ width:8, height:8, borderRadius:"50%", background:"#4caf50", display:"block", animation:"pulseDot 1.4s ease-in-out infinite" }} />
-              <span className="jk" style={{ fontSize:12, color:"rgba(255,255,255,.9)", fontWeight:600, letterSpacing:".06em" }}>
-                {ldSlides ? "Loading…" : slides[slideIdx]?.caption}
-              </span>
+              <h1 className="fr" style={{ fontSize:"clamp(46px, 6.5vw, 86px)", lineHeight:1.05, fontWeight:900, color:"#ffffff", letterSpacing: "-1px", textShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
+                Cultivating<br />
+                <span style={{ color:"#11a967" }}>Tomorrow's Agriculture</span><br />
+                <span style={{ color:"#aec708" }}>Today</span>
+              </h1>
+
+              <p className="jk" style={{ marginTop:24, fontSize:18, lineHeight:1.8, color:"rgba(255,255,255,.85)", maxWidth:500, fontWeight:400, textShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
+                {ldSlides ? "Join a thriving community…" : slides[slideIdx]?.sub}
+              </p>
             </div>
 
-            <h1 className="fr" style={{ fontSize:"clamp(42px,6vw,78px)", lineHeight:1.05, fontWeight:900, color:"#fff" }}>
-              Cultivating<br />
-              <span style={{ color:"#81c784", fontStyle:"italic" }}>Tomorrow's Agriculture</span><br />
-              Today
-            </h1>
-
-            <p className="jk" style={{ marginTop:20, fontSize:16, lineHeight:1.8, color:"rgba(255,255,255,.78)", maxWidth:460, fontWeight:300 }}>
-              {ldSlides ? "Join a thriving community…" : slides[slideIdx]?.sub}
-            </p>
-
-            <div style={{ display:"flex", gap:14, marginTop:36 }}>
-              <a href="/stories" className="btn-solid">Explore Stories ›</a>
-              <a href="/UnderDevelopment" className="btn-outline" style={{ color:"#fff", borderColor:"rgba(255,255,255,.5)", background:"rgba(255,255,255,.12)" }}>◎ Share Stories</a>
+            <div style={{ display:"flex", flexDirection: "column", gap:16, minWidth: "220px" }}>
+              <a href="/stories" className="hero-glass-btn primary">Explore Stories</a>
+              <a href="/UnderDevelopment" className="hero-glass-btn secondary">Join Community</a>
             </div>
+
           </div>
         </div>
 
@@ -274,137 +423,243 @@ export default function Home() {
           ))}
         </div>
 
-        <div style={{ position:"absolute", bottom:28, right:52, zIndex:4, display:"flex", flexDirection:"column", alignItems:"center", gap:6 }}>
-          <div style={{ width:22, height:36, borderRadius:12, border:"2px solid rgba(255,255,255,.45)", display:"flex", padding:4 }}>
-            <div style={{ width:4, height:8, borderRadius:2, background:"rgba(255,255,255,.65)", animation:"scrollDot 1.6s ease infinite" }} />
+        <div style={{ position:"absolute", bottom:28, right:52, zIndex:4, display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
+          <div style={{ width:24, height:40, borderRadius:12, border:"2px solid rgba(255,255,255,.5)", display:"flex", padding:4, justifyContent: "center" }}>
+            <div style={{ width:4, height:10, borderRadius:2, background:"#fff", animation:"scrollDot 1.6s ease infinite" }} />
           </div>
-          <span className="jk" style={{ fontSize:10, color:"rgba(255,255,255,.55)", letterSpacing:".1em" }}>Scroll to explore</span>
+          <span className="jk" style={{ fontSize:11, color:"rgba(255,255,255,.7)", letterSpacing:".15em", fontWeight:700, textTransform: "uppercase" }}>Scroll</span>
         </div>
       </section>
 
       {/* ══ STORIES ══ */}
-      <section style={{ padding:"100px 52px" }}>
+      <section style={{ padding:"120px 52px" }}>
         <div style={{ maxWidth:1200, margin:"0 auto" }}>
-          <div id="stories-hdr" ref={setRef("stories-hdr")} style={{ textAlign:"center", marginBottom:56 }} className={`reveal ${visible["stories-hdr"] ? "on" : ""}`}>
-            <span className="chip">Real Experiences</span>
-            <h2 className="fr" style={{ fontSize:"clamp(30px,4vw,52px)", fontWeight:700, color:"#1a3a1a", lineHeight:1.1 }}>Featured Stories</h2>
-            <p className="jk" style={{ marginTop:12, fontSize:16, color:"#6a8a6a", fontWeight:300 }}>Learn from students making a difference in agriculture worldwide</p>
+          <div id="stories-hdr" ref={setRef("stories-hdr")} style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:60, borderBottom:"1px solid rgba(16, 185, 129, 0.2)", paddingBottom:20 }} className={`reveal ${visible["stories-hdr"] ? "on" : ""}`}>
+            <div>
+              <span className="chip">Real Experiences</span>
+              <h2 className="fr" style={{ fontSize:"clamp(36px,4vw,56px)", fontWeight:800, color:"#0f172a", lineHeight:1.1 }}>Featured Stories</h2>
+            </div>
+            <a href="/stories" className="btn-outline" style={{ background:"transparent", color:"#047857" }}>View All Stories</a>
           </div>
 
-          <div id="stories-grid" ref={setRef("stories-grid")} style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:26 }}>
-            {ldStories ? [1,2,3].map(i => (
-              <div key={i} className="story-card"><Skel h={210} r={0} /><div style={{ padding:"22px" }}><Skel w="60%" mb={14}/><Skel w="90%" mb={8}/><Skel w="80%"/></div></div>
+          <div id="stories-grid" ref={setRef("stories-grid")} style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(320px, 1fr))", gap:"60px 40px" }}>
+            {ldStories ? [1,2,3,4,5,6].map(i => (
+              <div key={i}><Skel h={260} r={20} mb={20}/><Skel w="80%" h={28} mb={12}/><Skel w="60%"/></div>
             )) : stories.map((s, i) => (
               <div key={s.id} className={`story-card reveal d${(i%3)+1} ${visible["stories-grid"] ? "on" : ""}`}
-                onMouseEnter={() => setHoveredStory(s.id)} onMouseLeave={() => setHoveredStory(null)}>
-                <div style={{ height:210, overflow:"hidden", position:"relative" }}>
-                  <img src={s.img} alt={s.title} style={{ width:"100%", height:"100%", objectFit:"cover", transform: hoveredStory===s.id ? "scale(1.07)" : "scale(1)", transition:"transform .5s ease" }} />
-                  <div style={{ position:"absolute", top:14, left:14 }}><span className="tag">{s.tag}</span></div>
+                onClick={() => setActiveStoryModal(s)}
+                onMouseEnter={() => setHoveredStory(s.id)} 
+                onMouseLeave={() => setHoveredStory(null)}
+              >
+                <div className="story-img-wrap">
+                  <img src={s.img} alt={s.title} />
+                  <div style={{ position:"absolute", top:16, left:16 }}><span className="tag">{s.tag}</span></div>
                 </div>
-                <div style={{ padding:"20px 22px 24px" }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:13 }}>
-                    <div className="avatar" style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}>{s.initials}</div>
-                    <div><div className="jk" style={{ fontSize:13, fontWeight:600 }}>{s.author}</div><div className="jk" style={{ fontSize:11, color:"#9aba9a" }}>{s.ago}</div></div>
-                  </div>
-                  <h3 className="fr" style={{ fontSize:19, fontWeight:700, lineHeight:1.32, marginBottom:9 }}>{s.title}</h3>
-                  <p className="jk" style={{ fontSize:13, color:"#6a8a6a", lineHeight:1.75, fontWeight:300 }}>{s.desc}</p>
-                  <a href="/stories" className="jk" style={{ display:"inline-flex", alignItems:"center", gap:5, marginTop:16, color:"#43a047", fontSize:13, fontWeight:600, textDecoration:"none" }}>Read More →</a>
+                
+                <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:16 }}>
+                  <div className="avatar" style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length], width: 30, height: 30, fontSize: 11 }}>{s.initials}</div>
+                  <span className="jk" style={{ fontSize:14, fontWeight:700, color: "#334155" }}>{s.author}</span>
                 </div>
+                
+                <h3 className="fr" style={{ fontSize:24, fontWeight:800, lineHeight:1.3, marginBottom:12, color: "#0f172a", wordBreak: "break-word" }}>{s.title}</h3>
+                
+                <p className="jk" style={{ fontSize:15, color:"#64748b", lineHeight:1.7, fontWeight:500, wordBreak: "break-word" }}>
+                  {(s.desc || "").substring(0, 90)}...
+                </p>
               </div>
             ))}
-          </div>
-
-          <div style={{ textAlign:"center", marginTop:48, display:"flex", justifyContent:"center", gap:14 }}>
-            {!ldStories && !allLoaded && (
-              <button className="btn-outline" onClick={loadMore} disabled={ldMore}
-                style={{ display:"inline-flex", alignItems:"center", gap:8 }}>
-                {ldMore ? <><div className="spinner" /> Loading…</> : "Load More Stories"}
-              </button>
-            )}
-            {!ldStories && <a href="/stories" className="btn-solid">View All Stories</a>}
           </div>
         </div>
       </section>
 
-      {/* ══ TOPICS ══ */}
-      <section style={{ padding:"60px 52px 100px", background:"linear-gradient(180deg,rgba(232,245,232,.5) 0%,rgba(248,253,248,0) 100%)" }}>
+      {/* ══ TOPICS (COLORFUL CLAYMORPHISM) ══ */}
+      <section style={{ padding:"60px 52px 120px" }}>
         <div style={{ maxWidth:1200, margin:"0 auto" }}>
-          <div id="topics-hdr" ref={setRef("topics-hdr")} style={{ textAlign:"center", marginBottom:52 }} className={`reveal ${visible["topics-hdr"] ? "on" : ""}`}>
-            <span className="chip">Knowledge Hub</span>
-            <h2 className="fr" style={{ fontSize:"clamp(30px,4vw,52px)", fontWeight:700, color:"#1a3a1a", lineHeight:1.1 }}>Explore Topics</h2>
-            <p className="jk" style={{ marginTop:12, fontSize:16, color:"#6a8a6a", fontWeight:300 }}>Dive deep into specialised agricultural disciplines</p>
+          <div id="topics-hdr" ref={setRef("topics-hdr")} style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:60, borderBottom:"1px solid rgba(16, 185, 129, 0.2)", paddingBottom:20 }} className={`reveal ${visible["topics-hdr"] ? "on" : ""}`}>
+            <div>
+              <span className="chip">Knowledge Hub</span>
+              <h2 className="fr" style={{ fontSize:"clamp(36px,4vw,56px)", fontWeight:800, color:"#0f172a", lineHeight:1.1 }}>Explore Topics</h2>
+            </div>
+            <a href="/topics" className="btn-outline" style={{ background:"transparent", color:"#047857" }}>View All Topics</a>
           </div>
 
-          <div id="topics-grid" ref={setRef("topics-grid")} style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
+          <div id="topics-grid" ref={setRef("topics-grid")} style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(320px, 1fr))", gap:"30px 40px" }}>
             {ldTopics ? [1,2,3,4,5,6].map(i => (
-              <div key={i} className="topic-card"><Skel w={52} h={52} mb={18}/><Skel w="70%" h={20} mb={10}/><Skel w="90%"/></div>
-            )) : topics.map((t, i) => (
-              <div key={t.id} className={`topic-card reveal d${i+1} ${visible["topics-grid"] ? "on" : ""}`}
-                onMouseEnter={() => setHoveredTopic(i)} onMouseLeave={() => setHoveredTopic(null)}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
-                  <div style={{ width:52, height:52, borderRadius:14, background: hoveredTopic===i ? "rgba(76,175,80,.18)" : "rgba(76,175,80,.08)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:26 }}>{t.icon}</div>
-                </div>
-                <h3 className="fr" style={{ fontSize:20, fontWeight:700, marginBottom:8 }}>{t.label}</h3>
-                <p className="jk" style={{ fontSize:13, color:"#6a8a6a", lineHeight:1.7, fontWeight:300, marginBottom:22 }}>{t.desc}</p>
-                <a href="/topics" style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", width:32, height:32, borderRadius:"50%", background: hoveredTopic===i ? "#4caf50" : "rgba(76,175,80,.12)", color: hoveredTopic===i ? "#fff" : "#4caf50", textDecoration:"none", fontSize:16, fontWeight:700 }}>→</a>
+              <div key={i} className="topic-card">
+                <Skel w={80} h={80} mb={24} r={26} />
+                <Skel w="70%" h={28} mb={16}/>
+                <Skel w="90%" h={18} mb={8}/><Skel w="60%" h={18}/>
               </div>
-            ))}
+            )) : topics.map((t, i) => {
+              const theme = TOPIC_THEMES[i % TOPIC_THEMES.length];
+              
+              return (
+              <div key={t.id} className={`topic-card reveal d${i+1} ${visible["topics-grid"] ? "on" : ""}`}
+                style={{ '--card-bg': theme.bg, '--card-shadow': theme.shadow, '--card-text': theme.text }}
+                onClick={() => setActiveTopicModal(t)}
+                onMouseEnter={() => setHoveredTopic(i)} 
+                onMouseLeave={() => setHoveredTopic(null)}
+              >
+                <div className="topic-icon-wrap">{t.icon}</div>
+                <h3 className="fr" style={{ fontSize:24, fontWeight:800, marginBottom:10, color: "#0f172a", wordBreak: "break-word" }}>{t.label}</h3>
+                <p className="jk" style={{ fontSize:15, color:"#64748b", lineHeight:1.7, fontWeight:500, wordBreak: "break-word" }}>
+                  {(t.desc || "").replace(/#|-|\*/g, '').substring(0, 85)}...
+                </p>
+              </div>
+            )})}
           </div>
         </div>
       </section>
 
-      {/* ══ NEWSLETTER ══ */}
+      {/* ══ NEWSLETTER (WITH TWIST ANIMATION) ══ */}
       <section style={{ padding:"0 52px 100px" }}>
-        <div style={{ maxWidth:1200, margin:"0 auto", borderRadius:28, overflow:"hidden", background:"linear-gradient(135deg,rgba(210,245,210,.80),rgba(190,235,200,.70))", backdropFilter:"blur(28px)", border:"1px solid rgba(255,255,255,.92)", boxShadow:"0 16px 56px rgba(60,140,60,.12)", padding:"72px 80px", textAlign:"center", position:"relative" }}>
-          <span style={{ position:"absolute", top:-24, left:-16, fontSize:170, opacity:.06, transform:"rotate(-12deg)", pointerEvents:"none" }}>🌿</span>
+        <div style={{ maxWidth:1200, margin:"0 auto", borderRadius:32, overflow:"hidden", background:"linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%)", border:"1px solid rgba(255,255,255,1)", boxShadow:"0 20px 60px -15px rgba(16, 185, 129, 0.2)", padding:"80px", textAlign:"center", position:"relative" }}>
+          <span style={{ position:"absolute", top:-24, left:-16, fontSize:180, opacity:.04, transform:"rotate(-15deg)", pointerEvents:"none" }}>🌿</span>
           <div style={{ position:"relative", zIndex:1 }}>
-            <span className="chip">Join Us Today</span>
-            <h2 className="fr" style={{ fontSize:"clamp(30px,4vw,52px)", fontWeight:700, color:"#1a3a1a", lineHeight:1.1, marginBottom:16 }}>
-              Start Your Green<br /><span style={{ color:"#43a047", fontStyle:"italic" }}>Journey Today</span>
+            <span className="chip" style={{ background: "#ffffff" }}>Join Us Today</span>
+            <h2 className="fr" style={{ fontSize:"clamp(32px,4vw,56px)", fontWeight:800, color:"#0f172a", lineHeight:1.1, marginBottom:20 }}>
+              Start Your Green<br /><span style={{ color:"#059669", fontStyle:"italic" }}>Journey Today</span>
             </h2>
-            <p className="jk" style={{ fontSize:15, color:"#4a6a4a", maxWidth:420, margin:"0 auto 36px", fontWeight:300, lineHeight:1.8 }}>
+            <p className="jk" style={{ fontSize:16, color:"#334155", maxWidth:480, margin:"0 auto 40px", fontWeight:500, lineHeight:1.8 }}>
               Get weekly plant care reminders, personalised tips, and connect with gardeners worldwide.
             </p>
-            <div style={{ display:"flex", maxWidth:460, margin:"0 auto", borderRadius:50, overflow:"hidden", boxShadow:"0 6px 28px rgba(76,175,80,.2)" }}>
-              <input className="nl-input" placeholder="Enter your email address…" />
-              <button className="btn-solid" style={{ borderRadius:"0 50px 50px 0", padding:"14px 28px", fontSize:13 }}>Subscribe 🌱</button>
+            
+            {/* 🟢 NEW: Newsletter Input & Animated Twist Message */}
+            <div style={{ display:"flex", maxWidth:500, margin:"0 auto", height: 50, position: "relative" }}>
+              {nlState === "success" ? (
+                <div style={{ 
+                  width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", 
+                  background: "#ffffff", borderRadius: 50, boxShadow: "0 10px 30px rgba(16, 185, 129, 0.2)",
+                  color: "#059669", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: 16,
+                  animation: "bounceTwist 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards"
+                }}>
+                  🎉 You're all set! ThankYou
+                </div>
+              ) : (
+                <div style={{ display:"flex", width: "100%", borderRadius:50, overflow:"hidden", boxShadow:"0 10px 30px rgba(16, 185, 129, 0.15)", transition: "opacity 0.3s", opacity: nlState === "loading" ? 0.8 : 1 }}>
+                  <input 
+                    className="nl-input" 
+                    placeholder="Enter your email address…" 
+                    value={nlEmail} 
+                    onChange={e => setNlEmail(e.target.value)}
+                    disabled={nlState === "loading"}
+                  />
+                  <button className="btn-solid" style={{ borderRadius:"0 50px 50px 0", padding:"0 32px", fontSize:14, height: "100%" }} onClick={handleSubscribe} disabled={nlState === "loading"}>
+                    {nlState === "loading" ? <div className="spinner" /> : "Subscribe 🌱"}
+                  </button>
+                </div>
+              )}
             </div>
+
           </div>
         </div>
       </section>
 
-      {/* ══ FOOTER ══ */}
-      <footer style={{ background:"rgba(255,255,255,.80)", borderTop:"1px solid rgba(76,175,80,.12)", padding:"56px 52px 32px" }}>
+      {/* 🟢 NEW: REDESIGNED DARK FOREST FOOTER */}
+      <footer style={{ background:"linear-gradient(180deg, #064e3b 0%, #022c22 100%)", padding:"80px 52px 40px", color: "#f8fafc" }}>
         <div style={{ maxWidth:1200, margin:"0 auto" }}>
-          <div style={{ display:"grid", gridTemplateColumns:"2.2fr 1fr 1fr 1fr 1fr", gap:48, marginBottom:48 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr", gap:60, marginBottom:60 }}>
             <div>
-              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
-                <div style={{ width:36, height:36, borderRadius:"50%", background:"linear-gradient(135deg,#66bb6a,#1b5e20)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🌿</div>
-                <span className="fr" style={{ fontSize:20, fontWeight:700 }}>Horti<span style={{ color:"#43a047" }}>Verse</span></span>
+              <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
+                <div style={{ width:44, height:44, borderRadius:"14px", background:"linear-gradient(135deg,#34d399,#10b981)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, boxShadow: "0 4px 15px rgba(16, 185, 129, 0.3)" }}>🌿</div>
+                <span className="fr" style={{ fontSize:28, fontWeight:800, color:"#ffffff" }}>Horti<span style={{ color:"#34d399" }}>Verse</span></span>
               </div>
-              <p className="jk" style={{ fontSize:13, color:"#7a9a7a", lineHeight:1.85, maxWidth:240 }}>A thriving community of horticulture students sharing knowledge and sustainable farming practices worldwide.</p>
+              <p className="jk" style={{ fontSize:15, color:"#94a3b8", lineHeight:1.8, maxWidth:320, fontWeight:400 }}>
+                A thriving community of horticulture students sharing knowledge and sustainable farming practices worldwide.
+              </p>
             </div>
 
-            {[
-              { title:"Explore",  links:["Stories","Topics","Resources"] },
-              { title:"Topics",   links:["Sustainable Farming","AgriTech","Livestock"] },
-              { title:"Company",  links:["About Us","Blog"] },
-              { title:"Support",  links:["Help Center","Privacy Policy"] },
-            ].map(col => (
-              <div key={col.title}>
-                <h4 className="jk" style={{ fontSize:11, letterSpacing:".16em", color:"#43a047", marginBottom:18, textTransform:"uppercase", fontWeight:700 }}>{col.title}</h4>
-                {col.links.map(lk => (
-                  <a key={lk} href="#" className="jk" style={{ display:"block", color:"#8aaa8a", textDecoration:"none", fontSize:13, marginBottom:11 }}>{lk}</a>
-                ))}
-              </div>
-            ))}
+            {/* 🟢 Modified Footer Links */}
+            <div>
+              <h4 className="jk" style={{ fontSize:13, letterSpacing:".15em", color:"#34d399", marginBottom:24, textTransform:"uppercase", fontWeight:800 }}>Explore</h4>
+              <a href="/stories" className="jk" style={{ display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:15, marginBottom:16, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>Stories</a>
+              <a href="/topics" className="jk" style={{ display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:15, marginBottom:16, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>Topics</a>
+              <a href="/resources" className="jk" style={{ display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:15, marginBottom:16, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>Resources</a>
+            </div>
+
+            <div>
+              <h4 className="jk" style={{ fontSize:13, letterSpacing:".15em", color:"#34d399", marginBottom:24, textTransform:"uppercase", fontWeight:800 }}>Support</h4>
+              <a href="/about" className="jk" style={{ display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:15, marginBottom:16, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>About Us</a>
+              <a href="/help" className="jk" style={{ display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:15, marginBottom:16, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>Help Center</a>
+              <a href="/privacy" className="jk" style={{ display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:15, marginBottom:16, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>Privacy Policy</a>
+            </div>
+
           </div>
-          <div style={{ borderTop:"1px solid rgba(76,175,80,.1)", paddingTop:24, display:"flex", justifyContent:"space-between" }}>
-            <p className="jk" style={{ fontSize:12, color:"#aacaaa" }}>© 2026 HortiVerse. All rights reserved.</p>
-            <p className="jk" style={{ fontSize:12, color:"#aacaaa" }}>Made with 🌿 for horticulture students everywhere</p>
+          <div style={{ borderTop:"1px solid rgba(255,255,255,0.1)", paddingTop:30, display:"flex", justifyContent:"space-between" }}>
+            <p className="jk" style={{ fontSize:13, color:"#64748b", fontWeight:500 }}>© 2026 HortiVerse. All rights reserved.</p>
+            <p className="jk" style={{ fontSize:13, color:"#64748b", fontWeight:500 }}>Made with 🌿 for horticulture students everywhere</p>
           </div>
         </div>
       </footer>
+
+      {/* 🟢 STORY MODAL OVERLAY */}
+      {activeStoryModal && (
+        <div className="modal-overlay" onClick={() => setActiveStoryModal(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={() => setActiveStoryModal(null)}>✕</button>
+
+            <div className="modal-scroll-area">
+              <div style={{ height: 320, overflow: "hidden", position: "relative", flexShrink: 0 }}>
+                <img src={activeStoryModal.img} alt={activeStoryModal.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(15,23,42,0.85) 0%, transparent 60%)" }} />
+                <div style={{ position: "absolute", bottom: 24, left: 32, right: 32 }}>
+                  <span className="tag-badge" style={{ marginBottom: 16 }}>{activeStoryModal.tag}</span>
+                  <h1 className="fr" style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 900, color: "#ffffff", lineHeight: 1.15, textShadow: "0 2px 8px rgba(0,0,0,0.5)", wordBreak: "break-word" }}>
+                    {activeStoryModal.title}
+                  </h1>
+                </div>
+              </div>
+
+              <div style={{ padding: "40px 48px 60px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 16, paddingBottom: 24, borderBottom: "1px solid #e2e8f0", marginBottom: 32 }}>
+                  <div className="avatar" style={{ background: AVATAR_COLORS[(activeStoryModal.id || 0) % AVATAR_COLORS.length], width: 48, height: 48, fontSize: 16 }}>{activeStoryModal.initials}</div>
+                  <div>
+                    <div className="jk" style={{ fontSize: 16, fontWeight: 800, color: "#0f172a" }}>{activeStoryModal.author}</div>
+                    <div className="jk" style={{ fontSize: 14, color: "#64748b", marginTop: 2, fontWeight: 500 }}>{activeStoryModal.ago}</div>
+                  </div>
+                </div>
+
+                <div className="modal-content-text">
+                  {(activeStoryModal.content || activeStoryModal.desc || "No full content available.").split("\n\n").map((para, i) => (
+                    <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🟢 TOPIC MODAL OVERLAY */}
+      {activeTopicModal && (
+        <div className="modal-overlay" onClick={() => setActiveTopicModal(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ '--accent-color': activeTopicModal.accent, maxWidth: 650 }}>
+            <button className="modal-close-btn dark" onClick={() => setActiveTopicModal(null)}>✕</button>
+            <div className="modal-scroll-area">
+              <div style={{ 
+                padding: "48px 32px 24px", 
+                background: `linear-gradient(180deg, ${activeTopicModal.color} 0%, rgba(255,255,255,0) 100%)`, 
+                textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center"
+              }}>
+                <div style={{ 
+                  width: 72, height: 72, borderRadius: "20px", background: "#ffffff", 
+                  display: "flex", alignItems: "center", justifyContent: "center", 
+                  fontSize: 36, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)", marginBottom: 20
+                }}>{activeTopicModal.icon}</div>
+                <h2 className="fr" style={{ fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 900, color: "#0f172a", lineHeight: 1.1, marginBottom: 16, wordBreak: "break-word" }}>
+                  {activeTopicModal.label}
+                </h2>
+              </div>
+              <div style={{ padding: "0 32px 48px" }}>
+                <div className="modal-article-content">
+                  {renderTopicContent(activeTopicModal.desc || "", activeTopicModal.accent)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

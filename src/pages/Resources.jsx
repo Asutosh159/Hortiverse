@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Footer from '../components/Footer'; // Adjust this path if your folder structure is different!
 
 const TYPE_CONFIG = {
   "Research Paper":  { icon: "📄", accent: "#0284c7", bg: "#e0f2fe" },
@@ -264,6 +265,7 @@ export default function Resources() {
       {/* ════ GLOBAL STYLES ════ */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700;800&display=swap');
         
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
@@ -272,8 +274,8 @@ export default function Resources() {
         ::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.3); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.6); }
         
-        .fr { font-family: 'Fraunces', serif; }
-        .jk { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .fr { font-family: 'Lora', serif; }
+        .jk { font-family: 'Manrope', sans-serif; }
 
         /* Modern Colorful Card Styling */
         .res-card {
@@ -562,6 +564,8 @@ export default function Resources() {
       {showUpload && (
         <UploadModal onClose={() => setShowUpload(false)} onSuccess={handleNewResource} user={user} />
       )}
+      {/* ══ FOOTER ══ */}
+            <Footer />
     </div>
   );
 }

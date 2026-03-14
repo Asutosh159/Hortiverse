@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import Footer from '../components/Footer'; // Adjust this path if your folder structure is different!
 
 /* ══════════════════════════════════════════════════════════
    BACKEND-READY API LAYER
@@ -792,6 +793,8 @@ export default function Community() {
           </div>
         </div>
       )}
+      {/* ══ FOOTER ══ */}
+      <Footer />
 
     </div>
   );

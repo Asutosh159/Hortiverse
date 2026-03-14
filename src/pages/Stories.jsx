@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Footer from '../components/Footer'; // Adjust this path if your folder structure is different!
 
 const avatarColors = ["#059669","#047857","#10b981","#34d399","#065f46","#064e3b"];
 
@@ -215,6 +216,19 @@ export default function Stories() {
     fetchStories();
   }, [visitorId]);
 
+  // 🟢 FIX: PREVENT BACKGROUND SCROLLING WHEN MODAL IS OPEN
+  useEffect(() => {
+    if (selectedStory || showUpload) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [selectedStory, showUpload]);
+
   // Filter only by Search Query
   const filtered = stories.filter((s) => {
     return s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -367,8 +381,11 @@ export default function Stories() {
         .c-input:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
 
         .modal-overlay { position: fixed; top: 72px; left: 0; right: 0; bottom: 0; z-index: 450; background: rgba(15, 23, 42, 0.35); backdrop-filter: blur(24px); display: flex; justify-content: center; align-items: center; padding: 40px 20px; animation: fadeIn .3s ease-out; }
-        .modal-box { background: #ffffff; border-radius: 24px; width: 100%; max-width: 800px; max-height: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3); animation: slideUp .4s cubic-bezier(0.16, 1, 0.3, 1); }
-        .modal-scroll-area { overflow-y: auto; flex-grow: 1; width: 100%; }
+        
+        /* 🟢 FIX: PREVENT HORIZONTAL OVERFLOW */
+        .modal-box { background: #ffffff; border-radius: 24px; width: 100%; max-width: 800px; max-height: 100%; display: flex; flex-direction: column; position: relative; overflow-x: hidden; overflow-y: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3); animation: slideUp .4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .modal-scroll-area { overflow-y: auto; overflow-x: hidden; flex-grow: 1; width: 100%; word-break: break-word; overscroll-behavior: contain; }
+        
         .modal-scroll-area::-webkit-scrollbar { width: 6px; }
         .modal-scroll-area::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.25); border-radius: 4px; }
         
@@ -378,7 +395,7 @@ export default function Stories() {
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         @keyframes slideUp { from{opacity:0;transform:translateY(40px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
 
-        .modal-content p { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; line-height: 1.8; color: #334155; margin-bottom: 24px; font-weight: 400; }
+        .modal-content p { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; line-height: 1.8; color: #334155; margin-bottom: 24px; font-weight: 400; word-break: break-word; }
         .modal-content strong, .modal-content b { font-weight: 700; color: #0f172a; }
 
         .tag-badge { display: inline-block; background: rgba(16, 185, 129, 0.9); color: #ffffff; backdrop-filter: blur(4px); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 6px 14px; border-radius: 50px; }
@@ -603,6 +620,7 @@ export default function Stories() {
           </div>
         </div>
       )}
+      <Footer />
     </div> 
   );
 }
