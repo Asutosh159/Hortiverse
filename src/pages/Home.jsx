@@ -24,18 +24,40 @@ const API = {
   },
 
   async getStories() { 
-    try {
-      const res = await fetch("https:/hortiverse-backend.onrender.com/api/stories");
-      const dbStories = await res.json();
-      return dbStories.map(s => {
-        const initials = s.author ? s.author.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : "HV";
-        return {
-          id: s.id, author: s.author || "Community Member", initials: initials, ago: "Recently", 
-          title: s.title, desc: s.excerpt, content: s.content, tag: s.tag, img: s.image_url
-        };
-      });
-    } catch (err) { return []; }
-  },
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/stories`);
+    const dbStories = await res.json();
+    
+    return dbStories.map(s => {
+      // 🟢 Safer initials logic
+      let initials = "HV";
+      if (s.author && typeof s.author === 'string' && s.author.trim().length > 0) {
+        initials = s.author
+          .split(' ')
+          .filter(part => part.length > 0) // Remove empty spaces
+          .map(n => n[0])
+          .join('')
+          .substring(0, 2)
+          .toUpperCase();
+      }
+
+      return {
+        id: s.id, 
+        author: s.author || "Community Member", 
+        initials: initials, 
+        ago: "Recently", 
+        title: s.title || "Untitled Story", 
+        desc: s.excerpt || s.content?.substring(0, 100) || "", 
+        content: s.content || "", 
+        tag: s.tag || "Horticulture", 
+        img: s.image_url || "https://via.placeholder.com/400x260?text=HortiVerse" // Fallback image
+      };
+    });
+  } catch (err) { 
+    console.error("Stories fetch error:", err);
+    return []; 
+  }
+},
 
   async getTopics()  { 
     try {
