@@ -80,7 +80,7 @@ function UploadTopicModal({ onClose, onSuccess }) {
       <div className="modal-box" style={{ maxWidth: 700 }}>
         <button className="modal-close-btn" onClick={onClose}>✕</button>
 
-        <div className="modal-scroll-area" style={{ padding: "40px 48px" }}>
+        <div className="modal-scroll-area upload-scroll" style={{ padding: "40px 48px" }}>
           {success ? (
             <div style={{ textAlign:"center", padding:"40px 0", animation:"popIn .35s ease" }}>
               <div style={{ fontSize:64, marginBottom:20 }}>✨</div>
@@ -129,7 +129,7 @@ function UploadTopicModal({ onClose, onSuccess }) {
                         width: "42px", height: "42px", fontSize: "20px", borderRadius: "12px",
                         background: icon === ico ? "rgba(16,185,129,0.15)" : "#ffffff",
                         border: `1px solid ${icon === ico ? "#059669" : "#e2e8f0"}`,
-                        cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "center", justifyContent: "center",
+                        cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "center", justify: "center",
                         boxShadow: icon === ico ? "0 0 0 1px #059669" : "0 2px 4px rgba(0,0,0,0.02)"
                       }}>
                       {ico}
@@ -154,11 +154,12 @@ function UploadTopicModal({ onClose, onSuccess }) {
 
               <div style={{ marginBottom:20 }}>
                 <label style={LABEL}>Skeleton / Content <span style={{ color:"#ef4444" }}>*</span></label>
+                {/* 🟢 FIXED: Updated hints to include * for bullet points */}
                 <p style={{ fontSize: 12, color: "#64748b", marginBottom: 8, fontFamily:"'Plus Jakarta Sans',sans-serif", lineHeight: 1.5 }}>
-                  💡 <strong>Pro Tip:</strong> Type <code>##</code> before a Main Heading, and <code>-</code> before a subheading to auto-generate a Course Skeleton! Add descriptions right below them.
+                  💡 <strong>Pro Tip:</strong> Type <code>##</code> for a Main Heading, <code>-</code> for a Subheading, and <code>*</code> for Bullet Points!
                 </p>
-                <textarea className="input-modern" style={{ resize:"vertical", lineHeight:1.6, minHeight: "180px", fontFamily: "monospace" }}
-                  placeholder={`## Raising Vegetable Nursery\n- Benefits of nursery\nThis is a description of the benefits...\n\n## Soil treatment`} 
+                <textarea className="input-modern" style={{ resize:"vertical", lineHeight:1.6, minHeight: "220px", fontFamily: "monospace" }}
+                  placeholder={`## Raising Vegetable Nursery\n- Benefits of nursery\nThis is a description of the benefits...\n* Better germination rates\n* Healthier seedlings\n\n## Soil treatment`} 
                   value={description} onChange={e=>setDescription(e.target.value)} />
               </div>
 
@@ -239,11 +240,11 @@ export default function Topics() {
     setTopics(prev => [newTopic, ...prev]);
   };
 
-  // ADVANCED SKELETON PARSER LOGIC
+  // 🟢 FIXED & UPGRADED: Advanced Skeleton Parser Logic (Supports Subheadings AND Bullet Points)
   const renderTopicContent = (text, accentColor) => {
     if (!text.includes("##")) {
       return text.split("\n\n").map((para, i) => (
-        <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} style={{ wordBreak: 'break-word' }} />
+        <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} style={{ wordBreak: 'break-word', textAlign: 'justify' }} />
       ));
     }
 
@@ -255,55 +256,87 @@ export default function Topics() {
       const lines = modText.split("\n").filter(l => l.trim() !== "");
       const mainHeading = lines[0].trim();
       const items = [];
-      let currentItem = null;
+      
+      let currentSubheading = null;
       let mainDesc = [];
 
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
-        const isBullet = line.match(/^[-*]\s+(.*)/) || line.match(/^[0-9]+\.\s+(.*)/);
         
-        if (isBullet) {
-          if (currentItem) items.push(currentItem);
-          currentItem = { title: isBullet[1], desc: [] };
-        } else {
-          if (currentItem) {
-            currentItem.desc.push(line);
+        // Match "- Subheading"
+        const isSubheading = line.match(/^-\s+(.*)/);
+        // Match "* Bullet point"
+        const isBulletPoint = line.match(/^\*\s+(.*)/);
+        
+        if (isSubheading) {
+          // Save the previous subheading if it exists
+          if (currentSubheading) items.push(currentSubheading);
+          
+          currentSubheading = { 
+            title: isSubheading[1], 
+            desc: [], 
+            bullets: [] 
+          };
+        } 
+        else if (isBulletPoint) {
+          if (currentSubheading) {
+            currentSubheading.bullets.push(isBulletPoint[1]);
+          } else {
+            // If they used a bullet point before a subheading, treat it as a main description bullet
+            mainDesc.push(`• ${isBulletPoint[1]}`);
+          }
+        } 
+        else {
+          // Regular text
+          if (currentSubheading) {
+            currentSubheading.desc.push(line);
           } else {
             mainDesc.push(line); 
           }
         }
       }
-      if (currentItem) items.push(currentItem);
+      
+      // Push the final subheading
+      if (currentSubheading) items.push(currentSubheading);
 
       return { mainHeading, mainDesc: mainDesc.join(" "), items };
     });
 
     return (
       <div className="skeleton-container">
-        {introText && <p className="skeleton-intro" style={{ wordBreak: 'break-word' }}>{introText}</p>}
+        {introText && <p className="skeleton-intro" style={{ wordBreak: 'break-word', textAlign: 'justify' }}>{introText}</p>}
         
         <div className="skeleton-grid">
           {modules.map((mod, idx) => (
             <div key={idx} className="skeleton-module" style={{ borderTop: `3px solid ${accentColor}` }}>
               
-              <div className="module-header">
-                <span className="module-number" style={{ color: accentColor }}>{String(idx + 1).padStart(2, '0')}</span>
+              <div className="module-header" style={{ alignItems: 'flex-start' }}>
+                <span className="module-number" style={{ color: accentColor, marginTop: '2px' }}>{String(idx + 1).padStart(2, '0')}</span>
                 <h4 style={{ wordBreak: 'break-word', margin: 0 }}>{mod.mainHeading}</h4>
               </div>
               
-              {mod.mainDesc && <p className="module-main-desc" style={{ wordBreak: 'break-word' }}>{mod.mainDesc}</p>}
+              {mod.mainDesc && <p className="module-main-desc" style={{ wordBreak: 'break-word', textAlign: 'justify' }}>{mod.mainDesc}</p>}
               
               {mod.items.length > 0 && (
                 <ul className="module-list">
                   {mod.items.map((item, sIdx) => (
-                    <li key={sIdx}>
+                    <li key={sIdx} style={{ marginBottom: item.bullets.length > 0 ? '16px' : '0' }}>
                       <div className="sub-title">
-                        <span style={{ color: accentColor, marginRight: 8, marginTop: 1 }}>▹</span>
+                        <span style={{ color: accentColor, marginRight: 8, marginTop: 1, flexShrink: 0 }}>▹</span>
                         <span style={{ wordBreak: 'break-word' }}>{item.title}</span>
                       </div>
                       
                       {item.desc.length > 0 && (
-                        <p className="sub-desc" style={{ wordBreak: 'break-word' }}>{item.desc.join(" ")}</p>
+                        <p className="sub-desc" style={{ wordBreak: 'break-word', textAlign: 'justify' }}>{item.desc.join(" ")}</p>
+                      )}
+
+                      {/* 🟢 NEW: Renders bullet points under the subheading */}
+                      {item.bullets.length > 0 && (
+                        <ul style={{ listStyleType: 'disc', marginLeft: '38px', marginTop: '8px', color: '#475569', fontSize: '14px', lineHeight: 1.6, fontWeight: 500 }}>
+                          {item.bullets.map((bullet, bIdx) => (
+                            <li key={bIdx} style={{ marginBottom: '4px', wordBreak: 'break-word' }}>{bullet}</li>
+                          ))}
+                        </ul>
                       )}
                     </li>
                   ))}
@@ -365,7 +398,7 @@ export default function Topics() {
         .subtopic-tag { display: inline-block; background: #f1f5f9; color: #475569; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 50px; transition: all .2s; border: 1px solid transparent; }
         .topic-card:hover .subtopic-tag { background: #ffffff; border-color: #e2e8f0; }
 
-        .modal-overlay { position: fixed; top: 72px; left: 0; right: 0; bottom: 0; z-index: 450; background: rgba(15, 23, 42, 0.35); backdrop-filter: blur(24px); display: flex; justify-content: center; align-items: center; padding: 60px 20px; animation: fadeIn .3s ease-out; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; background: rgba(15, 23, 42, 0.35); backdrop-filter: blur(24px); display: flex; justify-content: center; align-items: center; padding: 60px 20px; animation: fadeIn .3s ease-out; }
         
         .modal-box { 
           background: #ffffff; 
@@ -411,7 +444,7 @@ export default function Topics() {
           line-height: 1.6; 
           margin-bottom: 24px; 
           font-weight: 500; 
-          text-align: center; 
+          text-align: justify; 
         }
 
         .skeleton-grid { 
@@ -451,6 +484,8 @@ export default function Topics() {
           font-weight: 900; 
           line-height: 1; 
           opacity: 0.2; 
+          flex-shrink: 0;
+          white-space: nowrap;
         }
 
         .module-header h4 { 
@@ -466,6 +501,7 @@ export default function Topics() {
           margin-bottom: 16px; 
           line-height: 1.6; 
           font-weight: 500;
+          text-align: justify;
         }
 
         .module-list { 
@@ -493,20 +529,36 @@ export default function Topics() {
           margin-left: 24px; 
           margin-top: 4px; 
           font-weight: 500; 
+          text-align: justify;
         }
 
-        /* 📱 MOBILE RESPONSIVENESS (ADDED) */
         @media (max-width: 768px) {
-          .modal-overlay { padding: 10px !important; align-items: flex-end; }
-          .modal-box { border-radius: 24px 24px 0 0 !important; max-height: 90vh !important; }
-          .modal-scroll-area { padding: 24px 20px !important; }
+          .modal-overlay { padding: 16px !important; align-items: center !important; }
+          .modal-box { border-radius: 24px !important; max-height: 85vh !important; margin: auto; }
+          .modal-scroll-area { padding: 0 !important; }
           .search-container { padding: 0 15px; }
           main > div > div { grid-template-columns: 1fr !important; }
+          
+          .topic-header-compact { padding: 32px 20px 16px !important; }
+          .topic-body-compact { padding: 0 20px 32px !important; }
+          .topic-icon-large { width: 56px !important; height: 56px !important; font-size: 28px !important; margin-bottom: 16px !important; }
+          .topic-title-large { font-size: 24px !important; }
+          
+          .skeleton-intro, .module-main-desc, .sub-desc, .modal-article-content p {
+            font-size: 14.5px !important;
+            line-height: 1.65 !important;
+            text-align: justify !important;
+            margin-bottom: 12px !important;
+          }
+          .skeleton-module { padding: 16px !important; border-radius: 16px !important; }
+          .module-number { font-size: 20px !important; }
+          .module-header h4 { font-size: 16.5px !important; }
+          .module-header { margin-bottom: 8px !important; padding-bottom: 8px !important; gap: 8px !important; }
+          
+          .upload-scroll { padding: 24px 20px !important; }
         }
       `}</style>
 
-      {/* ══ PAGE HEADER ══ */}
-      {/* 🟢 CHANGED: Increased padding-top to 120px on desktop to clear the Navbar */}
       <div style={{ paddingTop: 120, background: "transparent" }}>
         <div style={{ maxWidth: 800, margin: "0 auto", padding: "20px 24px 0px", textAlign: "center" }}>
           <span style={{ display:"inline-block", background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,1)", color:"#059669", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, fontWeight:800, letterSpacing:".1em", textTransform:"uppercase", padding:"8px 20px", borderRadius:50, marginBottom:24, boxShadow:"0 4px 12px rgba(0,0,0,0.03)" }}>
@@ -550,19 +602,17 @@ export default function Topics() {
                 <article key={t.id} className="topic-card" onClick={() => setSelected(t)} onMouseEnter={() => setHovered(t.id)} onMouseLeave={() => setHovered(null)}>
                   <div className="glow" style={{ background: t.accent }} />
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
-                    <div style={{ width: 60, height: 60, borderRadius: "16px", background: hovered === t.id ? t.color : "#f8faf9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, transition: "all .3s" }}>
+                    <div style={{ width: 60, height: 60, borderRadius: "16px", background: hovered === t.id ? t.color : "#f8faf9", display: "flex", alignItems: "center", justify: "center", fontSize: 32, transition: "all .3s" }}>
                       {t.icon}
                     </div>
                   </div>
 
                   <h3 className="fr" style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", marginBottom: 12, lineHeight: 1.2, wordBreak: "break-word" }}>{t.label}</h3>
                   
-                  {/* 🟢 FIXED: Removed flexGrow: 1, set line-clamp to 3, prevents half-line cutting bug */}
                   <p className="jk" style={{ fontSize: 15, color: "#475569", lineHeight: 1.6, fontWeight: 500, marginBottom: 24, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word" }}>
                     {(t.desc || "").replace(/#|[-*]/g, "")}
                   </p>
 
-                  {/* 🟢 FIXED: Added marginTop: "auto" to naturally push tags and footer down */}
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24, marginTop: "auto" }}>
                     {t.subtopics && t.subtopics.slice(0,3).map((s) => (
                       <span key={s} className="subtopic-tag">{s}</span>
@@ -602,21 +652,21 @@ export default function Topics() {
           <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ '--accent-color': selected.accent }}>
             <button className="modal-close-btn" onClick={() => setSelected(null)}>✕</button>
             <div className="modal-scroll-area">
-              <div style={{ 
+              <div className="topic-header-compact" style={{ 
                 padding: "48px 24px 24px", 
                 background: `linear-gradient(180deg, ${selected.color} 0%, rgba(255,255,255,0) 100%)`, 
                 textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center"
               }}>
-                <div style={{ 
+                <div className="topic-icon-large" style={{ 
                   width: 72, height: 72, borderRadius: "20px", background: "#ffffff", 
-                  display: "flex", alignItems: "center", justifyContent: "center", 
+                  display: "flex", alignItems: "center", justify: "center", 
                   fontSize: 36, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)", marginBottom: 20
                 }}>{selected.icon}</div>
-                <h2 className="fr" style={{ fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 900, color: "#0f172a", lineHeight: 1.1, marginBottom: 16, wordBreak: "break-word" }}>
+                <h2 className="fr topic-title-large" style={{ fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 900, color: "#0f172a", lineHeight: 1.1, marginBottom: 16, wordBreak: "break-word" }}>
                   {selected.label}
                 </h2>
               </div>
-              <div style={{ padding: "0 24px 48px" }}> 
+              <div className="topic-body-compact" style={{ padding: "0 24px 48px" }}> 
                 <div className="modal-article-content">
                   {renderTopicContent(selected.desc || "", selected.accent)}
                 </div>

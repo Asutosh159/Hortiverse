@@ -1,5 +1,6 @@
 import { API_BASE_URL } from '../apiConfig';
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer'; 
 
 /* ══════════════════════════════════════════════════
@@ -99,8 +100,6 @@ export default function Home() {
   const [visible,        setVisible]        = useState({});
   const [slideIdx,       setSlideIdx]       = useState(0);
   const [transitioning,  setTransitioning]  = useState(false);
-  const [hoveredTopic,   setHoveredTopic]   = useState(null);
-  const [hoveredStory,   setHoveredStory]   = useState(null);
 
   const [activeStoryModal, setActiveStoryModal] = useState(null);
   const [activeTopicModal, setActiveTopicModal] = useState(null);
@@ -141,6 +140,7 @@ export default function Home() {
       goSlide((slideIdx + 1) % slides.length);
     }, 5000);
     return () => clearInterval(timerRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slides, slideIdx, transitioning]);
 
   useEffect(() => {
@@ -185,10 +185,11 @@ export default function Home() {
     setNlState("success");
   };
 
+  // 🟢 FIXED: Explicitly added style={{ textAlign: "justify" }} to all text elements in the modal
   const renderTopicContent = (text, accentColor) => {
     if (!text.includes("##")) {
       return text.split("\n\n").map((para, i) => (
-        <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} className="break-words" />
+        <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} className="break-words text-[14px] md:text-[16px] text-slate-700 mb-5" style={{ textAlign: "justify", lineHeight: 1.8 }} />
       ));
     }
 
@@ -200,49 +201,71 @@ export default function Home() {
       const lines = modText.split("\n").filter(l => l.trim() !== "");
       const mainHeading = lines[0].trim();
       const items = [];
-      let currentItem = null;
+      
+      let currentSubheading = null;
       let mainDesc = [];
 
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
-        const isBullet = line.match(/^[-*]\s+(.*)/) || line.match(/^[0-9]+\.\s+(.*)/);
         
-        if (isBullet) {
-          if (currentItem) items.push(currentItem);
-          currentItem = { title: isBullet[1], desc: [] };
-        } else {
-          if (currentItem) {
-            currentItem.desc.push(line);
+        // Match "- Subheading"
+        const isSubheading = line.match(/^-\s+(.*)/);
+        // Match "* Bullet point"
+        const isBulletPoint = line.match(/^\*\s+(.*)/);
+        
+        if (isSubheading) {
+          if (currentSubheading) items.push(currentSubheading);
+          currentSubheading = { title: isSubheading[1], desc: [], bullets: [] };
+        } 
+        else if (isBulletPoint) {
+          if (currentSubheading) {
+            currentSubheading.bullets.push(isBulletPoint[1]);
+          } else {
+            mainDesc.push(`• ${isBulletPoint[1]}`);
+          }
+        } 
+        else {
+          if (currentSubheading) {
+            currentSubheading.desc.push(line);
           } else {
             mainDesc.push(line); 
           }
         }
       }
-      if (currentItem) items.push(currentItem);
+      
+      if (currentSubheading) items.push(currentSubheading);
+
       return { mainHeading, mainDesc: mainDesc.join(" "), items };
     });
 
     return (
       <div className="skeleton-container">
-        {introText && <p className="skeleton-intro break-words">{introText}</p>}
-        <div className="skeleton-grid">
+        {introText && <p className="skeleton-intro break-words text-[14px] md:text-[16px] text-slate-700 mb-6" style={{ textAlign: "justify", lineHeight: 1.8 }}>{introText}</p>}
+        <div className="skeleton-grid flex flex-col gap-4 md:gap-5">
           {modules.map((mod, idx) => (
-            <div key={idx} className="skeleton-module" style={{ borderTop: `3px solid ${accentColor}` }}>
-              <div className="module-header">
-                <span className="module-number" style={{ color: accentColor }}>{String(idx + 1).padStart(2, '0')}</span>
-                <h4 className="break-words m-0">{mod.mainHeading}</h4>
+            <div key={idx} className="bg-white md:bg-[#f8faf9] border border-slate-200 rounded-[16px] p-5 md:p-8 w-full shadow-sm md:shadow-none" style={{ borderTop: `3px solid ${accentColor}` }}>
+              <div className="flex items-start gap-3 mb-3 border-b border-slate-100 pb-3">
+                <span className="font-['Fraunces'] text-[28px] md:text-[32px] font-black opacity-20 leading-none mt-0.5 shrink-0 whitespace-nowrap" style={{ color: accentColor }}>{String(idx + 1).padStart(2, '0')}</span>
+                <h4 className="text-[17px] md:text-[18px] font-extrabold text-slate-900 m-0 leading-snug break-words">{mod.mainHeading}</h4>
               </div>
-              {mod.mainDesc && <p className="module-main-desc break-words">{mod.mainDesc}</p>}
+              {mod.mainDesc && <p className="text-[14px] md:text-[15px] text-slate-600 mb-4 break-words" style={{ textAlign: "justify", lineHeight: 1.7 }}>{mod.mainDesc}</p>}
               {mod.items.length > 0 && (
-                <ul className="module-list">
+                <ul className="flex flex-col gap-3 m-0 p-0 list-none">
                   {mod.items.map((item, sIdx) => (
-                    <li key={sIdx}>
-                      <div className="sub-title">
-                        <span style={{ color: accentColor, marginRight: 8, marginTop: 1 }}>▹</span>
+                    <li key={sIdx} style={{ marginBottom: item.bullets.length > 0 ? '16px' : '0' }}>
+                      <div className="flex items-start text-[14px] md:text-[15px] font-bold text-slate-800 leading-[1.4]">
+                        <span className="shrink-0" style={{ color: accentColor, marginRight: 8, marginTop: 2 }}>▹</span>
                         <span className="break-words">{item.title}</span>
                       </div>
                       {item.desc.length > 0 && (
-                        <p className="sub-desc break-words">{item.desc.join(" ")}</p>
+                        <p className="text-[13px] md:text-[14.5px] text-slate-500 mt-1.5 ml-5 break-words" style={{ textAlign: "justify", lineHeight: 1.6 }}>{item.desc.join(" ")}</p>
+                      )}
+                      {item.bullets.length > 0 && (
+                        <ul style={{ listStyleType: 'disc', marginLeft: '38px', marginTop: '8px', color: '#475569', fontSize: '13px', fontWeight: 500 }}>
+                          {item.bullets.map((bullet, bIdx) => (
+                            <li key={bIdx} style={{ marginBottom: '4px', wordBreak: 'break-word', textAlign: 'justify', lineHeight: 1.6 }}>{bullet}</li>
+                          ))}
+                        </ul>
                       )}
                     </li>
                   ))}
@@ -281,7 +304,6 @@ export default function Home() {
         <div className="absolute inset-0 z-[2]" style={{ background:"linear-gradient(110deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 45%, rgba(0,0,0,0.15) 75%, transparent 100%)" }} />
         
         <div className="relative z-10 h-full w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex items-center pt-28 md:pt-32 pb-16">
-          {/* 🟢 FIXED: Changed items-start to items-center to perfectly center the buttons with the text on Desktop */}
           <div className="flex w-full flex-col md:flex-row justify-between items-center gap-8 md:gap-10">
             
             <div className="max-w-[750px] text-center md:text-left flex flex-col items-center md:items-start w-full">
@@ -344,8 +366,6 @@ export default function Home() {
             )) : stories.map((s, i) => (
               <div key={s.id} className={`story-card reveal d${(i%3)+1} ${visible["stories-grid"] ? "on" : ""} w-full`}
                 onClick={() => setActiveStoryModal(s)}
-                onMouseEnter={() => setHoveredStory(s.id)} 
-                onMouseLeave={() => setHoveredStory(null)}
               >
                 <div className="story-img-wrap">
                   <img src={s.img} alt={s.title} />
@@ -391,8 +411,6 @@ export default function Home() {
               <div key={t.id} className={`topic-card w-full reveal d${i+1} ${visible["topics-grid"] ? "on" : ""}`}
                 style={{ '--card-bg': theme.bg, '--card-shadow': theme.shadow, '--card-text': theme.text }}
                 onClick={() => setActiveTopicModal(t)}
-                onMouseEnter={() => setHoveredTopic(i)} 
-                onMouseLeave={() => setHoveredTopic(null)}
               >
                 <div className="topic-icon-wrap">{t.icon}</div>
                 <h3 className="fr text-xl md:text-2xl font-extrabold mb-2.5 text-[#0f172a] break-words px-2">{t.label}</h3>
@@ -447,14 +465,14 @@ export default function Home() {
 
       {/* 🟢 STORY MODAL OVERLAY */}
       {activeStoryModal && (
-        <div className="modal-overlay px-2 py-4 md:px-5 md:py-[60px]" onClick={() => setActiveStoryModal(null)}>
-          <div className="modal-box w-[95%] md:w-full max-w-[860px] max-h-[90vh] md:max-h-[85vh] rounded-[20px] md:rounded-[24px]" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close-btn" onClick={() => setActiveStoryModal(null)}>✕</button>
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 md:p-12 animate-[fadeIn_.3s_ease-out]" onClick={() => setActiveStoryModal(null)}>
+          <div className="relative w-full max-w-[860px] max-h-[90vh] md:max-h-[85vh] bg-white rounded-[20px] md:rounded-[24px] shadow-2xl flex flex-col overflow-hidden animate-[slideUp_.4s_cubic-bezier(0.16,1,0.3,1)]" onClick={(e) => e.stopPropagation()}>
+            <button className="absolute top-4 right-4 z-50 w-10 h-10 bg-white/20 hover:bg-white border border-white/40 text-white hover:text-slate-900 rounded-full flex items-center justify-center transition-all shadow-md" onClick={() => setActiveStoryModal(null)}>✕</button>
 
-            <div className="modal-scroll-area !p-0">
-              <div className="h-[200px] md:h-[320px] overflow-hidden relative shrink-0">
+            <div className="overflow-y-auto flex-1 w-full relative">
+              <div className="h-[200px] md:h-[320px] w-full shrink-0 relative">
                 <img src={activeStoryModal.img} alt={activeStoryModal.title} className="w-full h-full object-cover" />
-                <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(15,23,42,0.85) 0%, transparent 60%)" }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/85 to-transparent" />
                 <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-8 md:right-8">
                   <span className="tag !bg-white/90 !text-[#047857] mb-2 md:mb-4 inline-block">{activeStoryModal.tag}</span>
                   <h1 className="fr text-[clamp(20px,5vw,42px)] font-black text-white leading-[1.15] drop-shadow-md break-words">
@@ -474,7 +492,7 @@ export default function Home() {
 
                 <div className="modal-content-text">
                   {(activeStoryModal.content || activeStoryModal.desc || "No full content available.").split("\n\n").map((para, i) => (
-                    <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} className="text-sm md:text-base" />
+                    <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} className="text-[14px] md:text-[16px] text-slate-700 mb-5" style={{ textAlign: "justify", lineHeight: 1.8 }} />
                   ))}
                 </div>
               </div>
@@ -485,21 +503,22 @@ export default function Home() {
 
       {/* 🟢 TOPIC MODAL OVERLAY */}
       {activeTopicModal && (
-        <div className="modal-overlay px-2 py-4 md:px-5 md:py-[60px]" onClick={() => setActiveTopicModal(null)}>
-          <div className="modal-box w-[95%] md:w-full max-w-[650px] rounded-[20px] md:rounded-[24px]" onClick={(e) => e.stopPropagation()} style={{ '--accent-color': activeTopicModal.accent }}>
-            <button className="modal-close-btn dark" onClick={() => setActiveTopicModal(null)}>✕</button>
-            <div className="modal-scroll-area !p-0">
-              <div className="pt-10 px-5 pb-5 md:pt-12 md:px-8 md:pb-6" style={{ background: `linear-gradient(180deg, ${activeTopicModal.color} 0%, rgba(255,255,255,0) 100%)` }}>
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 md:p-12 animate-[fadeIn_.3s_ease-out]" onClick={() => setActiveTopicModal(null)}>
+          <div className="relative w-full max-w-[860px] max-h-[90vh] md:max-h-[85vh] bg-white rounded-[20px] md:rounded-[24px] shadow-2xl flex flex-col overflow-hidden animate-[slideUp_.4s_cubic-bezier(0.16,1,0.3,1)]" onClick={(e) => e.stopPropagation()} style={{ '--accent-color': activeTopicModal.accent }}>
+            <button className="absolute top-4 right-4 z-50 w-10 h-10 bg-black/5 hover:bg-black/10 rounded-full flex items-center justify-center text-slate-700 transition-colors" onClick={() => setActiveTopicModal(null)}>✕</button>
+            
+            <div className="overflow-y-auto flex-1 w-full">
+              <div className="pt-10 px-5 pb-6 md:pt-12 md:px-12 md:pb-8" style={{ background: `linear-gradient(180deg, ${activeTopicModal.color} 0%, rgba(255,255,255,0) 100%)` }}>
                 <div className="flex flex-col items-center text-center">
-                  <div className="w-[60px] h-[60px] md:w-[72px] md:h-[72px] rounded-[16px] md:rounded-[20px] bg-white flex items-center justify-center text-[28px] md:text-[36px] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1),0_0_0_1px_rgba(0,0,0,0.05)] mb-4 md:mb-5">
+                  <div className="w-[64px] h-[64px] md:w-[72px] md:h-[72px] rounded-[16px] md:rounded-[20px] bg-white flex items-center justify-center text-[32px] md:text-[36px] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1),0_0_0_1px_rgba(0,0,0,0.05)] mb-4 md:mb-5">
                     {activeTopicModal.icon}
                   </div>
-                  <h2 className="fr text-[clamp(22px,5vw,36px)] font-black text-[#0f172a] leading-[1.1] mb-3 break-words">
+                  <h2 className="fr text-[24px] md:text-[36px] font-black text-[#0f172a] leading-[1.2] mb-2 px-2 break-words max-w-[80%]">
                     {activeTopicModal.label}
                   </h2>
                 </div>
               </div>
-              <div className="px-5 pb-8 md:px-8 md:pb-12">
+              <div className="px-5 pb-8 md:px-12 md:pb-12">
                 <div className="modal-article-content">
                   {renderTopicContent(activeTopicModal.desc || "", activeTopicModal.accent)}
                 </div>

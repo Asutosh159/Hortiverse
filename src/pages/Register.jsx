@@ -1,6 +1,8 @@
 import { API_BASE_URL } from '../apiConfig';
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
+// 🟢 IMPORT LOGO
+import logoHV from '../assests/logoHV.png'; 
 
 /* ══════════════════════════════════════════════════════════
    LIVE BACKEND API LAYER (Connected to SQLite)
@@ -158,10 +160,10 @@ export default function Register() {
         @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap');
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { height: 100%; overflow: hidden; }
+        html, body { min-height: 100vh; overflow-x: hidden; }
         body { font-family: 'Inter', sans-serif; }
 
-        .clay-bg { position: fixed; inset: 0; background: #0cad9d; overflow: hidden; }
+        .clay-bg { position: fixed; inset: 0; background: #0cad9d; overflow: hidden; z-index: 0; }
 
         .orb { position: absolute; width: 60vmax; height: 60vmax; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(147, 51, 234, 0.4), rgba(42, 157, 143, 0.2)); filter: blur(80px); animation: orbMove 25s infinite alternate ease-in-out; }
         .orb2 { width: 70vmax; height: 70vmax; background: radial-gradient(circle at 70% 70%, rgba(42, 157, 143, 0.35), rgba(157, 78, 221, 0.2)); animation: orbMove2 30s infinite alternate-reverse; }
@@ -232,7 +234,15 @@ export default function Register() {
         .fade-step { animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .center-wrapper { height: 100vh; display: flex; align-items: center; justify-content: center; padding: 0.5rem; overflow: hidden; }
+        .center-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; overflow-y: auto; overflow-x: hidden; position: relative; z-index: 10; }
+
+        @media (max-width: 480px) {
+          .clay-card { padding: 1.5rem 1.2rem; border-radius: 30px; }
+          .input-field { font-size: 16px; }
+          .role-grid { display: flex; gap: 4px; }
+          .role-btn { flex: 1 0 48%; }
+          .btn-primary, .btn-ghost { padding: 12px; font-size: 0.85rem; }
+        }
       `}</style>
 
       <div className="clay-bg">
@@ -260,28 +270,29 @@ export default function Register() {
           ) : (
             <>
               {/* header with logo and link to login */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.8rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '1.6rem' }}>🌱</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '1.2rem', textAlign: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                  <img src={logoHV} alt="HortiVerse Logo" style={{ height: '32px', width: 'auto' }} />
                   <span style={{ color: 'white', fontWeight: 700, fontSize: '1.2rem', letterSpacing: '-0.5px' }}>
                     Horti<span style={{ color: accent }}>Verse</span>
                   </span>
                 </div>
-                <Link to="/login" style={{ color: accent, fontSize: '0.8rem', fontWeight: 600, textDecoration: 'none' }}>
+                
+                <h1 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 600, lineHeight: 1.2 }}>
+                  {step === 1 && <>Create your <span style={{ color: accent }}>account</span></>}
+                  {step === 2 && <>Your <span style={{ color: accent }}>profile</span></>}
+                  {step === 3 && <>Your <span style={{ color: accent }}>interests</span></>}
+                </h1>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginTop: '0.1rem' }}>
+                  {step === 1 && "Set up your login credentials."}
+                  {step === 2 && "A little about yourself."}
+                  {step === 3 && "Pick topics that matter to you."}
+                </p>
+
+                <Link to="/login" style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', color: accent, fontSize: '0.8rem', fontWeight: 600, textDecoration: 'none' }}>
                   Sign in →
                 </Link>
               </div>
-
-              <h1 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 600, lineHeight: 1.2 }}>
-                {step === 1 && <>Create your <span style={{ color: accent }}>account</span></>}
-                {step === 2 && <>Your <span style={{ color: accent }}>profile</span></>}
-                {step === 3 && <>Your <span style={{ color: accent }}>interests</span></>}
-              </h1>
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginTop: '0.1rem', marginBottom: '0.8rem' }}>
-                {step === 1 && "Set up your login credentials."}
-                {step === 2 && "A little about yourself."}
-                {step === 3 && "Pick topics that matter to you."}
-              </p>
 
               {/* step indicator */}
               <div className="step-indicator">
@@ -504,4 +515,4 @@ export default function Register() {
       </div>
     </>
   );
-} 
+}

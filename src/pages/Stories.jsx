@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../apiConfig';
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Footer from '../components/Footer'; // Adjust this path if your folder structure is different!
 
 // 🟢 NEW: Added the URL Formatter Helper Function
@@ -92,7 +92,7 @@ function UploadStoryModal({ onClose, onSuccess, user }) {
       <div className="modal-box" style={{ maxWidth: 640 }}>
         <button className="modal-close-btn" onClick={onClose}>✕</button>
 
-        <div className="modal-scroll-area" style={{ padding: "40px 48px" }}>
+        <div className="modal-scroll-area modal-content-container" style={{ padding: "40px 48px" }}>
           {success ? (
             <div style={{ textAlign:"center", padding:"40px 0", animation:"popIn .35s ease" }}>
               <div style={{ fontSize:64, marginBottom:20 }}>📖</div>
@@ -393,10 +393,10 @@ export default function Stories() {
         }
         .input-modern:focus { background: #fff; border-color: #059669; box-shadow: 0 0 0 4px rgba(5,150,105,0.1); }
 
-        .btn-green { background: #059669; color: #fff; border: none; cursor: pointer; border-radius: 50px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 14px; padding: 12px 28px; transition: all .2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-green { background: #059669; color: #fff; border: none; cursor: pointer; border-radius: 50px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 14px; padding: 12px 28px; transition: all .2s ease; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
         .btn-green:hover { background: #047857; transform: translateY(-1px); box-shadow: 0 8px 16px rgba(5, 150, 105, 0.25); }
 
-        .btn-ghost { background: rgba(255, 255, 255, 0.6); color: #334155; border: 1px solid rgba(0,0,0,0.05); cursor: pointer; border-radius: 50px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 14px; padding: 12px 28px; transition: all .2s ease; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-ghost { background: rgba(255, 255, 255, 0.6); color: #334155; border: 1px solid rgba(0,0,0,0.05); cursor: pointer; border-radius: 50px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 14px; padding: 12px 28px; transition: all .2s ease; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
         .btn-ghost:hover { background: #ffffff; color: #0f172a; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 
         .like-btn { background: #f8faf9; border: 1px solid #e2e8f0; border-radius: 50px; cursor: pointer; padding: 6px 14px; display: flex; align-items: center; gap: 6px; transition: all .2s; font-weight: 600; color: #475569; }
@@ -406,38 +406,61 @@ export default function Stories() {
         .c-input { padding: 14px 18px; border-radius: 12px; border: 1px solid #e2e8f0; outline: none; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; width: 100%; transition: border .2s; background: #ffffff; }
         .c-input:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
 
-        .modal-overlay { position: fixed; top: 72px; left: 0; right: 0; bottom: 0; z-index: 450; background: rgba(15, 23, 42, 0.35); backdrop-filter: blur(24px); display: flex; justify-content: center; align-items: center; padding: 40px 20px; animation: fadeIn .3s ease-out; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; background: rgba(15, 23, 42, 0.35); backdrop-filter: blur(24px); display: flex; justify-content: center; align-items: center; padding: 40px 20px; animation: fadeIn .3s ease-out; }
         
-        .modal-box { background: #ffffff; border-radius: 24px; width: 100%; max-width: 800px; max-height: 100%; display: flex; flex-direction: column; position: relative; overflow-x: hidden; overflow-y: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3); animation: slideUp .4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .modal-box { background: #ffffff; border-radius: 24px; width: 100%; max-width: 860px; max-height: 85vh; display: flex; flex-direction: column; position: relative; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3); animation: slideUp .4s cubic-bezier(0.16, 1, 0.3, 1); }
         .modal-scroll-area { overflow-y: auto; overflow-x: hidden; flex-grow: 1; width: 100%; word-break: break-word; overscroll-behavior: contain; }
         
         .modal-scroll-area::-webkit-scrollbar { width: 6px; }
         .modal-scroll-area::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.25); border-radius: 4px; }
         
-        .modal-close-btn { position: absolute; top: 20px; right: 20px; z-index: 100; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.4); color: #ffffff; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; }
+        .modal-close-btn { position: absolute; top: 20px; right: 20px; z-index: 100; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.4); color: #111; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; }
         .modal-close-btn:hover { background: #ffffff; color: #064e3b; transform: scale(1.1); }
 
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         @keyframes slideUp { from{opacity:0;transform:translateY(40px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
-
-        .modal-content p { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; line-height: 1.8; color: #334155; margin-bottom: 24px; font-weight: 400; word-break: break-word; }
-        .modal-content strong, .modal-content b { font-weight: 700; color: #0f172a; }
 
         .tag-badge { display: inline-block; background: rgba(16, 185, 129, 0.9); color: #ffffff; backdrop-filter: blur(4px); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 6px 14px; border-radius: 50px; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 14px; color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         
         /* 📱 MOBILE RESPONSIVENESS OVERRIDES */
         @media (max-width: 768px) {
-          .modal-overlay { padding: 10px !important; align-items: flex-end; }
-          .modal-box { border-radius: 24px 24px 0 0 !important; max-height: 90vh !important; }
+          .modal-overlay { padding: 16px !important; align-items: center !important; }
+          .modal-box { border-radius: 24px !important; max-height: 90vh !important; }
           .modal-scroll-area { padding: 24px 20px !important; }
           .search-container { padding: 0 15px; }
           main > div > div { grid-template-columns: 1fr !important; }
+          
+          .modal-content-container { padding: 24px 20px 32px !important; }
+          
+          .modal-content-text p {
+            font-size: 14.5px !important;
+            line-height: 1.7 !important;
+            text-align: justify !important;
+            margin-bottom: 16px !important;
+          }
+          
+          .story-card-title { font-size: 20px !important; }
+          .modal-story-title { font-size: 24px !important; }
+          
+          .comment-section { padding: 16px !important; }
+          
+          /* 🟢 FIXED: Makes action buttons sit in a single row on mobile */
+          .mobile-actions-row { 
+            flex-direction: row !important; 
+            width: 100% !important;
+            gap: 8px !important;
+          }
+          .mobile-actions-row button {
+            flex: 1 !important;
+            padding: 10px 12px !important;
+            font-size: 13px !important;
+            white-space: nowrap;
+          }
         }
       `}</style>
 
       {/* ══ PAGE HEADER ══ */}
-      {/* 🟢 CHANGED: Increased paddingTop from 30 to 120 so the Navbar doesn't cover the title */}
       <div style={{ paddingTop: 120, background: "transparent" }}>
         <div style={{ maxWidth: 800, margin: "0 auto", padding: "20px 24px 0px", textAlign: "center" }}>
           <h1 className="fr" style={{ fontSize: "clamp(35px, 5vw, 60px)", fontWeight: 900, color: "#112a0f", lineHeight: 1.1, letterSpacing: "-1px" }}>
@@ -485,7 +508,6 @@ export default function Stories() {
               </p>
             )}
 
-            {/* 🟢 CHANGED: minmax updated to 280px to prevent horizontal scrolling on small phones */}
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap: 32 }}>
               {filtered.map((s, i) => {
                 const shortTitle = s.title.length > 60 ? s.title.substring(0, 65).trim() + "..." : s.title;
@@ -506,14 +528,14 @@ export default function Stories() {
                     </div>
 
                     <div style={{ padding: "28px", display: "flex", flexDirection: "column", flexGrow: 1 }}>
-                      <h2 className="fr" style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", lineHeight: 1.3, marginBottom: 12 }}>
+                      <h2 className="fr story-card-title" style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", lineHeight: 1.3, marginBottom: 12 }}>
                         {shortTitle}
                       </h2>
-                      <p className="jk" style={{ fontSize: 15, color: "#475569", lineHeight: 1.6, fontWeight: 500, marginBottom: 24, flexGrow: 1, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                      <p className="jk" style={{ fontSize: 15, color: "#475569", lineHeight: 1.6, fontWeight: 500, marginBottom: 24, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", textAlign: "justify" }}>
                         {s.excerpt}
                       </p>
 
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 20, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 20, borderTop: "1px solid rgba(0,0,0,0.06)", marginTop: "auto" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                           <div className="avatar" style={{ background: avatarColors[i % avatarColors.length] }}>{s.initials}</div>
                           <div>
@@ -561,13 +583,13 @@ export default function Stories() {
                 <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(15,23,42,0.8) 0%, transparent 60%)" }} />
                 <div style={{ position: "absolute", bottom: 24, left: 32, right: 32 }}>
                   <span className="tag-badge" style={{ marginBottom: 16 }}>{selectedStory.tag}</span>
-                  <h1 className="fr" style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 900, color: "#ffffff", lineHeight: 1.15, textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}>
+                  <h1 className="fr modal-story-title" style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 900, color: "#ffffff", lineHeight: 1.15, textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}>
                     {selectedStory.title}
                   </h1>
                 </div>
               </div>
 
-              <div style={{ padding: "40px 48px 60px" }}>
+              <div className="modal-content-container" style={{ padding: "40px 48px 60px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "20px", marginBottom: 40, paddingBottom: 24, borderBottom: "1px solid #e2e8f0" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                     <div className="avatar" style={{ background: avatarColors[selectedStory.id % avatarColors.length], width: 48, height: 48, fontSize: 16 }}>{selectedStory.initials}</div>
@@ -577,7 +599,8 @@ export default function Stories() {
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", gap: 12 }}>
+                  {/* 🟢 FIXED: Added mobile-actions-row class to force side-by-side flex row on mobile */}
+                  <div className="mobile-actions-row" style={{ display: "flex", gap: 12 }}>
                     <button 
                       className="btn-green" 
                       onClick={(e) => toggleLike(selectedStory.id, e)}
@@ -596,9 +619,9 @@ export default function Stories() {
                   </div>
                 </div>
 
-                <div className="modal-content">
-                  {selectedStory.content && selectedStory.content.split("\n\n").map((para, i) => (
-                    <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} />
+                <div className="modal-content-text">
+                  {(selectedStory.content || selectedStory.desc || "No full content available.").split("\n\n").map((para, i) => (
+                    <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} style={{ textAlign: 'justify', fontSize: '17px', lineHeight: '1.8', color: '#334155', marginBottom: '24px' }} />
                   ))}
                 </div>
 
@@ -607,7 +630,7 @@ export default function Stories() {
                   <div style={{ marginTop: 40, paddingTop: 40, borderTop: "2px dashed #e2e8f0", animation: "fadeIn .4s" }}>
                     <h3 className="fr" style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", marginBottom: 24 }}>Join the Conversation</h3>
                     
-                    <div style={{ background: "#f8faf9", padding: 24, borderRadius: 16, marginBottom: 32, border: "1px solid #e2e8f0" }}>
+                    <div className="comment-section" style={{ background: "#f8faf9", padding: 24, borderRadius: 16, marginBottom: 32, border: "1px solid #e2e8f0" }}>
                       {!loggedInUser && (
                         <input 
                           className="c-input" 

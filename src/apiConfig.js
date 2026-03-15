@@ -1,12 +1,12 @@
 // Original Server Url for Backend Integration
 //
-export const API_BASE_URL = "https://hortiverse-backend.onrender.com";
+// export const API_BASE_URL = "https://hortiverse-backend.onrender.com";
 //
 //
 // LocalHost Server Url for Backend Integration
 //
 //
-// export const API_BASE_URL = "http://localhost:5000";
+export const API_BASE_URL = "http://localhost:5000";
 //
 //
 // Dont Update/Edit the Backend URL without known the API INTEGRATION

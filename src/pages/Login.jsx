@@ -1,6 +1,8 @@
 import { API_BASE_URL } from '../apiConfig';
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+// 🟢 IMPORT LOGO
+import logoHV from '../assests/logoHV.png'; 
 
 export default function Login() {
   const navigate = useNavigate();
@@ -57,11 +59,13 @@ export default function Login() {
         @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap');
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { height: 100%; overflow: hidden; }
+        
+        /* 🟢 FIXED: Changed height to min-height and allowed scrolling for mobile keyboards */
+        html, body { min-height: 100vh; overflow-x: hidden; }
         body { font-family: 'Inter', sans-serif; }
 
         /* === CLAYMORPHISM BACKGROUND === */
-        .clay-bg { position: fixed; inset: 0; background: #0cad9d; overflow: hidden; }
+        .clay-bg { position: fixed; inset: 0; background: #0cad9d; overflow: hidden; z-index: 0; }
 
         .orb { position: absolute; width: 60vmax; height: 60vmax; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(147, 51, 234, 0.4), rgba(42, 157, 143, 0.2)); filter: blur(80px); animation: orbMove 25s infinite alternate ease-in-out; }
         .orb2 { width: 70vmax; height: 70vmax; background: radial-gradient(circle at 70% 70%, rgba(42, 157, 143, 0.35), rgba(157, 78, 221, 0.2)); animation: orbMove2 30s infinite alternate-reverse; }
@@ -95,7 +99,15 @@ export default function Login() {
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .center-wrapper { height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; overflow: hidden; }
+        
+        /* 🟢 FIXED: Changed to min-height and added overflow-y: auto for mobile scrolling */
+        .center-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; overflow-y: auto; overflow-x: hidden; position: relative; z-index: 10; }
+
+        /* 📱 MOBILE RESPONSIVENESS OVERRIDES */
+        @media (max-width: 480px) {
+          .clay-card { padding: 1.8rem 1.2rem; border-radius: 30px; }
+          .input-field { font-size: 16px; /* Prevents iOS auto-zoom on inputs */ }
+        }
       `}</style>
 
       <div className="clay-bg">
@@ -107,22 +119,22 @@ export default function Login() {
       <div className="center-wrapper">
         <form onSubmit={handleSubmit} className="clay-card">
           
-          {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '1.8rem' }}>🌱</span>
+          {/* 🟢 Header Centered */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', textAlign: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <img src={logoHV} alt="HortiVerse Logo" style={{ height: '32px', width: 'auto' }} />
               <span style={{ color: 'white', fontWeight: 700, fontSize: '1.3rem', letterSpacing: '-0.5px' }}>
                 Horti<span style={{ color: accent }}>Verse</span>
               </span>
             </div>
+            
+            <h1 style={{ color: 'white', fontSize: '1.8rem', fontWeight: 600, lineHeight: 1.2 }}>
+              Welcome <span style={{ color: accent }}>back</span>
+            </h1>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', marginTop: '0.3rem' }}>
+              Sign in to continue your green journey.
+            </p>
           </div>
-
-          <h1 style={{ color: 'white', fontSize: '1.8rem', fontWeight: 600, lineHeight: 1.2 }}>
-            Welcome <span style={{ color: accent }}>back</span>
-          </h1>
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', marginTop: '0.3rem', marginBottom: '1.5rem' }}>
-            Sign in to continue your green journey.
-          </p>
 
           {/* Error Message */}
           {error && (

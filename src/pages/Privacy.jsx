@@ -27,26 +27,41 @@ export default function Privacy() {
         
         .policy-section { margin-bottom: 40px; }
         .policy-section h3 { font-family: 'Fraunces', serif; font-size: 22px; color: #7e22ce; margin-bottom: 12px; font-weight: 800; }
-        .policy-section p { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; color: #475569; line-height: 1.8; }
+        .policy-section p { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(15px, 3vw, 16px); color: #475569; line-height: 1.8; text-align: justify; }
+
+        /* 🟢 FIXED: Mobile responsiveness and padding */
+        @media (max-width: 768px) {
+          .animated-card { 
+            padding: 40px 24px; 
+            border-radius: 24px;
+          }
+          .header-section {
+            padding: 100px 20px 40px !important;
+          }
+          .policy-section {
+            margin-bottom: 30px;
+          }
+        }
       `}</style>
 
       {/* 🟢 FLEX WRAPPER */}
       <div style={{ flex: 1, paddingBottom: 80 }}>
         
-        <div style={{ paddingTop: 120, paddingBottom: 60, textAlign: "center", padding: "120px 20px 60px" }}>
+        <div className="header-section" style={{ textAlign: "center", padding: "140px 20px 60px" }}>
           <span style={{ display:"inline-block", background:"rgba(147, 51, 234, 0.1)", color:"#7e22ce", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:13, fontWeight:800, letterSpacing:".1em", textTransform:"uppercase", padding:"8px 24px", borderRadius:50, marginBottom:20 }}>
             Legal
           </span>
-          <h1 className="fr" style={{ fontSize: "clamp(40px, 6vw, 64px)", fontWeight: 900, color: "#0f172a", lineHeight: 1.1 }}>
+          <h1 className="fr" style={{ fontSize: "clamp(36px, 6vw, 64px)", fontWeight: 900, color: "#0f172a", lineHeight: 1.1 }}>
             Privacy <span style={{ color: "#7e22ce" }}>Policy</span>
           </h1>
           <p className="jk" style={{ fontSize: 16, color: "#64748b", marginTop: 20, fontWeight: 500 }}>Last updated: March 2026</p>
         </div>
 
-        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 20px" }}>
           <div className="animated-card">
             
-            <p className="jk" style={{ fontSize: 17, color: "#334155", lineHeight: 1.8, marginBottom: 40 }}>
+            {/* 🟢 FIXED: Text justified */}
+            <p className="jk" style={{ fontSize: "clamp(15px, 3vw, 17px)", color: "#334155", lineHeight: 1.8, marginBottom: 40, textAlign: "justify" }}>
               At HortiVerse, we deeply respect the privacy of our community. This policy outlines how we handle the information you provide when using our platform to share agricultural knowledge.
             </p>
 
@@ -71,7 +86,7 @@ export default function Privacy() {
             </div>
 
             <div style={{ marginTop: 50, paddingTop: 30, borderTop: "1px solid #e2e8f0", textAlign: "center" }}>
-              <p className="jk" style={{ color: "#64748b", fontSize: 15 }}>If you have questions about your data, contact us at privacy@hortiverse.com</p>
+              <p className="jk" style={{ color: "#64748b", fontSize: "clamp(14px, 3vw, 15px)" }}>If you have questions about your data, contact us at privacy@hortiverse.com</p>
             </div>
 
           </div>
