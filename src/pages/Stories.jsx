@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../apiConfig';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Footer from '../components/Footer'; // Adjust this path if your folder structure is different!
 
 // 🟢 NEW: Added the URL Formatter Helper Function
@@ -118,14 +118,14 @@ function UploadStoryModal({ onClose, onSuccess, user }) {
                 </div>
               )}
 
-              <div style={{ display: "flex", gap: 20, marginBottom: 20 }}>
-                <div style={{ flex: 2 }}>
+              <div style={{ display: "flex", gap: 20, marginBottom: 20, flexWrap: "wrap" }}>
+                <div style={{ flex: "1 1 250px" }}>
                   <label style={LABEL}>Title <span style={{ color:"#ef4444" }}>*</span></label>
                   <input className="input-modern" placeholder="Give your story a catchy title…"
                     value={title} onChange={e=>{setTitle(e.target.value);setError("");}}
                   />
                 </div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: "1 1 150px" }}>
                   <label style={LABEL}>Topic Tag</label>
                   <select className="input-modern" value={tag} onChange={e=>setTag(e.target.value)} style={{ appearance: "none" }}>
                     <option value="Agriculture">Agriculture</option>
@@ -137,14 +137,14 @@ function UploadStoryModal({ onClose, onSuccess, user }) {
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: 20, marginBottom: 20 }}>
-                <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", gap: 20, marginBottom: 20, flexWrap: "wrap" }}>
+                <div style={{ flex: "1 1 200px" }}>
                   <label style={LABEL}>Author Name</label>
                   <input className="input-modern" placeholder="Your name…"
                     value={author} onChange={e=>setAuthor(e.target.value)}
                   />
                 </div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: "1 1 200px" }}>
                   <label style={LABEL}>Cover Image URL <span style={{ color:"#94a3b8", fontWeight:500, textTransform:"none", letterSpacing:0 }}>(optional)</span></label>
                   <input className="input-modern" placeholder="https://example.com/image.jpg"
                     value={imgUrl} onChange={e=>setImgUrl(e.target.value)}
@@ -408,7 +408,6 @@ export default function Stories() {
 
         .modal-overlay { position: fixed; top: 72px; left: 0; right: 0; bottom: 0; z-index: 450; background: rgba(15, 23, 42, 0.35); backdrop-filter: blur(24px); display: flex; justify-content: center; align-items: center; padding: 40px 20px; animation: fadeIn .3s ease-out; }
         
-        /* 🟢 FIX: PREVENT HORIZONTAL OVERFLOW */
         .modal-box { background: #ffffff; border-radius: 24px; width: 100%; max-width: 800px; max-height: 100%; display: flex; flex-direction: column; position: relative; overflow-x: hidden; overflow-y: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3); animation: slideUp .4s cubic-bezier(0.16, 1, 0.3, 1); }
         .modal-scroll-area { overflow-y: auto; overflow-x: hidden; flex-grow: 1; width: 100%; word-break: break-word; overscroll-behavior: contain; }
         
@@ -426,10 +425,20 @@ export default function Stories() {
 
         .tag-badge { display: inline-block; background: rgba(16, 185, 129, 0.9); color: #ffffff; backdrop-filter: blur(4px); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 6px 14px; border-radius: 50px; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 14px; color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        /* 📱 MOBILE RESPONSIVENESS OVERRIDES */
+        @media (max-width: 768px) {
+          .modal-overlay { padding: 10px !important; align-items: flex-end; }
+          .modal-box { border-radius: 24px 24px 0 0 !important; max-height: 90vh !important; }
+          .modal-scroll-area { padding: 24px 20px !important; }
+          .search-container { padding: 0 15px; }
+          main > div > div { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       {/* ══ PAGE HEADER ══ */}
-      <div style={{ paddingTop: 30, background: "transparent" }}>
+      {/* 🟢 CHANGED: Increased paddingTop from 30 to 120 so the Navbar doesn't cover the title */}
+      <div style={{ paddingTop: 120, background: "transparent" }}>
         <div style={{ maxWidth: 800, margin: "0 auto", padding: "20px 24px 0px", textAlign: "center" }}>
           <h1 className="fr" style={{ fontSize: "clamp(35px, 5vw, 60px)", fontWeight: 900, color: "#112a0f", lineHeight: 1.1, letterSpacing: "-1px" }}>
             Explore ideas, research, and <br/> <span style={{ color:"#059669" }}>agricultural stories.</span>
@@ -476,7 +485,8 @@ export default function Stories() {
               </p>
             )}
 
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))", gap: 32 }}>
+            {/* 🟢 CHANGED: minmax updated to 280px to prevent horizontal scrolling on small phones */}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap: 32 }}>
               {filtered.map((s, i) => {
                 const shortTitle = s.title.length > 60 ? s.title.substring(0, 65).trim() + "..." : s.title;
 

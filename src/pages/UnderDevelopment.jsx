@@ -55,6 +55,18 @@ export default function UnderDevelopment() {
   const hillsRef = useRef(null);
   const cloudsRef = useRef(null);
 
+  // 🟢 FIXED: Defined handleGameOver BEFORE the game loop so it doesn't cause a ReferenceError
+  const handleGameOver = useCallback(() => {
+    setGameState('gameover');
+    cancelAnimationFrame(requestRef.current);
+    
+    const finalScore = Math.floor(engine.current.scoreTracker);
+    if (finalScore > highScore) {
+      setHighScore(finalScore);
+      localStorage.setItem('hortiverse_highscore', finalScore.toString());
+    }
+  }, [highScore]);
+
   // ══════════════════════════════════════════════════════════════════════════
   // CORE GAME LOOP (Runs ~60 times per second)
   // ══════════════════════════════════════════════════════════════════════════
@@ -170,7 +182,8 @@ export default function UnderDevelopment() {
 
     // Loop
     requestRef.current = requestAnimationFrame(updateGame);
-  }, [gameState, dayPhase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState, dayPhase, handleGameOver]);
 
 
   // --- BATCH DOM RENDERER ---
@@ -236,18 +249,7 @@ export default function UnderDevelopment() {
     requestRef.current = requestAnimationFrame(updateGame);
   };
 
-  const handleGameOver = () => {
-    setGameState('gameover');
-    cancelAnimationFrame(requestRef.current);
-    
-    const finalScore = Math.floor(engine.current.scoreTracker);
-    if (finalScore > highScore) {
-      setHighScore(finalScore);
-      localStorage.setItem('hortiverse_highscore', finalScore.toString());
-    }
-  };
-
-  const handleInteraction = (e) => {
+  const handleInteraction = useCallback((e) => {
     if (e && e.type === 'keydown') {
       if (e.code !== 'Space' && e.code !== 'ArrowUp') return;
       e.preventDefault(); 
@@ -257,7 +259,8 @@ export default function UnderDevelopment() {
     } else {
       jump();
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleInteraction);
@@ -265,7 +268,7 @@ export default function UnderDevelopment() {
       window.removeEventListener('keydown', handleInteraction);
       cancelAnimationFrame(requestRef.current);
     };
-  }, [gameState]);
+  }, [handleInteraction]);
 
   useEffect(() => {
     if (gameState === 'playing') {
@@ -298,7 +301,6 @@ export default function UnderDevelopment() {
           50% { opacity: 1; transform: scale(1.05); }
         }
 
-        /* 🟢 THE FIX: Forced min-height stops the game from being squished by the footer! */
         .game-world {
           flex: 1; 
           min-height: 500px; 
@@ -307,6 +309,8 @@ export default function UnderDevelopment() {
           cursor: pointer;
           user-select: none;
           transition: background 3s ease-in-out;
+          /* Prevents tap highlight on mobile phones */
+          -webkit-tap-highlight-color: transparent;
         }
 
         /* Dynamic Environment Colors */
@@ -352,8 +356,9 @@ export default function UnderDevelopment() {
         }
 
         /* UI Overlays */
+        /* 🟢 CHANGED: top: 100px so it clears the Navbar */
         .hud-scores {
-          position: absolute; top: 40px; right: 50px; z-index: 30;
+          position: absolute; top: 100px; right: 50px; z-index: 30;
           font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 800;
           text-shadow: 0 2px 10px rgba(255,255,255,1); display: flex; gap: 30px;
           transition: color 2s;
@@ -373,7 +378,12 @@ export default function UnderDevelopment() {
           border-radius: 32px; padding: 60px 80px;
           box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.2);
           animation: popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          max-width: 700px; width: 100%;
+          max-width: 700px; width: 100%; margin-top: 50px;
+        }
+
+        .score-display {
+          background: #f8faf9; padding: 24px 40px; border-radius: 24px; 
+          border: 1px solid #e2e8f0; display: inline-block; margin-bottom: 30px;
         }
 
         .pulse-text {
@@ -392,8 +402,20 @@ export default function UnderDevelopment() {
         .btn-exit:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); background: #ffffff; }
 
         /* Floating button for active gameplay */
+        /* 🟢 CHANGED: top: 100px so it clears the Navbar */
         .btn-exit-floating {
-          position: absolute; top: 40px; left: 50px;
+          position: absolute; top: 100px; left: 50px;
+        }
+
+        /* 📱 MOBILE RESPONSIVENESS */
+        @media (max-width: 768px) {
+          .menu-card { padding: 30px 20px !important; border-radius: 20px !important; margin-top: 60px; }
+          .hud-scores { top: 90px !important; right: 20px !important; font-size: 20px !important; gap: 15px !important; }
+          .btn-exit-floating { top: 90px !important; left: 20px !important; padding: 10px 16px !important; font-size: 12px !important; }
+          .celestial-body { font-size: 50px !important; }
+          .pulse-text { font-size: 14px !important; margin-top: 20px; }
+          .score-display { padding: 16px 24px !important; border-radius: 16px !important; }
+          .score-display p:last-child { font-size: 36px !important; }
         }
       `}</style>
 
@@ -401,17 +423,29 @@ export default function UnderDevelopment() {
       <main 
         className={`game-world theme-${dayPhase}`} 
         onClick={handleInteraction}
+        /* 🟢 ADDED: onTouchStart gives instant mobile jump responses without the 300ms click delay */
+        onTouchStart={(e) => { 
+          // Only prevent default if they didn't tap a button inside the game world
+          if(e.target.tagName !== 'BUTTON') {
+             e.preventDefault(); 
+             handleInteraction();
+          }
+        }}
       >
         
         {/* Escape Button (Only visible during gameplay so user isn't trapped) */}
         {gameState === 'playing' && (
-          <button className="btn-exit btn-exit-floating" onClick={(e) => { e.stopPropagation(); navigate('/'); }}>
+          <button 
+            className="btn-exit btn-exit-floating" 
+            onClick={(e) => { e.stopPropagation(); navigate('/'); }}
+            onTouchStart={(e) => { e.stopPropagation(); navigate('/'); }}
+          >
             <span>🔙</span> Exit Simulator
           </button>
         )}
 
         {/* Live HUD */}
-        <div className="hud-overlay">
+        <div className="hud-overlay hud-scores">
           <span style={{ color: dayPhase === 'night' ? '#94a3b8' : '#64748b' }}>
             HI {String(highScore).padStart(5, '0')}
           </span>
@@ -450,17 +484,21 @@ export default function UnderDevelopment() {
               <span style={{ display:"inline-block", background:"#ecfdf5", color:"#059669", fontSize:12, fontWeight:800, letterSpacing:".1em", textTransform:"uppercase", padding:"8px 24px", borderRadius:50, marginBottom:20, border: "1px solid #d1fae5" }}>
                 Under Construction
               </span>
-              <h1 className="fr" style={{ fontSize: "clamp(40px, 6vw, 64px)", color: "#0f172a", fontWeight: 900, marginBottom: 16, lineHeight: 1.1 }}>
+              <h1 className="fr" style={{ fontSize: "clamp(36px, 6vw, 64px)", color: "#0f172a", fontWeight: 900, marginBottom: 16, lineHeight: 1.1 }}>
                 Tractor Run! 🚜
               </h1>
-              <p className="jk" style={{ fontSize: 18, color: "#475569", fontWeight: 500, lineHeight: 1.6, marginBottom: 10 }}>
+              <p className="jk" style={{ fontSize: "clamp(14px, 3vw, 18px)", color: "#475569", fontWeight: 500, lineHeight: 1.6, marginBottom: 10 }}>
                 The Community dashboard is currently being engineered. In the meantime, jump the terrain and set a high score!
               </p>
               
               <div className="pulse-text">Press Space or Tap to Start</div>
               
               <div style={{ marginTop: 40 }}>
-                <button className="btn-exit" onClick={(e) => { e.stopPropagation(); navigate('/'); }}>
+                <button 
+                  className="btn-exit" 
+                  onClick={(e) => { e.stopPropagation(); navigate('/'); }}
+                  onTouchStart={(e) => { e.stopPropagation(); navigate('/'); }}
+                >
                   Return to Homepage
                 </button>
               </div>
@@ -473,9 +511,9 @@ export default function UnderDevelopment() {
           <div className="glass-menu" style={{ background: "rgba(15, 23, 42, 0.4)" }}>
             <div className="menu-card">
               <div style={{ fontSize: 70, marginBottom: 10 }}>💥</div>
-              <h2 className="fr" style={{ fontSize: 42, fontWeight: 900, color: "#ef4444", marginBottom: 20 }}>Tractor Crashed!</h2>
+              <h2 className="fr" style={{ fontSize: "clamp(32px, 5vw, 42px)", fontWeight: 900, color: "#ef4444", marginBottom: 20 }}>Tractor Crashed!</h2>
               
-              <div style={{ background: "#f8faf9", padding: "24px 40px", borderRadius: 24, border: "1px solid #e2e8f0", display: "inline-block", marginBottom: 30 }}>
+              <div className="score-display">
                 <p style={{ fontSize: 14, color: "#64748b", fontWeight: 800, textTransform: "uppercase", letterSpacing: "2px", marginBottom: 8 }}>Final Score</p>
                 <p style={{ fontSize: 48, color: "#0f172a", fontWeight: 900, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>{score}</p>
               </div>
@@ -483,7 +521,11 @@ export default function UnderDevelopment() {
               <div className="pulse-text">Press Space or Tap to Restart</div>
 
               <div style={{ marginTop: 40 }}>
-                <button className="btn-exit" onClick={(e) => { e.stopPropagation(); navigate('/'); }}>
+                <button 
+                  className="btn-exit" 
+                  onClick={(e) => { e.stopPropagation(); navigate('/'); }}
+                  onTouchStart={(e) => { e.stopPropagation(); navigate('/'); }}
+                >
                   Abandon Tractor & Return Home
                 </button>
               </div>

@@ -4,15 +4,18 @@ import logo from '../assests/logoHV.png';
 
 export default function Footer() {
   return (
-    <footer style={{ background:"linear-gradient(180deg, #064e3b 0%, #022c22 100%)", padding:"40px 52px 20px", color: "#f8fafc", width: "100%" }}>
+    <footer className="w-full text-slate-50 px-6 py-8 md:px-[52px] md:pt-10 md:pb-5" style={{ background:"linear-gradient(180deg, #064e3b 0%, #022c22 100%)" }}>
       
-      {/* 🟢 NEW: Style block for Logo and Social Icon Hover Effects */}
+      {/* 🟢 Style block for Logo and Social Icon Hover Effects */}
       <style>{`
         .footer-logo {
-          height: 50px; /* Reduced from 85px to fit compact footer */
+          height: 40px; /* Slightly smaller for mobile */
           width: auto;
           object-fit: contain;
           transition: transform 0.3s ease;
+        }
+        @media (min-width: 768px) {
+          .footer-logo { height: 50px; }
         }
         .footer-logo:hover {
           transform: scale(1.1);
@@ -22,7 +25,7 @@ export default function Footer() {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 36px; /* Slightly smaller */
+          width: 36px; 
           height: 36px;
           border-radius: 50%;
           background: rgba(255, 255, 255, 0.08);
@@ -37,22 +40,27 @@ export default function Footer() {
         }
       `}</style>
 
-      <div style={{ maxWidth:1200, margin:"0 auto" }}>
-        {/* Reduced gap and marginBottom for compactness */}
-        <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr", gap:40, marginBottom:30 }}>
+      <div className="max-w-7xl mx-auto w-full">
+        {/* 🟢 Tailwind Grid: 1 column on mobile, 3 columns on tablet/desktop */}
+        {/* 🔥 FIX: Changed gap-10 to gap-6 for mobile so it's much more compact */}
+        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-6 md:gap-10 mb-8 md:mb-8">
           
           {/* ── LEFT COLUMN: Brand & Socials ── */}
-          <div>
-            <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:12 }}>
+          <div className="flex flex-col items-center md:items-start text-center md:text-left">
+            <div className="flex items-center gap-3 mb-3 md:mb-3">
               <img src={logo} alt="HortiVerse Logo" className="footer-logo" />
-              <span className="fr" style={{ fontFamily: "'Fraunces', serif", fontSize:24, fontWeight:800, color:"#ffffff" }}>Horti<span style={{ color:"#34d399" }}>Verse</span></span>
+              {/* 🔥 FIX: Reduced text size on mobile to text-2xl */}
+              <span className="font-['Fraunces'] text-2xl md:text-2xl font-extrabold text-white">
+                Horti<span className="text-emerald-400">Verse</span>
+              </span>
             </div>
-            <p className="jk" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize:14, color:"#94a3b8", lineHeight:1.6, maxWidth:320, fontWeight:400 }}>
+            <p className="font-['Plus_Jakarta_Sans'] text-[14px] md:text-sm text-slate-400 leading-[1.6] max-w-[320px] font-medium">
               A thriving community of horticulture students sharing knowledge and sustainable farming practices worldwide.
             </p>
             
             {/* 🟢 Social Media Icons Block */}
-            <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+            {/* 🔥 FIX: Removed massive top margin on mobile */}
+            <div className="flex justify-center md:justify-start gap-2.5 mt-4">
               <a href="https://instagram.com" target="_blank" rel="noreferrer" className="social-link" title="Instagram">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
@@ -88,27 +96,28 @@ export default function Footer() {
           </div>
 
           {/* ── MIDDLE COLUMN: Explore ── */}
-          <div>
-            <h4 className="jk" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize:12, letterSpacing:".15em", color:"#34d399", marginBottom:16, textTransform:"uppercase", fontWeight:800 }}>Explore</h4>
-            <a href="/stories" className="jk" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:14, marginBottom:10, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>Stories</a>
-            <a href="/topics" className="jk" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:14, marginBottom:10, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>Topics</a>
-            <a href="/resources" className="jk" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:14, marginBottom:10, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>Resources</a>
+          {/* 🔥 FIX: Tightened spacing below headers */}
+          <div className="flex flex-col items-center md:items-start text-center md:text-left">
+            <h4 className="font-['Plus_Jakarta_Sans'] text-[11px] md:text-xs tracking-[.15em] text-emerald-400 mb-3 uppercase font-extrabold">Explore</h4>
+            <a href="/stories" className="font-['Plus_Jakarta_Sans'] block text-slate-300 no-underline text-[14px] md:text-sm mb-2 font-medium transition-colors hover:text-white">Stories</a>
+            <a href="/topics" className="font-['Plus_Jakarta_Sans'] block text-slate-300 no-underline text-[14px] md:text-sm mb-2 font-medium transition-colors hover:text-white">Topics</a>
+            <a href="/resources" className="font-['Plus_Jakarta_Sans'] block text-slate-300 no-underline text-[14px] md:text-sm mb-2 font-medium transition-colors hover:text-white">Resources</a>
           </div>
 
           {/* ── RIGHT COLUMN: Support ── */}
-          <div>
-            <h4 className="jk" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize:12, letterSpacing:".15em", color:"#34d399", marginBottom:16, textTransform:"uppercase", fontWeight:800 }}>Support</h4>
-            <a href="/about" className="jk" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:14, marginBottom:10, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>About Us</a>
-            <a href="/help" className="jk" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:14, marginBottom:10, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>Help Center</a>
-            <a href="/privacy" className="jk" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:14, marginBottom:10, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>Privacy Policy</a>
+          <div className="flex flex-col items-center md:items-start text-center md:text-left">
+            <h4 className="font-['Plus_Jakarta_Sans'] text-[11px] md:text-xs tracking-[.15em] text-emerald-400 mb-3 uppercase font-extrabold">Support</h4>
+            <a href="/about" className="font-['Plus_Jakarta_Sans'] block text-slate-300 no-underline text-[14px] md:text-sm mb-2 font-medium transition-colors hover:text-white">About Us</a>
+            <a href="/help" className="font-['Plus_Jakarta_Sans'] block text-slate-300 no-underline text-[14px] md:text-sm mb-2 font-medium transition-colors hover:text-white">Help Center</a>
+            <a href="/privacy" className="font-['Plus_Jakarta_Sans'] block text-slate-300 no-underline text-[14px] md:text-sm mb-2 font-medium transition-colors hover:text-white">Privacy Policy</a>
           </div>
 
         </div>
         
         {/* ── BOTTOM ROW: Copyright ── */}
-        <div style={{ borderTop:"1px solid rgba(255,255,255,0.1)", paddingTop:20, display:"flex", justifyContent:"space-between", flexWrap: "wrap", gap: "10px" }}>
-          <p className="jk" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize:12, color:"#64748b", fontWeight:500 }}>© 2026 HortiVerse. All rights reserved.</p>
-          <p className="jk" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize:12, color:"#64748b", fontWeight:500 }}>Made with 🌿 for horticulture students everywhere</p>
+        <div className="border-t border-white/10 pt-5 flex flex-col md:flex-row justify-between items-center gap-2 text-center md:text-left">
+          <p className="font-['Plus_Jakarta_Sans'] text-[12px] text-slate-400 font-medium">© 2026 HortiVerse. All rights reserved.</p>
+          <p className="font-['Plus_Jakarta_Sans'] text-[12px] text-slate-400 font-medium">Made with 🌿 for horticulture students everywhere</p>
         </div>
       </div>
     </footer>

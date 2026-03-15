@@ -102,18 +102,18 @@ function UploadTopicModal({ onClose, onSuccess }) {
                 </div>
               )}
 
-              <div style={{ display: "flex", gap: 20, marginBottom: 16 }}>
+              <div style={{ display: "flex", gap: 20, marginBottom: 16, flexWrap: "wrap" }}>
                 <div style={{ width: "80px" }}>
                   <label style={LABEL}>Icon</label>
                   <input className="input-modern" style={{ textAlign: "center", fontSize: "24px", padding: "8px" }} value={icon} onChange={e=>setIcon(e.target.value)} maxLength={2} />
                 </div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: "1 1 200px" }}>
                   <label style={LABEL}>Topic Name <span style={{ color:"#ef4444" }}>*</span></label>
                   <input className="input-modern" placeholder="e.g., Nursery Management" value={label} onChange={e=>{setLabel(e.target.value);setError("");}} />
                 </div>
               </div>
 
-              {/* 🟢 NEW: ICON PACK SELECTION AREA */}
+              {/* 🟢 ICON PACK SELECTION AREA */}
               <div style={{ marginBottom: 24 }}>
                 <label style={LABEL}>Quick Icon Select</label>
                 <div style={{ 
@@ -154,7 +154,7 @@ function UploadTopicModal({ onClose, onSuccess }) {
 
               <div style={{ marginBottom:20 }}>
                 <label style={LABEL}>Skeleton / Content <span style={{ color:"#ef4444" }}>*</span></label>
-                <p style={{ fontSize: 12, color: "#64748b", marginBottom: 8, fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+                <p style={{ fontSize: 12, color: "#64748b", marginBottom: 8, fontFamily:"'Plus Jakarta Sans',sans-serif", lineHeight: 1.5 }}>
                   💡 <strong>Pro Tip:</strong> Type <code>##</code> before a Main Heading, and <code>-</code> before a subheading to auto-generate a Course Skeleton! Add descriptions right below them.
                 </p>
                 <textarea className="input-modern" style={{ resize:"vertical", lineHeight:1.6, minHeight: "180px", fontFamily: "monospace" }}
@@ -241,7 +241,6 @@ export default function Topics() {
 
   // ADVANCED SKELETON PARSER LOGIC
   const renderTopicContent = (text, accentColor) => {
-    // If no ## exists, just render normal paragraphs
     if (!text.includes("##")) {
       return text.split("\n\n").map((para, i) => (
         <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} style={{ wordBreak: 'break-word' }} />
@@ -495,18 +494,28 @@ export default function Topics() {
           margin-top: 4px; 
           font-weight: 500; 
         }
+
+        /* 📱 MOBILE RESPONSIVENESS (ADDED) */
+        @media (max-width: 768px) {
+          .modal-overlay { padding: 10px !important; align-items: flex-end; }
+          .modal-box { border-radius: 24px 24px 0 0 !important; max-height: 90vh !important; }
+          .modal-scroll-area { padding: 24px 20px !important; }
+          .search-container { padding: 0 15px; }
+          main > div > div { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       {/* ══ PAGE HEADER ══ */}
-      <div style={{ paddingTop: 30, background: "transparent" }}>
+      {/* 🟢 CHANGED: Increased padding-top to 120px on desktop to clear the Navbar */}
+      <div style={{ paddingTop: 120, background: "transparent" }}>
         <div style={{ maxWidth: 800, margin: "0 auto", padding: "20px 24px 0px", textAlign: "center" }}>
           <span style={{ display:"inline-block", background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,1)", color:"#059669", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, fontWeight:800, letterSpacing:".1em", textTransform:"uppercase", padding:"8px 20px", borderRadius:50, marginBottom:24, boxShadow:"0 4px 12px rgba(0,0,0,0.03)" }}>
             Knowledge Hub
           </span>
-          <h1 className="fr" style={{ fontSize: "clamp(40px, 5vw, 60px)", fontWeight: 900, color: "#0f172a", lineHeight: 1.1, letterSpacing: "-1px" }}>
+          <h1 className="fr" style={{ fontSize: "clamp(32px, 6vw, 60px)", fontWeight: 900, color: "#0f172a", lineHeight: 1.1, letterSpacing: "-1px" }}>
             Explore agricultural <br/> <span style={{ color:"#059669" }}>disciplines.</span>
           </h1>
-          <p className="jk" style={{ marginTop: 20, fontSize: 18, color: "#475569", fontWeight: 500, lineHeight: 1.6, maxWidth: 600, margin: "20px auto 0" }}>
+          <p className="jk" style={{ marginTop: 20, fontSize: 16, color: "#475569", fontWeight: 500, lineHeight: 1.6, maxWidth: 600, margin: "20px auto 0" }}>
             Dive into specialized agricultural disciplines and explore our full curriculum structures.
           </p>
 
@@ -525,7 +534,7 @@ export default function Topics() {
         </div>
       </div>
 
-      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "100px 48px 100px", position: "relative", zIndex: 5 }}>
+      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "80px 20px 100px", position: "relative", zIndex: 5 }}>
         {loading ? (
           <div style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>Loading topics from database...</div>
         ) : (
@@ -536,7 +545,7 @@ export default function Topics() {
               </p>
             )}
 
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))", gap: 32 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
               {filtered.map((t) => (
                 <article key={t.id} className="topic-card" onClick={() => setSelected(t)} onMouseEnter={() => setHovered(t.id)} onMouseLeave={() => setHovered(null)}>
                   <div className="glow" style={{ background: t.accent }} />
@@ -548,11 +557,13 @@ export default function Topics() {
 
                   <h3 className="fr" style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", marginBottom: 12, lineHeight: 1.2, wordBreak: "break-word" }}>{t.label}</h3>
                   
-                  <p className="jk" style={{ fontSize: 15, color: "#475569", lineHeight: 1.6, fontWeight: 500, marginBottom: 24, flexGrow: 1, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word" }}>
+                  {/* 🟢 FIXED: Removed flexGrow: 1, set line-clamp to 3, prevents half-line cutting bug */}
+                  <p className="jk" style={{ fontSize: 15, color: "#475569", lineHeight: 1.6, fontWeight: 500, marginBottom: 24, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word" }}>
                     {(t.desc || "").replace(/#|[-*]/g, "")}
                   </p>
 
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
+                  {/* 🟢 FIXED: Added marginTop: "auto" to naturally push tags and footer down */}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24, marginTop: "auto" }}>
                     {t.subtopics && t.subtopics.slice(0,3).map((s) => (
                       <span key={s} className="subtopic-tag">{s}</span>
                     ))}
@@ -574,7 +585,7 @@ export default function Topics() {
               <div style={{ textAlign: "center", padding: "100px 0" }}>
                 <div style={{ fontSize: 64, marginBottom: 20 }}>🔍</div>
                 <h3 className="fr" style={{ fontSize: 28, color: "#0f172a", fontWeight: 800 }}>No topics found</h3>
-                <p className="jk" style={{ color: "#64748b", marginTop: 10, fontSize: 16 }}>We couldn't find anything matching your search.</p>
+                <p className="jk" style={{ color: "#64748b", mt: 10, fontSize: 16 }}>We couldn't find anything matching your search.</p>
                 <button className="btn-ghost" style={{ marginTop: 24, background:"rgba(255,255,255,0.8)" }} onClick={() => setSearch("")}>Clear Search</button>
               </div>
             )}
@@ -592,7 +603,7 @@ export default function Topics() {
             <button className="modal-close-btn" onClick={() => setSelected(null)}>✕</button>
             <div className="modal-scroll-area">
               <div style={{ 
-                padding: "48px 32px 24px", 
+                padding: "48px 24px 24px", 
                 background: `linear-gradient(180deg, ${selected.color} 0%, rgba(255,255,255,0) 100%)`, 
                 textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center"
               }}>
@@ -605,7 +616,7 @@ export default function Topics() {
                   {selected.label}
                 </h2>
               </div>
-              <div style={{ padding: "0 32px 48px" }}> 
+              <div style={{ padding: "0 24px 48px" }}> 
                 <div className="modal-article-content">
                   {renderTopicContent(selected.desc || "", selected.accent)}
                 </div>

@@ -453,9 +453,30 @@ export default function Resources() {
 
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         @keyframes slideUp { from{opacity:0;transform:translateY(40px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+        /* 📱 MOBILE RESPONSIVENESS OVERRIDES */
+        @media (max-width: 768px) {
+          .modal-overlay { padding: 10px !important; align-items: flex-end; }
+          .modal-box { border-radius: 24px 24px 0 0 !important; max-height: 90vh !important; }
+          .modal-scroll-area { padding: 24px 20px !important; }
+          .search-container { padding: 0 15px; }
+          
+          /* Ensures the filter pills scroll horizontally instead of stacking */
+          .filters-wrapper { 
+            flex-wrap: nowrap !important; 
+            overflow-x: auto; 
+            padding-bottom: 10px; 
+            -webkit-overflow-scrolling: touch; 
+          }
+          .fpill { white-space: nowrap; flex-shrink: 0; }
+          
+          /* Make grid 1 column on phones */
+          .cards-grid { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
-      <div style={{ paddingTop: 20, background: "transparent" }}>
+      {/* 🟢 CHANGED: Increased padding-top to 120px so Navbar doesn't overlap on Desktop */}
+      <div style={{ paddingTop: 120, background: "transparent" }}>
         <div style={{ maxWidth: 800, margin: "0 auto", padding: "20px 24px 0px", textAlign: "center" }}>
           <span style={{ display:"inline-block", background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,1)", color:"#059669", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, fontWeight:800, letterSpacing:".1em", textTransform:"uppercase", padding:"8px 20px", borderRadius:50, marginBottom:24, boxShadow:"0 4px 12px rgba(0,0,0,0.03)" }}>
             Knowledge Library
@@ -500,7 +521,8 @@ export default function Resources() {
         ) : (
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 40, flexWrap: "wrap", gap: 20 }}>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              {/* 🟢 CHANGED: Added class filters-wrapper for mobile scrolling */}
+              <div className="filters-wrapper" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 {FILTERS.map(f => (
                   <button key={f} className={`fpill ${activeFilter===f?"on":""}`} onClick={() => setActiveFilter(f)}>
                     {f !== "All" && <span style={{ fontSize: 16 }}>{TYPE_CONFIG[f].icon}</span>}
@@ -523,7 +545,8 @@ export default function Resources() {
               {search && <> for "<strong>{search}</strong>"</>}
             </p>
 
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+            {/* 🟢 CHANGED: Added class cards-grid and adjusted minmax for mobile */}
+            <div className="cards-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(320px, 1fr))", gap: 24 }}>
               {visibleResources.map((r) => {
                 const cfg = TYPE_CONFIG[r.type] || { icon: "📄", accent: "#475569", bg: "#f1f5f9" };
                 return (
@@ -553,12 +576,14 @@ export default function Resources() {
                         {r.institution && ` · ${r.institution}`}
                       </p>
 
-                      <p className="jk" style={{ fontSize: 14, color: "#64748b", lineHeight: 1.5, fontWeight: 500, marginBottom: 20, flexGrow: 1 }}>
-                        {(r.desc || "").substring(0, 90)}...
+                      {/* 🟢 FIXED: Removed flexGrow: 1 from description to prevent the text splitting bug */}
+                      <p className="jk" style={{ fontSize: 14, color: "#64748b", lineHeight: 1.5, fontWeight: 500, marginBottom: 20, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                        {r.desc || "No description available."}
                       </p>
 
+                      {/* 🟢 FIXED: Pushes button to bottom naturally */}
                       <a href={r.drive_link} target="_blank" rel="noopener noreferrer" 
-                        className="btn-green" style={{ width: "100%", justifyContent: "center", background: "rgba(255,255,255,0.8)", color: cfg.accent, border: `1px solid ${cfg.bg}`, padding: "10px", fontSize: 14 }}
+                        className="btn-green" style={{ width: "100%", justifyContent: "center", background: "rgba(255,255,255,0.8)", color: cfg.accent, border: `1px solid ${cfg.bg}`, padding: "10px", fontSize: 14, marginTop: "auto" }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = cfg.accent; e.currentTarget.style.color = "#fff"; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.8)"; e.currentTarget.style.color = cfg.accent; }}
                         onClick={(e) => e.stopPropagation()} 
@@ -604,7 +629,8 @@ export default function Resources() {
               <button className="modal-close-btn" onClick={() => setSelectedResource(null)}>✕</button>
               
               <div className="modal-scroll-area">
-                <div style={{ padding: "48px 48px 32px", background: `linear-gradient(180deg, ${cfg.bg} 0%, rgba(255,255,255,0) 100%)` }}>
+                {/* 🟢 Mobile tweak: Adjusted padding for phones */}
+                <div style={{ padding: "48px 24px 32px", background: `linear-gradient(180deg, ${cfg.bg} 0%, rgba(255,255,255,0) 100%)` }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
                     <div style={{ width: 64, height: 64, borderRadius: 16, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)" }}>
                       {cfg.icon}
@@ -617,7 +643,7 @@ export default function Resources() {
                     </div>
                   </div>
                   
-                  <h2 className="fr" style={{ fontSize: "clamp(28px, 4vw, 36px)", fontWeight: 900, color: "#0f172a", lineHeight: 1.2, marginBottom: 16 }}>
+                  <h2 className="fr" style={{ fontSize: "clamp(24px, 5vw, 36px)", fontWeight: 900, color: "#0f172a", lineHeight: 1.2, marginBottom: 16 }}>
                     {selectedResource.title}
                   </h2>
                   
@@ -627,7 +653,8 @@ export default function Resources() {
                   </p>
                 </div>
                 
-                <div style={{ padding: "0 48px 48px" }}>
+                {/* 🟢 Mobile tweak: Adjusted padding for phones */}
+                <div style={{ padding: "0 24px 48px" }}>
                   <div style={{ marginBottom: 40 }}>
                     <h4 className="jk" style={{ fontSize: 14, textTransform: "uppercase", letterSpacing: ".1em", color: "#94a3b8", fontWeight: 800, marginBottom: 12 }}>Description</h4>
                     <p className="jk" style={{ fontSize: 16, color: "#334155", lineHeight: 1.8, whiteSpace: "pre-wrap" }}>
