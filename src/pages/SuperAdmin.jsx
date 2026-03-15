@@ -1,6 +1,24 @@
 import { API_BASE_URL } from '../apiConfig';
 import { useState, useEffect } from "react";
 
+// 🟢 NEW: Added the URL Formatter Helper Function so the Admin Preview works with Drive Links
+const getDirectImageUrl = (url) => {
+  if (!url) return "https://via.placeholder.com/400x260?text=HortiVerse"; 
+
+  if (url.includes("drive.google.com")) {
+    let match = url.match(/\/d\/([a-zA-Z0-9_-]+)/); 
+    if (!match) match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/); 
+    
+    if (match && match[1]) {
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
+    }
+  }
+  return url;
+};
+
+// Predefined Sticker Library for Horticulture Topics
+const PREDEFINED_ICONS = ["🌿", "🌱", "🌾", "🚜", "💧", "🌻", "🍎", "🍅", "🌳", "🔬", "🐛", "☀️", "🌧️", "👨‍🌾", "👩‍🌾", "🪴"];
+
 export default function SuperAdmin() {
   const [stats, setStats] = useState({ users: 0, stories: 0, topics: 0, resources: 0 });
   const [users, setUsers] = useState([]);
@@ -18,11 +36,10 @@ export default function SuperAdmin() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // 🟢 Standardized all fetches to use API_BASE_URL and match your backend routes
       const [uRes, stRes, tRes, rRes, sRes, slRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/admin/users`),
-        fetch(`${API_BASE_URL}/api/stories`), // Fetches all stories
-        fetch(`${API_BASE_URL}/api/topics`),  // Fetches all topics
+        fetch(`${API_BASE_URL}/api/stories`), 
+        fetch(`${API_BASE_URL}/api/topics`),  
         fetch(`${API_BASE_URL}/api/resources`),
         fetch(`${API_BASE_URL}/api/stats`),
         fetch(`${API_BASE_URL}/api/slides`)
@@ -56,7 +73,6 @@ export default function SuperAdmin() {
 
   const deleteItem = async (type, id) => {
     if (!window.confirm(`Delete this ${type}?`)) return;
-    // 🟢 Matches your backend DELETE /api/admin/:type/:id
     const res = await fetch(`${API_BASE_URL}/api/admin/${type}/${id}`, { method: 'DELETE' });
     if (res.ok) fetchData();
   };
@@ -65,7 +81,6 @@ export default function SuperAdmin() {
     e.preventDefault();
     const { type, data } = editingItem;
     
-    // 🟢 Mapping singular type to the plural endpoints in your server.js
     let endpoint = 'resources';
     if (type === 'story') endpoint = 'stories';
     if (type === 'topic') endpoint = 'topics';
@@ -146,6 +161,9 @@ export default function SuperAdmin() {
         .slide-preview img { width: 100%; height: 100%; object-fit: cover; }
         .slide-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 20px; }
         .slide-del-btn { position: absolute; top: 12px; right: 12px; background: rgba(220,38,38,0.9); color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; backdrop-filter: blur(4px); }
+        
+        .sticker-btn { transition: all 0.2s; }
+        .sticker-btn:hover { transform: scale(1.1); background: #f1f5f9; }
       `}</style>
 
       <aside className="sidebar">
@@ -234,6 +252,11 @@ export default function SuperAdmin() {
                 <div style={{ flex: 2 }}>
                   <label className="form-label" style={{ marginTop: 0 }}>Image URL (Direct Link)</label>
                   <input className="form-input" placeholder="https://images.unsplash.com/..." value={newSlide.url} onChange={e => setNewSlide({...newSlide, url: e.target.value})} />
+                  
+                  {/* 🟢 NEW: Helpful hint below the input field */}
+                  <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, color:"#64748b", marginTop:6, fontWeight:500 }}>
+                    💡 Works with direct image URLs (.jpg, .png) or public Google Drive links.
+                  </p>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 16 }}>
@@ -248,11 +271,13 @@ export default function SuperAdmin() {
               </div>
               <button onClick={addSlide} style={{ marginTop: 16, width: '100%', padding: '16px', background: 'linear-gradient(135deg, #059669 0%, #10B981 100%)', color: 'white', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: 16, cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.3)' }}>+ Add Slide to Homepage</button>
             </div>
+            
             <h3 className="fr" style={{ fontSize: 24, marginBottom: 20 , color:"black"}}>Active Slider Preview</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
               {slides.map(s => (
                 <div key={s.id} className="slide-preview">
-                  <img src={s.image_url} alt="Slider Background" />
+                  {/* 🟢 NEW: Pass the image through the formatter for the preview */}
+                  <img src={getDirectImageUrl(s.image_url)} alt="Slider Background" />
                   <div className="slide-overlay">
                     <button className="slide-del-btn" onClick={() => deleteItem('slide', s.id)}>Remove Slide</button>
                     <h4 className="fr" style={{ color: 'white', fontSize: 22, margin: 0 }}>{s.caption}</h4>
@@ -270,6 +295,7 @@ export default function SuperAdmin() {
           <div className="edit-card">
             <h2 className="fr" style={{ fontSize: 32, color: '#0f172a', marginTop: 0, marginBottom: 32 }}>Edit Content</h2>
             <form onSubmit={handleUpdate}>
+              
               <label className="form-label">Title / Label</label>
               <input className="form-input" value={editingItem.data.title || editingItem.data.label || ""} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, [editingItem.data.label ? 'label' : 'title']: e.target.value}})} />
               
@@ -277,6 +303,14 @@ export default function SuperAdmin() {
                 <>
                   <label className="form-label">Author</label>
                   <input className="form-input" value={editingItem.data.author} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, author: e.target.value}})} />
+                  
+                  <label className="form-label">Image URL</label>
+                  <input className="form-input" value={editingItem.data.image_url || ""} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, image_url: e.target.value}})} />
+                  {/* 🟢 NEW: Helpful hint below the Edit modal input */}
+                  <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, color:"#64748b", marginTop:4, fontWeight:500 }}>
+                    💡 Works with direct image URLs (.jpg, .png) or public Google Drive links.
+                  </p>
+
                   <label className="form-label">Story Content</label>
                   <textarea className="form-input" rows="6" value={editingItem.data.content} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, content: e.target.value}})} />
                 </>
@@ -285,9 +319,44 @@ export default function SuperAdmin() {
               {editingItem.type === 'topic' && (
                 <>
                   <label className="form-label">Icon (Emoji)</label>
-                  <input className="form-input" value={editingItem.data.icon} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, icon: e.target.value}})} />
+                  <input className="form-input" style={{ marginBottom: '8px' }} value={editingItem.data.icon} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, icon: e.target.value}})} />
+                  
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', background: '#f8faf9', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+                    <span style={{ width: '100%', fontSize: '12px', color: '#64748b', fontWeight: 600, marginBottom: '4px', fontFamily: 'Plus Jakarta Sans' }}>Or choose from library:</span>
+                    {PREDEFINED_ICONS.map(icon => (
+                      <div 
+                        key={icon}
+                        className="sticker-btn"
+                        onClick={() => setEditingItem({...editingItem, data: {...editingItem.data, icon: icon}})}
+                        style={{
+                          fontSize: '24px',
+                          cursor: 'pointer',
+                          padding: '6px 10px',
+                          borderRadius: '8px',
+                          background: editingItem.data.icon === icon ? '#dcfce7' : 'transparent',
+                          border: editingItem.data.icon === icon ? '1px solid #10b981' : '1px solid transparent',
+                        }}
+                      >
+                        {icon}
+                      </div>
+                    ))}
+                  </div>
+
                   <label className="form-label">Description</label>
                   <textarea className="form-input" rows="6" value={editingItem.data.description} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, description: e.target.value}})} />
+                </>
+              )}
+
+              {editingItem.type === 'resource' && (
+                <>
+                  <label className="form-label">Google Drive Link</label>
+                  <input className="form-input" value={editingItem.data.drive_link || ""} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, drive_link: e.target.value}})} />
+                  
+                  <label className="form-label">Author / Source</label>
+                  <input className="form-input" value={editingItem.data.author || ""} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, author: e.target.value}})} />
+                  
+                  <label className="form-label">Description</label>
+                  <textarea className="form-input" rows="4" value={editingItem.data.desc || ""} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, desc: e.target.value}})} />
                 </>
               )}
 

@@ -2,6 +2,25 @@ import { API_BASE_URL } from '../apiConfig';
 import { useState, useEffect } from "react";
 import Footer from '../components/Footer'; // Adjust this path if your folder structure is different!
 
+// 🟢 NEW: Added the URL Formatter Helper Function
+/* ── helper: convert Drive links to direct image links ── */
+const getDirectImageUrl = (url) => {
+  if (!url) return "https://images.unsplash.com/photo-1592982537447-6f2a6a0c5c4f?auto=format&fit=crop&w=800&q=80"; // Fallback
+
+  // If it's a Google Drive link, extract the ID and make it a direct image
+  if (url.includes("drive.google.com")) {
+    let match = url.match(/\/d\/([a-zA-Z0-9_-]+)/); // Matches /d/ID/
+    if (!match) match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/); // Matches ?id=ID
+    
+    if (match && match[1]) {
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
+    }
+  }
+  
+  // If it's a normal URL (like Unsplash), just return it
+  return url;
+};
+
 const avatarColors = ["#059669","#047857","#10b981","#34d399","#065f46","#064e3b"];
 
 /* ─── UPLOAD MODAL ──────────────────────────────────────── */
@@ -37,7 +56,7 @@ function UploadStoryModal({ onClose, onSuccess, user }) {
     };
 
     try {
-      const res = await fetch("https://hortiverse-backend.onrender.com/api/stories", {
+      const res = await fetch(`${API_BASE_URL}/api/stories`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -130,6 +149,10 @@ function UploadStoryModal({ onClose, onSuccess, user }) {
                   <input className="input-modern" placeholder="https://example.com/image.jpg"
                     value={imgUrl} onChange={e=>setImgUrl(e.target.value)}
                   />
+                  {/* 🟢 NEW: Helpful hint below the input field */}
+                  <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, color:"#64748b", marginTop:6, fontWeight:500, lineHeight: 1.4 }}>
+                    💡 Works with direct image URLs (.jpg, .png) or public Google Drive links.
+                  </p>
                 </div>
               </div>
 
@@ -167,7 +190,7 @@ export default function Stories() {
   const [loading, setLoading] = useState(true);
   const [selectedStory, setSelectedStory] = useState(null);
   const [searchQuery,   setSearchQuery]   = useState("");
-  const [showUpload,    setShowUpload]    = useState(false); // 🟢 Controls the upload modal
+  const [showUpload,    setShowUpload]    = useState(false); // Controls the upload modal
 
   // Comments State
   const [showComments, setShowComments] = useState(false);
@@ -177,14 +200,14 @@ export default function Stories() {
 
   // Get the unique ID we generated in App.js
   const visitorId = localStorage.getItem("hv_visitor_id") || "guest_fallback";
-  // 🟢 Check if a real user is logged in
+  // Check if a real user is logged in
   const loggedInUser = JSON.parse(localStorage.getItem("hv_user"));
 
   // Fetch stories on mount
   useEffect(() => {
     const fetchStories = async () => {
       try {
-        const res = await fetch(`https://hortiverse-backend.onrender.com/api/stories?visitorId=${visitorId}`);
+        const res = await fetch(`${API_BASE_URL}/api/stories?visitorId=${visitorId}`);
         const dbStories = await res.json();
         
         const formattedStories = dbStories.map(s => {
@@ -199,7 +222,8 @@ export default function Stories() {
             readTime: s.read_time || "5 min read",
             likes: s.likes,
             comments: s.comments, // Fetched directly from the database!
-            img: s.image_url,
+            // 🟢 Run the database URL through the formatter
+            img: getDirectImageUrl(s.image_url),
             excerpt: s.excerpt,
             content: s.content,
             hasLiked: s.has_liked === 1 
@@ -217,7 +241,7 @@ export default function Stories() {
     fetchStories();
   }, [visitorId]);
 
-  // 🟢 FIX: PREVENT BACKGROUND SCROLLING WHEN MODAL IS OPEN
+  // PREVENT BACKGROUND SCROLLING WHEN MODAL IS OPEN
   useEffect(() => {
     if (selectedStory || showUpload) {
       document.body.style.overflow = "hidden";
@@ -267,7 +291,7 @@ export default function Stories() {
 
     // 2. Send the actual request to the backend
     try {
-      await fetch(`https://hortiverse-backend.onrender.com/api/stories/${id}/like`, {
+      await fetch(`${API_BASE_URL}/api/stories/${id}/like`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ visitorId })
@@ -278,7 +302,7 @@ export default function Stories() {
   const loadComments = async (storyId) => {
     if (!showComments) {
       try {
-        const res = await fetch(`https://hortiverse-backend.onrender.com/api/stories/${storyId}/comments`);
+        const res = await fetch(`${API_BASE_URL}/api/stories/${storyId}/comments`);
         const data = await res.json();
         setComments(data);
       } catch(err) { console.error("Failed to load comments:", err); }
@@ -296,12 +320,12 @@ export default function Stories() {
     };
 
     try {
-      const res = await fetch(`https://hortiverse-backend.onrender.com/api/stories/${selectedStory.id}/comments`, {
+      const res = await fetch(`${API_BASE_URL}/api/stories/${selectedStory.id}/comments`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
       });
       
       if (res.ok) {
-        const freshRes = await fetch(`https://hortiverse-backend.onrender.com/api/stories/${selectedStory.id}/comments`);
+        const freshRes = await fetch(`${API_BASE_URL}/api/stories/${selectedStory.id}/comments`);
         const freshData = await freshRes.json();
         setComments(freshData);
         setNewComment(""); 
@@ -312,14 +336,15 @@ export default function Stories() {
     } catch(err) { console.error("Failed to post comment:", err); }
   };
 
-  // 🟢 NEW: Instantly show the new story when uploaded
+  // Instantly show the new story when uploaded
   const handleNewStory = (newStory) => {
     const initials = newStory.author.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
     
     const formattedNewStory = {
       ...newStory,
-      img: newStory.image_url,    // Fix: mapping to what the card expects
-      readTime: newStory.read_time, // Fix: mapping to what the card expects
+      // 🟢 Run the newly submitted URL through the formatter too!
+      img: getDirectImageUrl(newStory.image_url),    
+      readTime: newStory.read_time,
       initials: initials,
       ago: "Just now",
       hasLiked: false
@@ -404,8 +429,8 @@ export default function Stories() {
       `}</style>
 
       {/* ══ PAGE HEADER ══ */}
-      <div style={{ paddingTop: 72, background: "transparent" }}>
-        <div style={{ maxWidth: 800, margin: "0 auto", padding: "50px 24px 0px", textAlign: "center" }}>
+      <div style={{ paddingTop: 30, background: "transparent" }}>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "20px 24px 0px", textAlign: "center" }}>
           <h1 className="fr" style={{ fontSize: "clamp(35px, 5vw, 60px)", fontWeight: 900, color: "#112a0f", lineHeight: 1.1, letterSpacing: "-1px" }}>
             Explore ideas, research, and <br/> <span style={{ color:"#059669" }}>agricultural stories.</span>
           </h1>
@@ -413,7 +438,7 @@ export default function Stories() {
             Stay updated with the latest developments in agriculture and horticulture, including sustainable farming innovations and newly released crop varieties from leading institutes worldwide.
           </p>
 
-          {/* 🟢 ADDED: Upload Button (Only shows if user is logged in) */}
+          {/* Upload Button (Only shows if user is logged in) */}
           {loggedInUser && (
             <div style={{ marginTop: "24px", animation: "fadeIn 0.5s ease" }}>
               <button 

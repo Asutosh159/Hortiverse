@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import logo from '../assests/logoHV.png';
 
 export default function Navbar() {
   const location = useLocation();
@@ -41,9 +42,27 @@ export default function Navbar() {
 
   return (
     <nav style={styles.nav}>
+      {/* 🟢 NEW: Added style block for the logo hover effect */}
+      <style>{`
+        .logo-img {
+          height: 59px; /* Enlarged to fit the navbar better */
+          width: auto;
+          object-fit: contain;
+          transition: transform 0.3s ease; /* Smooth transition */
+        }
+        .logo-img:hover {
+          transform: scale(1.2); /* Enlarges by 20% on hover */
+        }
+      `}</style>
+
       {/* ── LEFT: Logo ── */}
       <Link to="/" style={styles.logoContainer}>
-        <div style={styles.logoIcon}>🌿</div>
+        {/* 🟢 CHANGED: Using the CSS class for hover instead of inline styles */}
+        <img 
+          src={logo} 
+          alt="HortiVerse Logo" 
+          className="logo-img"
+        />
         <span style={styles.logoText}>
           Horti<span style={{ color: "#2e7d32" }}>Verse</span>
         </span>
@@ -85,7 +104,6 @@ export default function Navbar() {
               {getInitials(user.full_name)}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {/* 🟢 FIXED: Safe fallback if full_name is missing */}
               <span style={styles.welcomeText}>Hi, {user.full_name ? user.full_name.split(" ")[0] : "Admin"}</span>
               
               {user.role === 'admin' && (
@@ -111,7 +129,7 @@ const styles = {
     padding: "16px 48px", background: "#ffffff", borderBottom: "1px solid #edf2f7", 
     position: "sticky", top: 0, zIndex: 1000 
   },
-  logoContainer: { display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" },
+  logoContainer: { display: "flex", alignItems: "center", gap: "13px", textDecoration: "none" },
   logoIcon: { 
     width: "36px", height: "36px", borderRadius: "50%", 
     background: "linear-gradient(135deg, #66bb6a, #2e7d32)", 

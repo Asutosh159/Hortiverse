@@ -14,7 +14,7 @@ const REGISTER_API = {
   },
   async register({ name, email, password }) {
     // 🟢 REAL DATABASE CALL
-    const res = await fetch("https://hortiverse-backend.onrender.com/api/register", {
+    const res = await fetch(`${API_BASE_URL}/api/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 

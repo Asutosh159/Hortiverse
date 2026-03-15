@@ -1,19 +1,39 @@
 import { API_BASE_URL } from '../apiConfig';
 import { useState, useEffect, useRef } from "react";
+import Footer from '../components/Footer'; 
 
 /* ══════════════════════════════════════════════════
    BACKEND-CONNECTED API LAYER
 ══════════════════════════════════════════════════ */
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/* ── helper: convert Drive links to direct image links ── */
+const getDirectImageUrl = (url) => {
+  if (!url) return "https://via.placeholder.com/400x260?text=HortiVerse"; // Fallback
+
+  // If it's a Google Drive link, extract the ID and make it a direct image
+  if (url.includes("drive.google.com")) {
+    let match = url.match(/\/d\/([a-zA-Z0-9_-]+)/); // Matches /d/ID/
+    if (!match) match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/); // Matches ?id=ID
+    
+    if (match && match[1]) {
+      // 🟢 Using Google's Thumbnail API (Much more reliable for React)
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1920`; // w1920 for high-res hero images
+    }
+  }
+  
+  return url;
+};
+
 const API = {
   async getSlides() {
     try {
-      const res = await fetch("https://hortiverse-backend.onrender.com/api/slides");
+      const res = await fetch(`${API_BASE_URL}/api/slides`);
       const dbSlides = await res.json();
       return dbSlides.map(s => ({
         id: s.id,
-        url: s.image_url,
+        // 🟢 FIX: Process slider images through our Drive link formatter!
+        url: getDirectImageUrl(s.image_url), 
         caption: s.caption,
         sub: s.sub_text
       }));
@@ -24,44 +44,45 @@ const API = {
   },
 
   async getStories() { 
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/stories`);
-    const dbStories = await res.json();
-    
-    return dbStories.map(s => {
-      // 🟢 Safer initials logic
-      let initials = "HV";
-      if (s.author && typeof s.author === 'string' && s.author.trim().length > 0) {
-        initials = s.author
-          .split(' ')
-          .filter(part => part.length > 0) // Remove empty spaces
-          .map(n => n[0])
-          .join('')
-          .substring(0, 2)
-          .toUpperCase();
-      }
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/stories`);
+      const dbStories = await res.json();
+      
+      return dbStories.map(s => {
+        // Safer initials logic
+        let initials = "HV";
+        if (s.author && typeof s.author === 'string' && s.author.trim().length > 0) {
+          initials = s.author
+            .split(' ')
+            .filter(part => part.length > 0) // Remove empty spaces
+            .map(n => n[0])
+            .join('')
+            .substring(0, 2)
+            .toUpperCase();
+        }
 
-      return {
-        id: s.id, 
-        author: s.author || "Community Member", 
-        initials: initials, 
-        ago: "Recently", 
-        title: s.title || "Untitled Story", 
-        desc: s.excerpt || s.content?.substring(0, 100) || "", 
-        content: s.content || "", 
-        tag: s.tag || "Horticulture", 
-        img: s.image_url || "https://via.placeholder.com/400x260?text=HortiVerse" // Fallback image
-      };
-    });
-  } catch (err) { 
-    console.error("Stories fetch error:", err);
-    return []; 
-  }
-},
+        return {
+          id: s.id, 
+          author: s.author || "Community Member", 
+          initials: initials, 
+          ago: "Recently", 
+          title: s.title || "Untitled Story", 
+          desc: s.excerpt || s.content?.substring(0, 100) || "", 
+          content: s.content || "", 
+          tag: s.tag || "Horticulture", 
+          // Process the URL through our formatter before rendering!
+          img: getDirectImageUrl(s.image_url) 
+        };
+      });
+    } catch (err) { 
+      console.error("Stories fetch error:", err);
+      return []; 
+    }
+  },
 
   async getTopics()  { 
     try {
-      const res = await fetch("https://hortiverse-backend.onrender.com/api/topics");
+      const res = await fetch(`${API_BASE_URL}/api/topics`);
       const dbTopics = await res.json();
       return dbTopics.map(t => ({
         id: t.id, 
@@ -105,7 +126,7 @@ export default function Home() {
   const [activeStoryModal, setActiveStoryModal] = useState(null);
   const [activeTopicModal, setActiveTopicModal] = useState(null);
 
-  // 🟢 NEW: Newsletter State
+  // Newsletter State
   const [nlEmail, setNlEmail] = useState("");
   const [nlState, setNlState] = useState("idle"); // 'idle', 'loading', 'success'
 
@@ -194,7 +215,7 @@ export default function Home() {
     };
   }, [activeStoryModal, activeTopicModal]);
 
-  // 🟢 NEW: Handle Newsletter Submission
+  // Handle Newsletter Submission
   const handleSubscribe = async () => {
     if (!nlEmail || nlState !== "idle") return;
     setNlState("loading");
@@ -578,42 +599,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 🟢 NEW: REDESIGNED DARK FOREST FOOTER */}
-      <footer style={{ background:"linear-gradient(180deg, #064e3b 0%, #022c22 100%)", padding:"80px 52px 40px", color: "#f8fafc" }}>
-        <div style={{ maxWidth:1200, margin:"0 auto" }}>
-          <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr", gap:60, marginBottom:60 }}>
-            <div>
-              <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
-                <div style={{ width:44, height:44, borderRadius:"14px", background:"linear-gradient(135deg,#34d399,#10b981)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, boxShadow: "0 4px 15px rgba(16, 185, 129, 0.3)" }}>🌿</div>
-                <span className="fr" style={{ fontSize:28, fontWeight:800, color:"#ffffff" }}>Horti<span style={{ color:"#34d399" }}>Verse</span></span>
-              </div>
-              <p className="jk" style={{ fontSize:15, color:"#94a3b8", lineHeight:1.8, maxWidth:320, fontWeight:400 }}>
-                A thriving community of horticulture students sharing knowledge and sustainable farming practices worldwide.
-              </p>
-            </div>
-
-            {/* 🟢 Modified Footer Links */}
-            <div>
-              <h4 className="jk" style={{ fontSize:13, letterSpacing:".15em", color:"#34d399", marginBottom:24, textTransform:"uppercase", fontWeight:800 }}>Explore</h4>
-              <a href="/stories" className="jk" style={{ display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:15, marginBottom:16, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>Stories</a>
-              <a href="/topics" className="jk" style={{ display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:15, marginBottom:16, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>Topics</a>
-              <a href="/resources" className="jk" style={{ display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:15, marginBottom:16, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>Resources</a>
-            </div>
-
-            <div>
-              <h4 className="jk" style={{ fontSize:13, letterSpacing:".15em", color:"#34d399", marginBottom:24, textTransform:"uppercase", fontWeight:800 }}>Support</h4>
-              <a href="/about" className="jk" style={{ display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:15, marginBottom:16, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>About Us</a>
-              <a href="/help" className="jk" style={{ display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:15, marginBottom:16, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>Help Center</a>
-              <a href="/privacy" className="jk" style={{ display:"block", color:"#cbd5e1", textDecoration:"none", fontSize:15, marginBottom:16, fontWeight:500, transition:"color 0.2s" }} onMouseOver={e=>e.target.style.color='#ffffff'} onMouseOut={e=>e.target.style.color='#cbd5e1'}>Privacy Policy</a>
-            </div>
-
-          </div>
-          <div style={{ borderTop:"1px solid rgba(255,255,255,0.1)", paddingTop:30, display:"flex", justifyContent:"space-between" }}>
-            <p className="jk" style={{ fontSize:13, color:"#64748b", fontWeight:500 }}>© 2026 HortiVerse. All rights reserved.</p>
-            <p className="jk" style={{ fontSize:13, color:"#64748b", fontWeight:500 }}>Made with 🌿 for horticulture students everywhere</p>
-          </div>
-        </div>
-      </footer>
+      {/* 🟢 REPLACED HARDCODED FOOTER WITH COMPONENT */}
+      <Footer />
 
       {/* 🟢 STORY MODAL OVERLAY */}
       {activeStoryModal && (

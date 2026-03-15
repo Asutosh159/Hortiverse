@@ -51,7 +51,7 @@ function UploadTopicModal({ onClose, onSuccess }) {
     };
 
     try {
-      const res = await fetch("https://hortiverse-backend.onrender.com/api/topics", {
+      const res = await fetch(`${API_BASE_URL}/api/topics`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -193,7 +193,7 @@ export default function Topics() {
   useEffect(() => {
     const fetchTopics = async () => {
       try {
-        const res = await fetch("https://hortiverse-backend.onrender.com/api/topics");
+        const res = await fetch(`${API_BASE_URL}/api/topics`);
         const dbTopics = await res.json();
         
         const formattedTopics = dbTopics.map(t => ({
@@ -498,8 +498,8 @@ export default function Topics() {
       `}</style>
 
       {/* ══ PAGE HEADER ══ */}
-      <div style={{ paddingTop: 72, background: "transparent" }}>
-        <div style={{ maxWidth: 800, margin: "0 auto", padding: "80px 24px 0px", textAlign: "center" }}>
+      <div style={{ paddingTop: 30, background: "transparent" }}>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "20px 24px 0px", textAlign: "center" }}>
           <span style={{ display:"inline-block", background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,1)", color:"#059669", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, fontWeight:800, letterSpacing:".1em", textTransform:"uppercase", padding:"8px 20px", borderRadius:50, marginBottom:24, boxShadow:"0 4px 12px rgba(0,0,0,0.03)" }}>
             Knowledge Hub
           </span>

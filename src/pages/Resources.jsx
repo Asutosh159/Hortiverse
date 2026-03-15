@@ -18,14 +18,12 @@ const isDriveLink = (url) =>
   (url.includes("drive.google.com") || url.includes("docs.google.com"));
 
 /* ─── UPLOAD MODAL ──────────────────────────────────────── */
-// 🟢 Notice we now pass the 'user' as a prop
 function UploadModal({ onClose, onSuccess, user }) {
   const [type,    setType]    = useState("Research Paper");
   const [title,   setTitle]   = useState("");
   const [desc,    setDesc]    = useState("");
   const [link,    setLink]    = useState("");
   
-  // 🟢 Pre-fill the author name if the user is logged in
   const [author,  setAuthor]  = useState(user ? user.full_name : "");
   
   const [error,   setError]   = useState("");
@@ -52,7 +50,7 @@ function UploadModal({ onClose, onSuccess, user }) {
     };
 
     try {
-      const res = await fetch("https://hortiverse-backend.onrender.com/api/resources", {
+      const res = await fetch(`${API_BASE_URL}/api/resources`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -200,22 +198,20 @@ export default function Resources() {
   const [activeSort,   setActiveSort]   = useState("Most Recent");
   const [search,       setSearch]       = useState("");
   const [showUpload,   setShowUpload]   = useState(false);
+  const [selectedResource, setSelectedResource] = useState(null);
   
-  // 🟢 ADDED: User state to check if logged in
   const [user, setUser] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(9); 
 
-  // 🟢 FETCH USER & RESOURCES ON LOAD
   useEffect(() => {
-    // Check login status
     const storedUser = localStorage.getItem("hv_user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
 
-    // Fetch resources
     const fetchResources = async () => {
       try {
-        const res = await fetch("https://hortiverse-backend.onrender.com/api/resources");
+        const res = await fetch(`${API_BASE_URL}/api/resources`);
         const data = await res.json();
         setResources(data);
       } catch (err) {
@@ -226,6 +222,19 @@ export default function Resources() {
     };
     fetchResources();
   }, []);
+
+  useEffect(() => {
+    setVisibleCount(9); 
+  }, [activeFilter, activeSort, search]);
+
+  useEffect(() => {
+    if (showUpload || selectedResource) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => { document.body.style.overflow = "unset"; };
+  }, [showUpload, selectedResource]);
 
   /* filter + search + sort */
   const displayed = resources
@@ -238,8 +247,10 @@ export default function Resources() {
     )
     .sort((a, b) => {
       if (activeSort === "A–Z") return a.title.localeCompare(b.title);
-      return b.id - a.id; // Sorting by ID naturally sorts by "Most Recent"
+      return b.id - a.id; 
     });
+
+  const visibleResources = displayed.slice(0, visibleCount);
 
   const counts = FILTERS.reduce((acc, f) => {
     acc[f] = f === "All" ? resources.length : resources.filter(r => r.type === f).length;
@@ -253,7 +264,6 @@ export default function Resources() {
   return (
     <div style={{ position: "relative", minHeight: "100vh", color: "#111827", overflow: "hidden" }}>
 
-      {/* ── HIGHLY COLORFUL & ATTRACTIVE BACKGROUND ── */}
       <div style={{
         position: "fixed", inset: 0, zIndex: -1,
         background: "linear-gradient(135deg, #f0fdf4 0%, #fffbeb 50%, #f0f9ff 100%)",
@@ -263,7 +273,6 @@ export default function Resources() {
         <div style={{ position: "absolute", bottom: "-20%", left: "20%", width: "60vw", height: "60vw", background: "radial-gradient(circle, rgba(56,189,248,0.12) 0%, transparent 70%)", filter: "blur(80px)" }} />
       </div>
 
-      {/* ════ GLOBAL STYLES ════ */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700;800&display=swap');
@@ -278,21 +287,21 @@ export default function Resources() {
         .fr { font-family: 'Lora', serif; }
         .jk { font-family: 'Manrope', sans-serif; }
 
-        /* Modern Colorful Card Styling */
         .res-card {
-          background: rgba(255, 255, 255, 0.85); 
-          backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 1);
+          background: rgba(255, 255, 255, 0.45); 
+          backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.8);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.4);
           border-radius: 20px; 
           cursor: pointer; position: relative; overflow: hidden;
           transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-          box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
           display: flex; flex-direction: column;
         }
         .res-card:hover {
-          transform: translateY(-8px);
-          box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.25), 0 0 0 2px rgba(16, 185, 129, 0.1);
-          background: rgba(255, 255, 255, 0.95);
+          transform: translateY(-6px);
+          box-shadow: 0 20px 35px -10px rgba(16, 185, 129, 0.15), inset 0 0 0 1px rgba(255, 255, 255, 1);
+          background: rgba(255, 255, 255, 0.65);
         }
 
         .search-container {
@@ -318,7 +327,6 @@ export default function Resources() {
           color: #10b981; pointer-events: none;
         }
 
-        /* Buttons */
         .btn-green {
           background: #059669; color: #fff; border: none; cursor: pointer; border-radius: 50px;
           font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 14px; 
@@ -334,6 +342,41 @@ export default function Resources() {
         }
         .btn-ghost:hover { background: #ffffff; color: #0f172a; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 
+        @keyframes bounceArrow {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(3px); }
+        }
+        .btn-load-more {
+          background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6));
+          backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(16, 185, 129, 0.25);
+          color: #059669;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-weight: 700;
+          font-size: 15px;
+          padding: 14px 36px;
+          border-radius: 50px;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          box-shadow: 0 8px 20px -6px rgba(5, 150, 105, 0.15);
+        }
+        .btn-load-more:hover {
+          background: #ffffff;
+          transform: translateY(-3px);
+          box-shadow: 0 12px 25px -8px rgba(5, 150, 105, 0.3);
+          border-color: rgba(16, 185, 129, 0.4);
+        }
+        .btn-load-more .arrow {
+          transition: transform 0.3s;
+          display: inline-block;
+        }
+        .btn-load-more:hover .arrow {
+          animation: bounceArrow 1s ease-in-out infinite;
+        }
+
         .input-modern {
           width: 100%; padding: 14px 18px; background: #f8faf9;
           border: 1px solid #e2e8f0; border-radius: 12px; outline: none;
@@ -342,7 +385,6 @@ export default function Resources() {
         }
         .input-modern:focus { background: #fff; border-color: #059669; box-shadow: 0 0 0 4px rgba(5,150,105,0.1); }
 
-        /* Filters & Sort */
         .fpill {
           background: rgba(255,255,255,0.6); backdrop-filter: blur(12px);
           border: 1px solid rgba(255,255,255,0.9); color: #475569;
@@ -367,19 +409,18 @@ export default function Resources() {
         .sort-b.on { color: #059669; background: rgba(5,150,105,0.1); }
 
         .res-tag {
-          font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 600; 
-          padding: 6px 14px; border-radius: 50px; border: 1px solid transparent;
+          font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; font-weight: 600; 
+          padding: 4px 12px; border-radius: 50px; border: 1px solid transparent;
           background: #f1f5f9; color: #475569; transition: all 0.2s;
         }
         .res-card:hover .res-tag { background: #ffffff; border-color: #e2e8f0; }
 
         .type-badge {
-          font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 700; 
-          padding: 6px 14px; border-radius: 50px; letter-spacing: .05em; text-transform: uppercase; 
+          font-family: 'Plus Jakarta Sans', sans-serif; font-size: 10px; font-weight: 800; 
+          padding: 4px 12px; border-radius: 50px; letter-spacing: .05em; text-transform: uppercase; 
           display: inline-flex; align-items: center; gap: 6px;
         }
 
-        /* ── MODAL SYSTEM ── */
         .modal-overlay {
           position: fixed; top: 72px; left: 0; right: 0; bottom: 0;
           z-index: 900; background: rgba(15, 23, 42, 0.4); 
@@ -394,9 +435,7 @@ export default function Resources() {
           box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255,255,255,0.2);
           animation: slideUp .4s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .modal-scroll-area {
-          overflow-y: auto; flex-grow: 1; width: 100%;
-        }
+        .modal-scroll-area { overflow-y: auto; flex-grow: 1; width: 100%; }
         .modal-scroll-area::-webkit-scrollbar { width: 6px; }
         .modal-scroll-area::-webkit-scrollbar-track { background: transparent; }
         .modal-scroll-area::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.25); border-radius: 4px; }
@@ -416,10 +455,8 @@ export default function Resources() {
         @keyframes slideUp { from{opacity:0;transform:translateY(40px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
       `}</style>
 
-
-      {/* ══ PAGE HEADER ══ */}
-      <div style={{ paddingTop: 72, background: "transparent" }}>
-        <div style={{ maxWidth: 800, margin: "0 auto", padding: "80px 24px 0px", textAlign: "center" }}>
+      <div style={{ paddingTop: 20, background: "transparent" }}>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "20px 24px 0px", textAlign: "center" }}>
           <span style={{ display:"inline-block", background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,1)", color:"#059669", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, fontWeight:800, letterSpacing:".1em", textTransform:"uppercase", padding:"8px 20px", borderRadius:50, marginBottom:24, boxShadow:"0 4px 12px rgba(0,0,0,0.03)" }}>
             Knowledge Library
           </span>
@@ -430,7 +467,6 @@ export default function Resources() {
             Access academic papers, guidebooks, and community-uploaded tools. Everything a horticulture student needs.
           </p>
 
-          {/* 🟢 ADDED: Upload Button (Only shows if user is logged in) */}
           {user && (
             <div style={{ marginTop: "24px", animation: "fadeIn 0.5s ease" }}>
               <button 
@@ -455,7 +491,6 @@ export default function Resources() {
         </div>
       </div>
 
-      {/* ══ FILTERS & GRID ══ */}
       <main style={{ maxWidth: 1200, margin: "0 auto", padding: "100px 48px 100px", position: "relative", zIndex: 5 }}>
         
         {loading ? (
@@ -464,7 +499,6 @@ export default function Resources() {
            </div>
         ) : (
           <>
-            {/* Filter Row */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 40, flexWrap: "wrap", gap: 20 }}>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 {FILTERS.map(f => (
@@ -483,62 +517,53 @@ export default function Resources() {
               </div>
             </div>
 
-            {/* Results Info */}
             <p className="jk" style={{ fontSize: 16, color: "#475569", marginBottom: 32, fontWeight: 600 }}>
-              Showing <strong style={{ color: "#0f172a" }}>{displayed.length}</strong> resources
+              Showing <strong style={{ color: "#0f172a" }}>{visibleResources.length}</strong> of <strong style={{ color: "#0f172a" }}>{displayed.length}</strong> resources
               {activeFilter !== "All" && <> in <strong>{activeFilter}</strong></>}
               {search && <> for "<strong>{search}</strong>"</>}
             </p>
 
-            {/* Grid */}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))", gap: 32 }}>
-              {displayed.map((r) => {
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+              {visibleResources.map((r) => {
                 const cfg = TYPE_CONFIG[r.type] || { icon: "📄", accent: "#475569", bg: "#f1f5f9" };
                 return (
-                  <article key={r.id} className="res-card">
+                  <article key={r.id} className="res-card" onClick={() => setSelectedResource(r)}>
                     
-                    <div style={{ height: 6, background: cfg.accent }} />
+                    <div style={{ height: 5, background: cfg.accent }} />
 
-                    <div style={{ padding: "32px 32px 24px", display: "flex", flexDirection: "column", flexGrow: 1 }}>
+                    <div style={{ padding: "24px", display: "flex", flexDirection: "column", flexGrow: 1 }}>
                       
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
-                        <div style={{ width: 56, height: 56, borderRadius: "16px", background: cfg.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                        <div style={{ width: 48, height: 48, borderRadius: "14px", background: cfg.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>
                           {cfg.icon}
                         </div>
-                        <span className="jk" style={{ fontSize: 14, color: "#64748b", fontWeight: 700, background: "#f1f5f9", padding: "6px 12px", borderRadius: "8px" }}>
+                        <span className="jk" style={{ fontSize: 12, color: "#64748b", fontWeight: 700, background: "rgba(255,255,255,0.7)", padding: "4px 10px", borderRadius: "8px", backdropFilter: "blur(4px)" }}>
                           {r.year}
                         </span>
                       </div>
 
-                      <span className="type-badge" style={{ background: cfg.bg, color: cfg.accent, alignSelf: "flex-start", marginBottom: 16 }}>{r.type}</span>
+                      <span className="type-badge" style={{ background: cfg.bg, color: cfg.accent, alignSelf: "flex-start", marginBottom: 12 }}>{r.type}</span>
 
-                      <h3 className="fr" style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", marginBottom: 12, lineHeight: 1.3 }}>
+                      <h3 className="fr" style={{ fontSize: 19, fontWeight: 800, color: "#0f172a", marginBottom: 8, lineHeight: 1.3 }}>
                         {r.title}
                       </h3>
 
-                      <p className="jk" style={{ fontSize: 14, color: "#475569", marginBottom: 16, fontWeight: 500 }}>
+                      <p className="jk" style={{ fontSize: 13, color: "#475569", marginBottom: 12, fontWeight: 600 }}>
                         <strong style={{ color: "#0f172a", fontWeight: 700 }}>{r.author}</strong>
                         {r.institution && ` · ${r.institution}`}
                       </p>
 
-                      <p className="jk" style={{ fontSize: 15, color: "#64748b", lineHeight: 1.6, fontWeight: 400, marginBottom: 24, flexGrow: 1 }}>
-                        {r.desc}
+                      <p className="jk" style={{ fontSize: 14, color: "#64748b", lineHeight: 1.5, fontWeight: 500, marginBottom: 20, flexGrow: 1 }}>
+                        {(r.desc || "").substring(0, 90)}...
                       </p>
 
-                      {/* Tags */}
-                      {r.tags && r.tags.length > 0 && (
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 32 }}>
-                          {r.tags.map(t => <span key={t} className="res-tag">{t}</span>)}
-                        </div>
-                      )}
-
-                      {/* Drive Button */}
                       <a href={r.drive_link} target="_blank" rel="noopener noreferrer" 
-                        className="btn-green" style={{ width: "100%", justifyContent: "center", background: "#f8faf9", color: cfg.accent, border: `1px solid ${cfg.bg}` }}
+                        className="btn-green" style={{ width: "100%", justifyContent: "center", background: "rgba(255,255,255,0.8)", color: cfg.accent, border: `1px solid ${cfg.bg}`, padding: "10px", fontSize: 14 }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = cfg.accent; e.currentTarget.style.color = "#fff"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = "#f8faf9"; e.currentTarget.style.color = cfg.accent; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.8)"; e.currentTarget.style.color = cfg.accent; }}
+                        onClick={(e) => e.stopPropagation()} 
                       >
-                        <span style={{ fontSize: 18 }}>👁️</span> View
+                        <span style={{ fontSize: 16 }}>👁️</span> View Resource
                       </a>
 
                     </div>
@@ -547,7 +572,17 @@ export default function Resources() {
               })}
             </div>
 
-            {/* Empty State */}
+            {visibleCount < displayed.length && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 56 }}>
+                <button 
+                  className="btn-load-more" 
+                  onClick={() => setVisibleCount(prev => prev + 9)} 
+                >
+                  Load More Resources <span className="arrow">⬇</span>
+                </button>
+              </div>
+            )}
+
             {displayed.length === 0 && (
               <div style={{ textAlign: "center", padding: "100px 0" }}>
                 <div style={{ fontSize: 64, marginBottom: 20 }}>📂</div>
@@ -560,13 +595,72 @@ export default function Resources() {
         )}
       </main>
 
-      {/* ════ UPLOAD MODAL ════ */}
-      {/* 🟢 Notice we pass user={user} into the modal */}
+      {/* ════ RESOURCE PREVIEW MODAL ════ */}
+      {selectedResource && !showUpload && (() => {
+        const cfg = TYPE_CONFIG[selectedResource.type] || { icon: "📄", accent: "#475569", bg: "#f1f5f9" };
+        return (
+          <div className="modal-overlay" onClick={() => setSelectedResource(null)}>
+            <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 700 }}>
+              <button className="modal-close-btn" onClick={() => setSelectedResource(null)}>✕</button>
+              
+              <div className="modal-scroll-area">
+                <div style={{ padding: "48px 48px 32px", background: `linear-gradient(180deg, ${cfg.bg} 0%, rgba(255,255,255,0) 100%)` }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
+                    <div style={{ width: 64, height: 64, borderRadius: 16, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)" }}>
+                      {cfg.icon}
+                    </div>
+                    <div>
+                      <span className="type-badge" style={{ background: "#fff", color: cfg.accent, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", padding: "6px 14px", marginBottom: 8 }}>
+                        {selectedResource.type}
+                      </span>
+                      <div className="jk" style={{ fontSize: 14, color: "#64748b", fontWeight: 700 }}>Published {selectedResource.year}</div>
+                    </div>
+                  </div>
+                  
+                  <h2 className="fr" style={{ fontSize: "clamp(28px, 4vw, 36px)", fontWeight: 900, color: "#0f172a", lineHeight: 1.2, marginBottom: 16 }}>
+                    {selectedResource.title}
+                  </h2>
+                  
+                  <p className="jk" style={{ fontSize: 16, color: "#475569", fontWeight: 600 }}>
+                    <strong style={{ color: "#0f172a", fontWeight: 800 }}>{selectedResource.author}</strong>
+                    {selectedResource.institution && ` · ${selectedResource.institution}`}
+                  </p>
+                </div>
+                
+                <div style={{ padding: "0 48px 48px" }}>
+                  <div style={{ marginBottom: 40 }}>
+                    <h4 className="jk" style={{ fontSize: 14, textTransform: "uppercase", letterSpacing: ".1em", color: "#94a3b8", fontWeight: 800, marginBottom: 12 }}>Description</h4>
+                    <p className="jk" style={{ fontSize: 16, color: "#334155", lineHeight: 1.8, whiteSpace: "pre-wrap" }}>
+                      {selectedResource.desc || "No description provided for this resource."}
+                    </p>
+                  </div>
+
+                  {selectedResource.tags && selectedResource.tags.length > 0 && (
+                    <div style={{ marginBottom: 40 }}>
+                      <h4 className="jk" style={{ fontSize: 14, textTransform: "uppercase", letterSpacing: ".1em", color: "#94a3b8", fontWeight: 800, marginBottom: 12 }}>Tags</h4>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {selectedResource.tags.map(t => <span key={t} className="res-tag" style={{ background: "#f1f5f9", padding: "6px 16px", fontSize: 13 }}>{t}</span>)}
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", gap: 16, borderTop: "1px solid #e2e8f0", paddingTop: 32 }}>
+                    <a href={selectedResource.drive_link} target="_blank" rel="noopener noreferrer" className="btn-green" 
+                       style={{ flex: 1, justifyContent: "center", padding: "16px", fontSize: 16, background: cfg.accent, boxShadow: `0 10px 25px -5px ${cfg.accent}66` }}>
+                      <span style={{ fontSize: 20 }}>🔗</span> Open Resource Document
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {showUpload && (
         <UploadModal onClose={() => setShowUpload(false)} onSuccess={handleNewResource} user={user} />
       )}
-      {/* ══ FOOTER ══ */}
-            <Footer />
+      <Footer />
     </div>
   );
 }
