@@ -53,7 +53,7 @@ export default function Navbar() {
             <img 
               src={logo} 
               alt="HortiVerse Logo" 
-              className="h-[50px] md:h-[59px] w-auto object-contain transition-transform duration-300 ease-in-out group-hover:scale-110"
+              className="h-[62px] md:h-[67px] w-auto object-contain transition-transform duration-300 ease-in-out group-hover:scale-110"
             />
             <span className="text-[22px] font-extrabold text-[#1a202c] font-['Fraunces'] tracking-[-0.5px]">
               Horti<span className="text-[#2e7d32]">Verse</span>

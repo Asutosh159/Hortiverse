@@ -123,7 +123,7 @@ export default function SuperAdmin() {
   };
 
   if (loading) return (
-    <div style={{ display:'flex', height:'100vh', alignItems:'center', justifyContent:'center', background:'#f8faf9', color:'#0f172a' }}>
+    <div style={{ display:'flex', height:'100vh', alignItems:'center', justify: 'center', background:'#f8faf9', color:'#0f172a' }}>
       <h2 className="fr" style={{ fontSize: 24 }}>Accessing Command Center...</h2>
     </div>
   );
@@ -134,7 +134,8 @@ export default function SuperAdmin() {
         .fr { font-family: 'Fraunces', serif; }
         .jk { font-family: 'Plus Jakarta Sans', sans-serif; }
         
-        .sidebar { width: 280px; background: #ffffff; border-right: 1px solid #e2e8f0; padding: 40px 24px; position: fixed; top: 0; bottom: 0; z-index: 10000; display: flex; flex-direction: column; gap: 8px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* 🟢 FIXED: Changed top: 0 to top: 80px to sit below the Navbar */
+        .sidebar { width: 280px; background: #ffffff; border-right: 1px solid #e2e8f0; padding: 40px 24px; position: fixed; top: 80px; bottom: 0; z-index: 1000; display: flex; flex-direction: column; gap: 8px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .nav-item { padding: 14px 20px; border-radius: 12px; color: #64748b; cursor: pointer; transition: all 0.2s ease; font-weight: 600; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; display: flex; align-items: center; gap: 12px; }
         .nav-item:hover { background: #f1f5f9; color: #0f172a; }
         .nav-item.active { background: #ecfdf5; color: #059669; font-weight: 700; }
@@ -148,7 +149,6 @@ export default function SuperAdmin() {
         .bg-topics { background: linear-gradient(135deg, #059669 0%, #10B981 100%); }
         .bg-resources { background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%); }
         
-        /* 🟢 FIXED: Table wrapper forced to block with touch-scrolling */
         .table-responsive { display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 16px; border: 1px solid #e2e8f0; background: white; margin-top: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; min-width: 500px; }
         th { text-align: left; padding: 18px 24px; background: #f8faf9; color: #64748b; font-size: 12px; text-transform: uppercase; font-weight: 800; border-bottom: 1px solid #e2e8f0; letter-spacing: 0.5px; white-space: nowrap; }
@@ -178,7 +178,6 @@ export default function SuperAdmin() {
         @media (max-width: 1024px) {
           .sidebar { transform: translateX(${isSidebarOpen ? '0' : '-100%'}); box-shadow: 20px 0 50px rgba(0,0,0,0.1); padding-top: 40px; }
           .sidebar-header h2 { font-size: 18px !important; }
-          /* 🟢 FIXED: overflow-x hidden on main container ensures table scroll works */
           .main-content { margin-left: 0; padding: 120px 20px 40px; width: 100vw; max-width: 100vw; overflow-x: hidden; }
           .mobile-toggle { display: flex; }
           .edit-card { padding: 24px; }
@@ -189,7 +188,6 @@ export default function SuperAdmin() {
           .stat-card div:last-child { font-size: 32px; }
           .fr { font-size: 30px !important; }
           
-          /* 🟢 FIXED: Reduce padding in mobile table to make swiping easier */
           th { padding: 12px 16px; font-size: 11px; }
           td { padding: 12px 16px; font-size: 13.5px; }
           .btn-act { padding: 6px 12px; font-size: 12px; }
@@ -205,7 +203,7 @@ export default function SuperAdmin() {
       {isSidebarOpen && (
         <div 
           onClick={() => setIsSidebarOpen(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(4px)', zIndex: 9999 }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(4px)', zIndex: 999 }}
         />
       )}
 

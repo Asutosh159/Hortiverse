@@ -9,13 +9,13 @@ export default function Footer() {
       {/* 🟢 Style block for Logo and Social Icon Hover Effects */}
       <style>{`
         .footer-logo {
-          height: 40px; /* Slightly smaller for mobile */
+          height: 60px; /* Slightly smaller for mobile */
           width: auto;
           object-fit: contain;
           transition: transform 0.3s ease;
         }
         @media (min-width: 768px) {
-          .footer-logo { height: 50px; }
+          .footer-logo { height: 60px; }
         }
         .footer-logo:hover {
           transform: scale(1.1);
