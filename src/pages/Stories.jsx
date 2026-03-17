@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../apiConfig';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Footer from '../components/Footer'; 
 
 // 🟢 URL Formatter Helper Function
@@ -22,7 +22,6 @@ const avatarColors = ["#059669","#047857","#10b981","#34d399","#065f46","#064e3b
 /* ─── UPLOAD MODAL ──────────────────────────────────────── */
 function UploadStoryModal({ onClose, onSuccess, user }) {
   const [title,   setTitle]   = useState("");
-  // const [excerpt, setExcerpt] = useState("");
   const [content, setContent] = useState("");
   const [tag,     setTag]     = useState("Agriculture");
   const [imgUrl,  setImgUrl]  = useState("");
@@ -32,9 +31,50 @@ function UploadStoryModal({ onClose, onSuccess, user }) {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // 🟢 NEW: State and Ref for Image Uploading
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // 🟢 NEW: Handle Cloudinary Image Upload with 4MB Limit
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Strict 4MB Limit Check
+    if (file.size > 4 * 1024 * 1024) {
+      alert("File is too large! Please select an image under 4MB.");
+      return;
+    }
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/upload`, {
+        method: 'POST',
+        body: formData, 
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        setImgUrl(data.imageUrl); // Save the Cloudinary URL to state
+      } else {
+        throw new Error(data.error || data.details || 'Upload failed');
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`Upload Error: ${err.message}`);
+    } finally {
+      setIsUploading(false);
+      if (event.target) event.target.value = null; 
+    }
+  };
+
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim() ) {
-      setError("Please fill out the title, short excerpt, and full story content.");
+      setError("Please fill out the title and full story content.");
       return;
     }
     
@@ -44,8 +84,7 @@ function UploadStoryModal({ onClose, onSuccess, user }) {
     const payload = {
       title: title.trim(),
       author: author.trim() || "Community Member",
-      // excerpt: excerpt.trim(),
-      content: content.trim(),
+      content: content.trim(), // 🟢 Excerpt is gone!
       tag: tag,
       image_url: imgUrl.trim() || "https://images.unsplash.com/photo-1592982537447-6f2a6a0c5c4f?auto=format&fit=crop&w=800&q=80",
       read_time: Math.max(1, Math.ceil(content.split(" ").length / 200)) + " min read"
@@ -125,23 +164,51 @@ function UploadStoryModal({ onClose, onSuccess, user }) {
                   <label className="block font-['Plus_Jakarta_Sans',sans-serif] text-xs font-bold text-slate-700 tracking-[0.05em] uppercase mb-2">Author Name</label>
                   <input className="w-full px-[18px] py-[14px] bg-slate-50 border border-slate-200 rounded-xl outline-none font-['Plus_Jakarta_Sans',sans-serif] text-[15px] text-slate-900 transition-all duration-200 font-medium focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10" placeholder="Your name…" value={author} onChange={e=>setAuthor(e.target.value)} />
                 </div>
+                
+                {/* 🟢 NEW: File Upload UI replaces text input */}
                 <div className="flex-1 min-w-[200px]">
-                  <label className="block font-['Plus_Jakarta_Sans',sans-serif] text-xs font-bold text-slate-700 tracking-[0.05em] uppercase mb-2">Cover Image URL <span className="text-slate-400 font-medium normal-case tracking-normal">(optional)</span></label>
-                  <input className="w-full px-[18px] py-[14px] bg-slate-50 border border-slate-200 rounded-xl outline-none font-['Plus_Jakarta_Sans',sans-serif] text-[15px] text-slate-900 transition-all duration-200 font-medium focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10" placeholder="https://example.com/image.jpg" value={imgUrl} onChange={e=>setImgUrl(e.target.value)} />
-                  <p className="font-['Plus_Jakarta_Sans',sans-serif] text-xs text-slate-500 mt-1.5 font-medium leading-[1.4]">
-                    💡 Works with direct image URLs (.jpg, .png) or public Google Drive links.
-                  </p>
+                  <label className="block font-['Plus_Jakarta_Sans',sans-serif] text-xs font-bold text-slate-700 tracking-[0.05em] uppercase mb-2">
+                    Cover Image <span className="text-slate-400 font-medium normal-case tracking-normal">(optional)</span>
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      ref={fileInputRef}
+                      className="hidden"
+                      onChange={handleImageUpload}
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => fileInputRef.current.click()} 
+                      disabled={isUploading}
+                      className="flex-1 px-5 py-[13px] bg-slate-50 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 font-bold rounded-xl transition-colors border border-slate-200 disabled:opacity-50 flex items-center justify-center gap-2 text-[14px]"
+                    >
+                      {isUploading ? '⏳ Uploading...' : '📷 Select Photo'}
+                    </button>
+
+                    {imgUrl && (
+                      <div className="h-[46px] w-[60px] rounded-lg border border-slate-200 overflow-hidden shadow-sm relative group shrink-0">
+                        <img src={imgUrl} alt="Cover Preview" className="w-full h-full object-cover" />
+                        <button 
+                          type="button" 
+                          onClick={() => setImgUrl("")}
+                          className="absolute top-1 right-1 bg-red-500 text-white w-4 h-4 flex justify-center items-center rounded-full text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              
 
               <div className="mb-8">
                 <label className="block font-['Plus_Jakarta_Sans',sans-serif] text-xs font-bold text-slate-700 tracking-[0.05em] uppercase mb-2">Full Story Content <span className="text-red-500">*</span></label>
                 <textarea className="w-full px-[18px] py-[14px] bg-slate-50 border border-slate-200 rounded-xl outline-none font-['Plus_Jakarta_Sans',sans-serif] text-[15px] text-slate-900 transition-all duration-200 font-medium focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 resize-y leading-[1.6] min-h-[200px]" placeholder="Write your full story here. You can use double asterisks like **this** to make text bold." value={content} onChange={e=>setContent(e.target.value)} />
               </div>
 
-              <button onClick={handleSubmit} disabled={loading} className="w-full justify-center bg-emerald-600 text-white rounded-full font-['Plus_Jakarta_Sans',sans-serif] font-semibold text-base px-7 py-4 transition-all duration-200 inline-flex items-center gap-1.5 hover:bg-emerald-700 hover:-translate-y-[1px] hover:shadow-[0_8px_16px_rgba(5,150,105,0.25)] disabled:opacity-70 disabled:cursor-not-allowed">
+              <button onClick={handleSubmit} disabled={loading || isUploading} className="w-full justify-center bg-emerald-600 text-white rounded-full font-['Plus_Jakarta_Sans',sans-serif] font-semibold text-base px-7 py-4 transition-all duration-200 inline-flex items-center gap-1.5 hover:bg-emerald-700 hover:-translate-y-[1px] hover:shadow-[0_8px_16px_rgba(5,150,105,0.25)] disabled:opacity-70 disabled:cursor-not-allowed">
                 {loading ? "Publishing..." : "✍️ Publish Story"}
               </button>
             </>
@@ -182,7 +249,7 @@ export default function Stories() {
         const res = await fetch(`${API_BASE_URL}/api/stories?visitorId=${visitorId}`);
         const dbStories = await res.json();
         
-        const formattedStories = dbStories.map(s => {
+       const formattedStories = dbStories.map(s => {
           const initials = s.author ? s.author.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : "HV";
           return {
             id: s.id,
@@ -195,12 +262,12 @@ export default function Stories() {
             likes: s.likes,
             comments: s.comments, 
             img: getDirectImageUrl(s.image_url),
-            excerpt: s.excerpt,
+            // 🟢 Create a short 120-character preview on the fly!
+            excerpt: s.content ? s.content.substring(0, 120) + "..." : "", 
             content: s.content,
             hasLiked: s.has_liked === 1 
           };
         });
-        
         setStories(formattedStories);
       } catch (err) {
         console.error("Failed to load stories:", err);
@@ -311,7 +378,7 @@ export default function Stories() {
       <style>{`
         html { scroll-behavior: smooth; }
         
-        /* 🟢 HIGH-PERFORMANCE SCROLLBAR (Same as Home) */
+        /* 🟢 HIGH-PERFORMANCE SCROLLBAR */
         .modal-scrollbar {
           -webkit-overflow-scrolling: touch; 
           transform: translateZ(0); 

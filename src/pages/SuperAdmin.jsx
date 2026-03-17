@@ -422,25 +422,8 @@
 //   dashboardWrapper: { display: 'flex', minHeight: '100vh', background: '#f8faf9' }
 // };
 import { API_BASE_URL } from '../apiConfig';
-import { useState, useEffect } from "react";
-// import Footer from '../components/Footer'; // Optional: Add to bottom of <main> if needed
+import { useState, useEffect, useRef } from "react";
 
-// 🟢 Helper Function for Drive Links
-const getDirectImageUrl = (url) => {
-  if (!url) return "https://via.placeholder.com/400x260?text=HortiVerse"; 
-
-  if (url.includes("drive.google.com")) {
-    let match = url.match(/\/d\/([a-zA-Z0-9_-]+)/); 
-    if (!match) match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/); 
-    
-    if (match && match[1]) {
-      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
-    }
-  }
-  return url;
-};
-
-// Predefined Sticker Library
 const PREDEFINED_ICONS = ["🌿", "🌱", "🌾", "🚜", "💧", "🌻", "🍎", "🍅", "🌳", "🔬", "🐛", "☀️", "🌧️", "👨‍🌾", "👩‍🌾", "🪴"];
 
 export default function SuperAdmin() {
@@ -450,12 +433,17 @@ export default function SuperAdmin() {
   const [topics, setTopics] = useState([]);
   const [resources, setResources] = useState([]);
   const [slides, setSlides] = useState([]);
+  
   const [activeSection, setActiveSection] = useState("overview"); 
   const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState(null); 
-  const [newSlide, setNewSlide] = useState({ url: "", caption: "", sub_text: "" });
   
-  // State to control mobile sidebar drawer
+  // Slide Upload State
+  const [newSlide, setNewSlide] = useState({ url: "", caption: "", sub_text: "" });
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
+  
+  // Mobile Sidebar
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => { fetchData(); }, []);
@@ -491,11 +479,8 @@ export default function SuperAdmin() {
         topics: sData.topics || tData.length,
         resources: sData.resources || rData.length
       });
-    } catch (err) { 
-      console.error("Fetch failed:", err); 
-    } finally { 
-      setLoading(false); 
-    }
+    } catch (err) { console.error("Fetch failed:", err); } 
+    finally { setLoading(false); }
   };
 
   const deleteItem = async (type, id) => {
@@ -526,8 +511,45 @@ export default function SuperAdmin() {
     }
   };
 
+  // 🟢 FIXED: Renamed to handleFileUpload to handle both Images AND PDFs
+  const handleFileUpload = async (event, callback) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (file.size > 4 * 1024 * 1024) {
+      alert("File is too large. Please select a file under 4MB.");
+      return;
+    }
+
+    setIsUploading(true);
+    const formData = new FormData();
+    // Keep 'image' as the key because your backend expects upload.single('image')
+    formData.append("image", file); 
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/upload`, {
+        method: 'POST',
+        body: formData, 
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        callback(data.imageUrl); 
+      } else {
+        throw new Error(data.error || data.details || 'Upload failed');
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`Upload Error: ${err.message}`);
+    } finally {
+      setIsUploading(false);
+      if (event.target) event.target.value = null; 
+    }
+  };
+
   const addSlide = async () => {
-    if(!newSlide.url.trim()) return alert("Please enter an image URL first!");
+    if(!newSlide.url.trim()) return alert("Please upload an image first!");
     
     const res = await fetch(`${API_BASE_URL}/api/slides`, {
       method: 'POST',
@@ -546,7 +568,6 @@ export default function SuperAdmin() {
     }
   };
 
-  // 🟢 Centered, Smooth Loading Screen
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 text-slate-900">
       <div className="text-5xl animate-bounce mb-6">....</div>
@@ -557,7 +578,7 @@ export default function SuperAdmin() {
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans selection:bg-emerald-200">
       
-      {/* 🟢 Mobile Menu Toggle */}
+      {/* Mobile Menu Toggle */}
       <button 
         className="lg:hidden fixed bottom-8 right-6 w-14 h-14 flex items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-xl shadow-emerald-600/30 z-[100001] transition-transform active:scale-95 text-2xl"
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -565,7 +586,7 @@ export default function SuperAdmin() {
         {isSidebarOpen ? '✕' : '☰'}
       </button>
 
-      {/* 🟢 Mobile Sidebar Overlay */}
+      {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 
           onClick={() => setIsSidebarOpen(false)}
@@ -573,7 +594,7 @@ export default function SuperAdmin() {
         />
       )}
 
-      {/* 🟢 Sidebar */}
+      {/* Sidebar */}
       <aside className={`fixed top-20 bottom-0 left-0 w-[280px] bg-white border-r border-slate-200 p-6 flex flex-col gap-2 z-[1000] transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="pb-6 mb-4 border-b border-slate-100">
           <h2 className="font-serif text-2xl font-bold text-slate-900 m-0">
@@ -604,7 +625,7 @@ export default function SuperAdmin() {
         ))}
       </aside>
 
-      {/* 🟢 Main Content */}
+      {/* Main Content */}
       <main className="flex-1 lg:ml-[280px] pt-32 px-6 md:px-10 pb-20 w-full min-h-screen transition-all duration-300">
         <div className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-slate-900">
@@ -701,14 +722,37 @@ export default function SuperAdmin() {
               <h3 className="font-serif text-3xl font-bold text-slate-900 mb-8">Upload New Background</h3>
               
               <div className="flex flex-col gap-6">
+                
                 <div>
-                  <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-2">Image URL (Direct Link)</label>
-                  <input 
-                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all" 
-                    placeholder="https://images.unsplash.com/..." 
-                    value={newSlide.url} onChange={e => setNewSlide({...newSlide, url: e.target.value})} 
-                  />
-                  <p className="text-xs font-medium text-slate-400 mt-2">💡 Works with direct image URLs (.jpg, .png) or public Google Drive links.</p>
+                  <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-2">Slide Image</label>
+                  
+                  <div className="flex items-center gap-4">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      ref={fileInputRef}
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(e, (url) => setNewSlide({...newSlide, url}))}
+                    />
+                    
+                    <button 
+                      onClick={() => fileInputRef.current.click()} 
+                      disabled={isUploading}
+                      className="px-6 py-4 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold rounded-2xl transition-colors border border-emerald-100 disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {isUploading ? <span className="animate-spin text-xl">⏳</span> : <span className="text-xl">📷</span>}
+                      {isUploading ? 'Uploading to Cloud...' : 'Select Photo'}
+                    </button>
+
+                    {newSlide.url && (
+                      <div className="h-16 w-24 rounded-xl border border-slate-200 overflow-hidden shadow-sm relative group">
+                        <img src={newSlide.url} alt="Preview" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">Ready ✅</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex flex-col md:flex-row gap-6">
@@ -741,10 +785,15 @@ export default function SuperAdmin() {
               {slides.map(s => (
                 <div key={s.id} className="relative rounded-2xl overflow-hidden h-56 shadow-md group">
                   <img 
-                    src={getDirectImageUrl(s.image_url)} 
+                    src={s.image_url} 
                     alt="Slider Background" 
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/400x260?text=Preview+Not+Available"; }}
+                    onError={(e) => { 
+                      if (!e.target.dataset.errorHandled) {
+                        e.target.dataset.errorHandled = true;
+                        e.target.src = "https://placehold.co/600x400/f1f5f9/94a3b8?text=Image+Error"; 
+                      }
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent p-5 flex flex-col justify-end">
                     <button onClick={() => deleteItem('slide', s.id)} className="absolute top-3 right-3 bg-red-600/90 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">Remove</button>
@@ -780,11 +829,41 @@ export default function SuperAdmin() {
                     <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-2">Author</label>
                     <input className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all" value={editingItem.data.author} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, author: e.target.value}})} />
                   </div>
+                  
                   <div>
-                    <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-2">Image URL</label>
-                    <input className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all" value={editingItem.data.image_url || ""} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, image_url: e.target.value}})} />
-                    <p className="text-xs font-medium text-slate-400 mt-2">💡 Works with direct image URLs or public Drive links.</p>
+                    <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-2">Cover Image</label>
+                    <div className="flex items-center gap-4">
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        id="story-file-upload"
+                        className="hidden"
+                        onChange={(e) => handleFileUpload(e, (url) => setEditingItem({...editingItem, data: {...editingItem.data, image_url: url}}))}
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => document.getElementById('story-file-upload').click()} 
+                        disabled={isUploading}
+                        className="px-6 py-4 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold rounded-2xl transition-colors border border-emerald-100 disabled:opacity-50 flex items-center gap-2"
+                      >
+                        {isUploading ? '⏳ Uploading...' : '📷 Replace Photo'}
+                      </button>
+                      
+                      {editingItem.data.image_url && (
+                        <div className="h-16 w-24 rounded-xl border border-slate-200 overflow-hidden shadow-sm relative group">
+                          <img src={editingItem.data.image_url} alt="Cover Preview" className="w-full h-full object-cover" />
+                          <button 
+                            type="button" 
+                            onClick={() => setEditingItem({...editingItem, data: {...editingItem.data, image_url: ""}})}
+                            className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 flex justify-center items-center rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
                   <div>
                     <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-2">Story Content</label>
                     <textarea className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all min-h-[150px]" value={editingItem.data.content} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, content: e.target.value}})} />
@@ -818,12 +897,61 @@ export default function SuperAdmin() {
                 </>
               )}
 
+              {/* 🟢 FIXED: RESOURCE SECTION FILE UPLOAD */}
               {editingItem.type === 'resource' && (
                 <>
                   <div>
-                    <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-2">Google Drive Link</label>
-                    <input className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all" value={editingItem.data.drive_link || ""} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, drive_link: e.target.value}})} />
+                    <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-2">
+                      Resource File (PDF or Image)
+                    </label>
+                    <div className="flex items-center gap-4">
+                      {/* Accept BOTH images and PDFs */}
+                      <input 
+                        type="file" 
+                        accept="image/*,application/pdf" 
+                        id="resource-file-upload"
+                        className="hidden"
+                        onChange={(e) => handleFileUpload(e, (url) => setEditingItem({...editingItem, data: {...editingItem.data, drive_link: url}}))}
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => document.getElementById('resource-file-upload').click()} 
+                        disabled={isUploading}
+                        className="px-6 py-4 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold rounded-2xl transition-colors border border-emerald-100 disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
+                      >
+                        {isUploading ? '⏳ Uploading...' : '📄 Upload File'}
+                      </button>
+                      
+                      {/* Smart Preview Box for Resource File */}
+                      {editingItem.data.drive_link && (
+                        <div className="flex-1 flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <span className="text-xl shrink-0">
+                              {editingItem.data.drive_link.includes('.pdf') ? '📑' : ''}
+                            </span>
+                            <a 
+                              href={editingItem.data.drive_link} 
+                              target="_blank" 
+                              rel="noreferrer" 
+                              className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline truncate block"
+                            >
+                              View Attached File
+                            </a>
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={() => setEditingItem({...editingItem, data: {...editingItem.data, drive_link: ""}})}
+                            className="text-slate-400 hover:text-red-500 font-bold text-lg ml-3"
+                            title="Remove File"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium mt-2">Allowed formats: PDF, JPEG, PNG, JPG; maximum PDF size: 4 MB; ensure files are clear and relevant.</p>
                   </div>
+                  
                   <div>
                     <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-2">Author / Source</label>
                     <input className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all" value={editingItem.data.author || ""} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, author: e.target.value}})} />
@@ -835,10 +963,20 @@ export default function SuperAdmin() {
                 </>
               )}
 
-              {/* 🟢 FIXED BUTTON PADDING AND FLEX VALUE HERE */}
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <button type="submit" className="flex-[2] px-6 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-200 transition-all active:scale-[0.98]">Save Changes</button>
-                <button type="button" onClick={() => setEditingItem(null)} className="flex-1 px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-2xl transition-all">Cancel</button>
+              <div className="flex flex-col sm:flex-row gap-4 pt-4 mt-8 border-t border-slate-100">
+                <button 
+                  type="submit" 
+                  className="flex-[2] whitespace-nowrap px-6 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-[0.98]"
+                >
+                  SAVE CHANGES
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setEditingItem(null)} 
+                  className="flex-1 whitespace-nowrap px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold rounded-2xl transition-all"
+                >
+                  CANCEL
+                </button>
               </div>
 
             </form>

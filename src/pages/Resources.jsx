@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../apiConfig';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Footer from '../components/Footer'; // Adjust this path if your folder structure is different!
 
 const TYPE_CONFIG = {
@@ -12,17 +12,12 @@ const TYPE_CONFIG = {
 const FILTERS = ["All", "Research Paper", "Book", "Popular Article", "Other"];
 const SORTS   = ["Most Recent", "A–Z"];
 
-/* ── helper: validate Google Drive link ── */
-const isDriveLink = (url) =>
-  url.trim() !== "" &&
-  (url.includes("drive.google.com") || url.includes("docs.google.com"));
-
 /* ─── UPLOAD MODAL ──────────────────────────────────────── */
 function UploadModal({ onClose, onSuccess, user }) {
   const [type,    setType]    = useState("Research Paper");
   const [title,   setTitle]   = useState("");
   const [desc,    setDesc]    = useState("");
-  const [link,    setLink]    = useState("");
+  const [link,    setLink]    = useState(""); // Will now hold the Cloudinary URL
   
   const [author,  setAuthor]  = useState(user ? user.full_name : "");
   
@@ -30,10 +25,51 @@ function UploadModal({ onClose, onSuccess, user }) {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // 🟢 NEW: File Upload States
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // 🟢 NEW: Handle Cloudinary File Upload
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (file.size > 4 * 1024 * 1024) {
+      alert("File is too large. Please select a file under 4MB.");
+      return;
+    }
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("image", file); 
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/upload`, {
+        method: 'POST',
+        body: formData, 
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        setLink(data.imageUrl); // Save Cloudinary URL
+        setError(""); // Clear any previous errors
+      } else {
+        throw new Error(data.error || data.details || 'Upload failed');
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`Upload Error: ${err.message}`);
+    } finally {
+      setIsUploading(false);
+      if (event.target) event.target.value = null; 
+    }
+  };
+
   const handleSubmit = async () => {
     if (!title.trim())      { setError("Please enter a title."); return; }
-    if (!link.trim())       { setError("Please enter a Google Drive link."); return; }
-    if (!isDriveLink(link)) { setError("Link must be a valid Google Drive or Google Docs URL."); return; }
+    // 🟢 FIXED: Adjusted error message for direct upload
+    if (!link.trim())       { setError("Please upload a resource file."); return; }
     
     setError("");
     setLoading(true);
@@ -46,7 +82,7 @@ function UploadModal({ onClose, onSuccess, user }) {
       year: new Date().getFullYear(),
       tags: [], 
       desc: desc.trim() || "No description provided.",
-      drive_link: link.trim(),
+      drive_link: link.trim(), // Storing the Cloudinary URL in the drive_link column
     };
 
     try {
@@ -99,7 +135,7 @@ function UploadModal({ onClose, onSuccess, user }) {
                   Share a <span style={{ color:"#059669" }}>Resource</span>
                 </h2>
                 <p className="jk" style={{ fontSize:15, color:"#64748b", fontWeight:500 }}>
-                  Add a Google Drive link to expand the community library.
+                  Upload a document to expand the community library.
                 </p>
               </div>
 
@@ -155,25 +191,57 @@ function UploadModal({ onClose, onSuccess, user }) {
                 />
               </div>
 
-              {/* google drive link */}
+              {/* 🟢 NEW: File Upload Section */}
               <div style={{ marginBottom:32 }}>
-                <label style={LABEL}>Google Drive Link <span style={{ color:"#ef4444" }}>*</span></label>
-                <div style={{ position:"relative", display:"flex", alignItems:"center" }}>
-                  <span style={{ position:"absolute", left:16, fontSize:18, pointerEvents:"none", color:"#94a3b8" }}>🔗</span>
-                  <input className="input-modern" style={{ paddingLeft: 46 }}
-                    placeholder="https://drive.google.com/file/d/…"
-                    value={link}
-                    onChange={e=>{setLink(e.target.value);setError("");}}
+                <label style={LABEL}>Resource File (PDF or Image) <span style={{ color:"#ef4444" }}>*</span></label>
+                <div style={{ display:"flex", alignItems:"center", gap: 16, flexWrap: "wrap" }}>
+                  <input 
+                    type="file" 
+                    accept="image/*,application/pdf" 
+                    ref={fileInputRef}
+                    style={{ display: "none" }}
+                    onChange={handleFileUpload}
                   />
+                  
+                  <button 
+                    type="button"
+                    onClick={() => fileInputRef.current.click()} 
+                    disabled={isUploading}
+                    className="btn-ghost"
+                    style={{ padding: "12px 24px", color: "#059669", borderColor: "#34d399", background: "#ecfdf5", margin: 0 }}
+                  >
+                    {isUploading ? '⏳ Uploading...' : '📄 Select File'}
+                  </button>
+
+                  {link && (
+                    <div style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", background: "#f8faf9", border: "1px solid #e2e8f0", borderRadius: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
+                        <span style={{ fontSize: 20 }}>
+                          {link.includes('.pdf') ? '📑' : '🖼️'}
+                        </span>
+                        <a href={link} target="_blank" rel="noreferrer" style={{ fontSize: 13, fontWeight: 700, color: "#059669", textDecoration: "none", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          View Attached File
+                        </a>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setLink("")}
+                        style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: 16, fontWeight: 700, marginLeft: 12, padding: "0 4px" }}
+                        title="Remove File"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:13, color:"#64748b", marginTop:8, fontWeight:500 }}>
-                  💡 Ensure your Drive file is set to <strong style={{ color:"#059669", fontWeight: 700 }}>"Anyone with link can view"</strong>
+                <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:13, color:"#64748b", marginTop:10, fontWeight:500 }}>
+                  💡 Maximum file size is <strong style={{ color: "#334155" }}>4MB</strong>.
                 </p>
               </div>
 
               {/* submit */}
-              <button className="btn-green" onClick={handleSubmit} disabled={loading} style={{ width: "100%", justifyContent: "center", padding: "16px", fontSize: 16 }}>
-                {loading ? "Verifying link..." : "🌿 Publish to Library"}
+              <button className="btn-green" onClick={handleSubmit} disabled={loading || isUploading} style={{ width: "100%", justifyContent: "center", padding: "16px", fontSize: 16 }}>
+                {loading ? "Publishing..." : "🌿 Publish to Library"}
               </button>
             </>
           )}
@@ -340,7 +408,8 @@ export default function Resources() {
           font-weight: 600; font-size: 14px; padding: 12px 28px; transition: all .2s ease;
           text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
         }
-        .btn-ghost:hover { background: #ffffff; color: #0f172a; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .btn-ghost:hover:not(:disabled) { background: #ffffff; color: #0f172a; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .btn-ghost:disabled { opacity: 0.7; cursor: not-allowed; }
 
         @keyframes bounceArrow {
           0%, 100% { transform: translateY(0); }
@@ -461,7 +530,6 @@ export default function Resources() {
           .modal-scroll-area { padding: 24px 20px !important; }
           .search-container { padding: 0 15px; }
           
-          /* Ensures the filter pills scroll horizontally instead of stacking */
           .filters-wrapper { 
             flex-wrap: nowrap !important; 
             overflow-x: auto; 
@@ -470,12 +538,10 @@ export default function Resources() {
           }
           .fpill { white-space: nowrap; flex-shrink: 0; }
           
-          /* Make grid 1 column on phones */
           .cards-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
-      {/* 🟢 CHANGED: Increased padding-top to 120px so Navbar doesn't overlap on Desktop */}
       <div style={{ paddingTop: 120, background: "transparent" }}>
         <div style={{ maxWidth: 800, margin: "0 auto", padding: "20px 24px 0px", textAlign: "center" }}>
           <span style={{ display:"inline-block", background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,1)", color:"#059669", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, fontWeight:800, letterSpacing:".1em", textTransform:"uppercase", padding:"8px 20px", borderRadius:50, marginBottom:24, boxShadow:"0 4px 12px rgba(0,0,0,0.03)" }}>
@@ -521,7 +587,6 @@ export default function Resources() {
         ) : (
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 40, flexWrap: "wrap", gap: 20 }}>
-              {/* 🟢 CHANGED: Added class filters-wrapper for mobile scrolling */}
               <div className="filters-wrapper" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 {FILTERS.map(f => (
                   <button key={f} className={`fpill ${activeFilter===f?"on":""}`} onClick={() => setActiveFilter(f)}>
@@ -545,7 +610,6 @@ export default function Resources() {
               {search && <> for "<strong>{search}</strong>"</>}
             </p>
 
-            {/* 🟢 CHANGED: Added class cards-grid and adjusted minmax for mobile */}
             <div className="cards-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(320px, 1fr))", gap: 24 }}>
               {visibleResources.map((r) => {
                 const cfg = TYPE_CONFIG[r.type] || { icon: "📄", accent: "#475569", bg: "#f1f5f9" };
@@ -576,12 +640,10 @@ export default function Resources() {
                         {r.institution && ` · ${r.institution}`}
                       </p>
 
-                      {/* 🟢 FIXED: Removed flexGrow: 1 from description to prevent the text splitting bug */}
                       <p className="jk" style={{ fontSize: 14, color: "#64748b", lineHeight: 1.5, fontWeight: 500, marginBottom: 20, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                         {r.desc || "No description available."}
                       </p>
 
-                      {/* 🟢 FIXED: Pushes button to bottom naturally */}
                       <a href={r.drive_link} target="_blank" rel="noopener noreferrer" 
                         className="btn-green" style={{ width: "100%", justifyContent: "center", background: "rgba(255,255,255,0.8)", color: cfg.accent, border: `1px solid ${cfg.bg}`, padding: "10px", fontSize: 14, marginTop: "auto" }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = cfg.accent; e.currentTarget.style.color = "#fff"; }}
@@ -629,7 +691,6 @@ export default function Resources() {
               <button className="modal-close-btn" onClick={() => setSelectedResource(null)}>✕</button>
               
               <div className="modal-scroll-area">
-                {/* 🟢 Mobile tweak: Adjusted padding for phones */}
                 <div style={{ padding: "48px 24px 32px", background: `linear-gradient(180deg, ${cfg.bg} 0%, rgba(255,255,255,0) 100%)` }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
                     <div style={{ width: 64, height: 64, borderRadius: 16, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)" }}>
@@ -653,7 +714,6 @@ export default function Resources() {
                   </p>
                 </div>
                 
-                {/* 🟢 Mobile tweak: Adjusted padding for phones */}
                 <div style={{ padding: "0 24px 48px" }}>
                   <div style={{ marginBottom: 40 }}>
                     <h4 className="jk" style={{ fontSize: 14, textTransform: "uppercase", letterSpacing: ".1em", color: "#94a3b8", fontWeight: 800, marginBottom: 12 }}>Description</h4>
