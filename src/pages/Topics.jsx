@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '../apiConfig';
 import { useState, useEffect } from "react";
-import Footer from '../components/Footer'; // Adjust this path if your folder structure is different!
+import Footer from '../components/Footer';
 
 // Pre-defined themes
 const THEMES = [
@@ -11,7 +11,7 @@ const THEMES = [
   { name: "Rose",    bg: "#fce7f3", accent: "#be185d" }
 ];
 
-// 🟢 NEW: PRE-DEFINED ICON PACK FOR USERS TO CHOOSE FROM
+// PRE-DEFINED ICON PACK FOR USERS TO CHOOSE FROM
 const ICON_PACK = [
   "🌱", "🌿", "🚜", "🌾", "🍎", "🌻", "💧", "☀️", 
   "🐄", "🐑", "🐓", "🐝", "🥕", "🍅", "🥦", "🌲", 
@@ -73,102 +73,89 @@ function UploadTopicModal({ onClose, onSuccess }) {
     }
   };
 
-  const LABEL = { display:"block", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, fontWeight:700, color:"#334155", letterSpacing:".05em", textTransform:"uppercase", marginBottom:8 };
-
   return (
-    <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} className="modal-overlay">
-      <div className="modal-box" style={{ maxWidth: 700 }}>
-        <button className="modal-close-btn" onClick={onClose}>✕</button>
+    <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-[99999] bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4 md:p-10 animate-[fadeIn_0.3s_ease-out]">
+      <div className="bg-white rounded-[24px] w-full max-w-[700px] max-h-[85vh] flex flex-col relative overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.2)] animate-[slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)]">
+        
+        <button className="absolute top-5 right-5 z-[100] w-11 h-11 rounded-full bg-white/80 backdrop-blur-md border border-black/5 text-slate-900 text-xl flex items-center justify-center cursor-pointer transition-all duration-200 shadow-sm hover:bg-white hover:text-emerald-600 hover:scale-110 active:scale-95" onClick={onClose}>✕</button>
 
-        <div className="modal-scroll-area upload-scroll" style={{ padding: "40px 48px" }}>
+        <div className="overflow-y-auto overflow-x-hidden grow w-full break-words custom-scrollbar p-6 md:p-12">
           {success ? (
-            <div style={{ textAlign:"center", padding:"40px 0", animation:"popIn .35s ease" }}>
-              <div style={{ fontSize:64, marginBottom:20 }}>✨</div>
-              <h3 className="fr" style={{ fontSize:32, color:"#0f172a", marginBottom:12, fontWeight:800 }}>Topic Created!</h3>
-              <p className="jk" style={{ fontSize:16, color:"#64748b", lineHeight:1.7, fontWeight:500 }}>Your new category is now live in the Knowledge Hub.</p>
+            <div className="text-center py-10 animate-[popIn_0.35s_ease]">
+              <div className="text-[64px] mb-5 animate-bounce">✨</div>
+              <h3 className="font-['Lora',serif] text-[32px] text-slate-900 mb-3 font-extrabold">Topic Created!</h3>
+              <p className="font-['Manrope',sans-serif] text-base text-slate-500 leading-[1.7] font-medium">Your new category is now live in the Knowledge Hub.</p>
             </div>
           ) : (
             <>
-              <div style={{ marginBottom: 32 }}>
-                <span className="tag-badge" style={{ background:"rgba(5,150,105,0.1)", color:"#059669", marginBottom:12 }}>New Category</span>
-                <h2 className="fr" style={{ fontSize: "clamp(28px, 4vw, 36px)", fontWeight:900, color:"#0f172a", lineHeight:1.1, marginBottom:8 }}>
-                  Create a <span style={{ color:"#059669" }}>Topic</span>
+              <div className="mb-8">
+                <span className="inline-block bg-emerald-600/10 text-emerald-600 text-xs font-bold px-3 py-1 rounded-full mb-3 uppercase tracking-wider">New Category</span>
+                <h2 className="font-['Lora',serif] text-[clamp(28px,4vw,36px)] font-black text-slate-900 leading-[1.1] mb-2">
+                  Create a <span className="text-emerald-600">Topic</span>
                 </h2>
               </div>
 
               {error && (
-                <div style={{ fontSize:14, color:"#dc2626", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:12, padding:"12px 16px", marginBottom:24, display:"flex", gap:8, alignItems:"center", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:600 }}>
+                <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-6 flex gap-2 items-center font-['Plus_Jakarta_Sans',sans-serif] font-semibold">
                   <span>⚠</span> {error}
                 </div>
               )}
 
-              <div style={{ display: "flex", gap: 20, marginBottom: 16, flexWrap: "wrap" }}>
-                <div style={{ width: "80px" }}>
-                  <label style={LABEL}>Icon</label>
-                  <input className="input-modern" style={{ textAlign: "center", fontSize: "24px", padding: "8px" }} value={icon} onChange={e=>setIcon(e.target.value)} maxLength={2} />
+              <div className="flex gap-5 mb-4 flex-wrap">
+                <div className="w-[80px]">
+                  <label className="block font-['Plus_Jakarta_Sans',sans-serif] text-xs font-bold text-slate-700 tracking-[0.05em] uppercase mb-2">Icon</label>
+                  <input className="w-full text-center text-[24px] p-2 bg-slate-50 border border-slate-200 rounded-xl outline-none transition-all duration-200 focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10" value={icon} onChange={e=>setIcon(e.target.value)} maxLength={2} />
                 </div>
-                <div style={{ flex: "1 1 200px" }}>
-                  <label style={LABEL}>Topic Name <span style={{ color:"#ef4444" }}>*</span></label>
-                  <input className="input-modern" placeholder="e.g., Nursery Management" value={label} onChange={e=>{setLabel(e.target.value);setError("");}} />
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block font-['Plus_Jakarta_Sans',sans-serif] text-xs font-bold text-slate-700 tracking-[0.05em] uppercase mb-2">Topic Name <span className="text-red-500">*</span></label>
+                  <input className="w-full px-[18px] py-[14px] bg-slate-50 border border-slate-200 rounded-xl outline-none font-['Plus_Jakarta_Sans',sans-serif] text-[15px] text-slate-900 transition-all duration-200 font-medium focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10" placeholder="e.g., Nursery Management" value={label} onChange={e=>{setLabel(e.target.value);setError("");}} />
                 </div>
               </div>
 
-              {/* 🟢 ICON PACK SELECTION AREA */}
-              <div style={{ marginBottom: 24 }}>
-                <label style={LABEL}>Quick Icon Select</label>
-                <div style={{ 
-                  display: "flex", gap: 8, flexWrap: "wrap", background: "#f8faf9", 
-                  padding: "16px", borderRadius: "16px", border: "1px solid #e2e8f0",
-                }}>
+              {/* QUICK ICON SELECT */}
+              <div className="mb-6">
+                <label className="block font-['Plus_Jakarta_Sans',sans-serif] text-xs font-bold text-slate-700 tracking-[0.05em] uppercase mb-2">Quick Icon Select</label>
+                <div className="flex gap-2 flex-wrap bg-slate-50 p-4 rounded-2xl border border-slate-200">
                   {ICON_PACK.map(ico => (
                     <button 
-                      key={ico} 
-                      type="button"
-                      onClick={() => setIcon(ico)} 
-                      style={{
-                        width: "42px", height: "42px", fontSize: "20px", borderRadius: "12px",
-                        background: icon === ico ? "rgba(16,185,129,0.15)" : "#ffffff",
-                        border: `1px solid ${icon === ico ? "#059669" : "#e2e8f0"}`,
-                        cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "center", justify: "center",
-                        boxShadow: icon === ico ? "0 0 0 1px #059669" : "0 2px 4px rgba(0,0,0,0.02)"
-                      }}>
+                      key={ico} type="button" onClick={() => setIcon(ico)} 
+                      className={`w-[42px] h-[42px] text-[20px] rounded-xl flex items-center justify-center cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-md active:scale-95 ${icon === ico ? 'bg-emerald-600/15 border border-emerald-600 shadow-[0_0_0_1px_#059669]' : 'bg-white border border-slate-200 shadow-sm'}`}
+                    >
                       {ico}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div style={{ marginBottom:24 }}>
-                <label style={LABEL}>Color Theme</label>
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <div className="mb-6">
+                <label className="block font-['Plus_Jakarta_Sans',sans-serif] text-xs font-bold text-slate-700 tracking-[0.05em] uppercase mb-2">Color Theme</label>
+                <div className="flex gap-3 flex-wrap">
                   {THEMES.map(theme => (
-                    <button type="button" key={theme.name} onClick={() => setSelectedTheme(theme)} style={{
-                      padding: "8px 16px", borderRadius: "50px", border: `2px solid ${selectedTheme.name === theme.name ? theme.accent : 'transparent'}`,
-                      background: theme.bg, color: theme.accent, fontWeight: 700, cursor: "pointer", transition: "all .2s"
-                    }}>
+                    <button type="button" key={theme.name} onClick={() => setSelectedTheme(theme)} 
+                    style={{ background: theme.bg, color: theme.accent, borderColor: selectedTheme.name === theme.name ? theme.accent : 'transparent' }}
+                    className="px-4 py-2 rounded-full border-2 font-bold cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm active:scale-95">
                       {theme.name}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div style={{ marginBottom:20 }}>
-                <label style={LABEL}>Skeleton / Content <span style={{ color:"#ef4444" }}>*</span></label>
-                {/* 🟢 FIXED: Updated hints to include * for bullet points */}
-                <p style={{ fontSize: 12, color: "#64748b", marginBottom: 8, fontFamily:"'Plus Jakarta Sans',sans-serif", lineHeight: 1.5 }}>
+              <div className="mb-5">
+                <label className="block font-['Plus_Jakarta_Sans',sans-serif] text-xs font-bold text-slate-700 tracking-[0.05em] uppercase mb-2">Skeleton / Content <span className="text-red-500">*</span></label>
+                <p className="text-xs text-slate-500 mb-2 font-['Plus_Jakarta_Sans',sans-serif] leading-[1.5]">
                   💡 <strong>Pro Tip:</strong> Type <code>##</code> for a Main Heading, <code>-</code> for a Subheading, and <code>*</code> for Bullet Points!
                 </p>
-                <textarea className="input-modern" style={{ resize:"vertical", lineHeight:1.6, minHeight: "220px", fontFamily: "monospace" }}
+                <textarea className="w-full px-[18px] py-[14px] bg-slate-50 border border-slate-200 rounded-xl outline-none font-['Plus_Jakarta_Sans',sans-serif] text-[15px] text-slate-900 transition-all duration-200 font-medium focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 resize-y leading-[1.6] min-h-[220px] font-mono"
                   placeholder={`## Raising Vegetable Nursery\n- Benefits of nursery\nThis is a description of the benefits...\n* Better germination rates\n* Healthier seedlings\n\n## Soil treatment`} 
                   value={description} onChange={e=>setDescription(e.target.value)} />
               </div>
 
-              <div style={{ marginBottom:32 }}>
-                <label style={LABEL}>Tags <span style={{ color:"#94a3b8", fontWeight:500, textTransform:"none", letterSpacing:0 }}>(comma separated)</span></label>
-                <input className="input-modern" placeholder="e.g., Soil, Greenhouse, Seeds" value={subtopics} onChange={e=>setSubtopics(e.target.value)} />
+              <div className="mb-8">
+                <label className="block font-['Plus_Jakarta_Sans',sans-serif] text-xs font-bold text-slate-700 tracking-[0.05em] uppercase mb-2">Tags <span className="text-slate-400 font-medium normal-case tracking-normal">(comma separated)</span></label>
+                <input className="w-full px-[18px] py-[14px] bg-slate-50 border border-slate-200 rounded-xl outline-none font-['Plus_Jakarta_Sans',sans-serif] text-[15px] text-slate-900 transition-all duration-200 font-medium focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10" placeholder="e.g., Soil, Greenhouse, Seeds" value={subtopics} onChange={e=>setSubtopics(e.target.value)} />
               </div>
 
-              <button type="button" className="btn-green" onClick={handleSubmit} disabled={loading} style={{ width: "100%", justifyContent: "center", padding: "16px", fontSize: 16 }}>
+              <button type="button" onClick={handleSubmit} disabled={loading} className="w-full justify-center bg-emerald-600 text-white rounded-full font-['Plus_Jakarta_Sans',sans-serif] font-semibold text-base px-7 py-4 transition-all duration-300 inline-flex items-center gap-1.5 hover:bg-emerald-700 hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(5,150,105,0.3)] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed">
                 {loading ? "Creating..." : "🌿 Launch Topic"}
               </button>
             </>
@@ -191,6 +178,14 @@ export default function Topics() {
   const [showUpload, setShowUpload] = useState(false);
   const user = JSON.parse(localStorage.getItem("hv_user"));
 
+  // 🟢 FIXED: Scroll to top and prevent browser memory restoration
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
+
   useEffect(() => {
     const fetchTopics = async () => {
       try {
@@ -198,14 +193,10 @@ export default function Topics() {
         const dbTopics = await res.json();
         
         const formattedTopics = dbTopics.map(t => ({
-          id: t.id,
-          icon: t.icon || "🌿",
-          label: t.label || "Untitled Topic",
+          id: t.id, icon: t.icon || "🌿", label: t.label || "Untitled Topic",
           reads: ((t.reads_count || 0) / 1000).toFixed(1) + "K",
-          color: t.color || "#f8faf9",
-          accent: t.accent || "#059669",
-          subtopics: t.subtopics || [],
-          desc: t.description || ""
+          color: t.color || "#f8faf9", accent: t.accent || "#059669",
+          subtopics: t.subtopics || [], desc: t.description || ""
         }));
         
         setTopics(formattedTopics);
@@ -220,14 +211,8 @@ export default function Topics() {
 
   // PREVENT BACKGROUND SCROLLING WHEN MODAL IS OPEN
   useEffect(() => {
-    if (selected || showUpload) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
+    document.body.style.overflow = (selected || showUpload) ? "hidden" : "unset";
+    return () => { document.body.style.overflow = "unset"; };
   }, [selected, showUpload]);
 
   const filtered = topics.filter((t) =>
@@ -236,15 +221,13 @@ export default function Topics() {
     (t.subtopics && t.subtopics.some(sub => sub.toLowerCase().includes(search.toLowerCase())))
   );
 
-  const handleNewTopic = (newTopic) => {
-    setTopics(prev => [newTopic, ...prev]);
-  };
+  const handleNewTopic = (newTopic) => setTopics(prev => [newTopic, ...prev]);
 
-  // 🟢 FIXED & UPGRADED: Advanced Skeleton Parser Logic (Supports Subheadings AND Bullet Points)
+  // ADVANCED SKELETON PARSER
   const renderTopicContent = (text, accentColor) => {
     if (!text.includes("##")) {
       return text.split("\n\n").map((para, i) => (
-        <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} style={{ wordBreak: 'break-word', textAlign: 'justify' }} />
+        <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} className="text-[14.5px] md:text-[15px] text-slate-600 leading-[1.65] font-medium text-justify mb-4 break-words font-['Plus_Jakarta_Sans',sans-serif]" />
       ));
     }
 
@@ -256,85 +239,61 @@ export default function Topics() {
       const lines = modText.split("\n").filter(l => l.trim() !== "");
       const mainHeading = lines[0].trim();
       const items = [];
-      
       let currentSubheading = null;
       let mainDesc = [];
 
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
-        
-        // Match "- Subheading"
         const isSubheading = line.match(/^-\s+(.*)/);
-        // Match "* Bullet point"
         const isBulletPoint = line.match(/^\*\s+(.*)/);
         
         if (isSubheading) {
-          // Save the previous subheading if it exists
           if (currentSubheading) items.push(currentSubheading);
-          
-          currentSubheading = { 
-            title: isSubheading[1], 
-            desc: [], 
-            bullets: [] 
-          };
-        } 
-        else if (isBulletPoint) {
-          if (currentSubheading) {
-            currentSubheading.bullets.push(isBulletPoint[1]);
-          } else {
-            // If they used a bullet point before a subheading, treat it as a main description bullet
-            mainDesc.push(`• ${isBulletPoint[1]}`);
-          }
-        } 
-        else {
-          // Regular text
-          if (currentSubheading) {
-            currentSubheading.desc.push(line);
-          } else {
-            mainDesc.push(line); 
-          }
+          currentSubheading = { title: isSubheading[1], desc: [], bullets: [] };
+        } else if (isBulletPoint) {
+          if (currentSubheading) currentSubheading.bullets.push(isBulletPoint[1]);
+          else mainDesc.push(`• ${isBulletPoint[1]}`);
+        } else {
+          if (currentSubheading) currentSubheading.desc.push(line);
+          else mainDesc.push(line); 
         }
       }
-      
-      // Push the final subheading
       if (currentSubheading) items.push(currentSubheading);
-
       return { mainHeading, mainDesc: mainDesc.join(" "), items };
     });
 
     return (
-      <div className="skeleton-container">
-        {introText && <p className="skeleton-intro" style={{ wordBreak: 'break-word', textAlign: 'justify' }}>{introText}</p>}
+      <div className="w-full font-['Plus_Jakarta_Sans',sans-serif]">
+        {introText && <p className="text-[14.5px] md:text-[15px] text-slate-600 leading-[1.65] font-medium text-justify mb-6 break-words">{introText}</p>}
         
-        <div className="skeleton-grid">
+        <div className="flex flex-col gap-4 w-full">
           {modules.map((mod, idx) => (
-            <div key={idx} className="skeleton-module" style={{ borderTop: `3px solid ${accentColor}` }}>
+            <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 md:p-6 transition-all duration-300 w-full hover:-translate-y-1 hover:shadow-[0_15px_30px_-10px_rgba(0,0,0,0.08)] hover:bg-white" style={{ borderTop: `3px solid ${accentColor}` }}>
               
-              <div className="module-header" style={{ alignItems: 'flex-start' }}>
-                <span className="module-number" style={{ color: accentColor, marginTop: '2px' }}>{String(idx + 1).padStart(2, '0')}</span>
-                <h4 style={{ wordBreak: 'break-word', margin: 0 }}>{mod.mainHeading}</h4>
+              <div className="flex gap-2 md:gap-3 items-start mb-2 md:mb-3 pb-2 md:pb-3 border-b border-black/5">
+                <span className="font-['Fraunces',serif] text-[20px] md:text-[24px] font-black leading-none opacity-20 shrink-0 whitespace-nowrap mt-0.5" style={{ color: accentColor }}>{String(idx + 1).padStart(2, '0')}</span>
+                <h4 className="text-[16.5px] md:text-[18px] font-extrabold text-slate-900 leading-[1.2] break-words m-0">{mod.mainHeading}</h4>
               </div>
               
-              {mod.mainDesc && <p className="module-main-desc" style={{ wordBreak: 'break-word', textAlign: 'justify' }}>{mod.mainDesc}</p>}
+              {mod.mainDesc && <p className="text-[14.5px] md:text-[14px] text-slate-700 mb-4 leading-[1.65] font-medium text-justify break-words">{mod.mainDesc}</p>}
               
               {mod.items.length > 0 && (
-                <ul className="module-list">
+                <ul className="list-none p-0 m-0 flex flex-col gap-3">
                   {mod.items.map((item, sIdx) => (
-                    <li key={sIdx} style={{ marginBottom: item.bullets.length > 0 ? '16px' : '0' }}>
-                      <div className="sub-title">
-                        <span style={{ color: accentColor, marginRight: 8, marginTop: 1, flexShrink: 0 }}>▹</span>
-                        <span style={{ wordBreak: 'break-word' }}>{item.title}</span>
+                    <li key={sIdx} className={`${item.bullets.length > 0 ? 'mb-4' : 'mb-0'}`}>
+                      <div className="text-[15px] font-bold text-slate-800 flex items-start leading-[1.4]">
+                        <span style={{ color: accentColor }} className="mr-2 mt-[1px] shrink-0">▹</span>
+                        <span className="break-words">{item.title}</span>
                       </div>
                       
                       {item.desc.length > 0 && (
-                        <p className="sub-desc" style={{ wordBreak: 'break-word', textAlign: 'justify' }}>{item.desc.join(" ")}</p>
+                        <p className="text-[14.5px] md:text-[14px] text-slate-500 leading-[1.65] ml-6 mt-1 font-medium text-justify break-words">{item.desc.join(" ")}</p>
                       )}
 
-                      {/* 🟢 NEW: Renders bullet points under the subheading */}
                       {item.bullets.length > 0 && (
-                        <ul style={{ listStyleType: 'disc', marginLeft: '38px', marginTop: '8px', color: '#475569', fontSize: '14px', lineHeight: 1.6, fontWeight: 500 }}>
+                        <ul className="list-disc ml-[38px] mt-2 text-slate-600 text-[14px] leading-[1.6] font-medium">
                           {item.bullets.map((bullet, bIdx) => (
-                            <li key={bIdx} style={{ marginBottom: '4px', wordBreak: 'break-word' }}>{bullet}</li>
+                            <li key={bIdx} className="mb-1 break-words">{bullet}</li>
                           ))}
                         </ul>
                       )}
@@ -350,281 +309,113 @@ export default function Topics() {
   };
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", color: "#111827", overflow: "hidden" }}>
-
-      <div style={{
-        position: "fixed", inset: 0, zIndex: -1,
-        background: "linear-gradient(135deg, #f0fdf4 0%, #fffbeb 50%, #f0f9ff 100%)",
-      }}>
-        <div style={{ position: "absolute", top: "-10%", left: "-10%", width: "50vw", height: "50vw", background: "radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%)", filter: "blur(60px)" }} />
-        <div style={{ position: "absolute", top: "40%", right: "-10%", width: "40vw", height: "40vw", background: "radial-gradient(circle, rgba(250,204,21,0.12) 0%, transparent 70%)", filter: "blur(60px)" }} />
-        <div style={{ position: "absolute", bottom: "-20%", left: "20%", width: "60vw", height: "60vw", background: "radial-gradient(circle, rgba(56,189,248,0.12) 0%, transparent 70%)", filter: "blur(80px)" }} />
-      </div>
-
+    <div className="relative min-h-screen text-slate-900 overflow-hidden">
+      
+      {/* Tiny CSS block solely for loading Fonts, Animations, and Webkit Scrollbars */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700;800&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700;800&display=swap');
         html { scroll-behavior: smooth; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.3); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.6); }
-        
-        .fr { font-family: 'Lora', serif; }
-        .jk { font-family: 'Manrope', sans-serif; }
 
-        .topic-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 1); border-radius: 20px; padding: 32px 28px; cursor: pointer; position: relative; overflow: hidden; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08); display: flex; flex-direction: column; }
-        .topic-card:hover { transform: translateY(-8px); box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.25), 0 0 0 2px rgba(16, 185, 129, 0.1); background: rgba(255, 255, 255, 0.95); }
-        
-        .topic-card .glow { position: absolute; top: -40px; right: -40px; width: 140px; height: 140px; border-radius: 50%; filter: blur(40px); opacity: 0; transition: opacity .5s; pointer-events: none; }
-        .topic-card:hover .glow { opacity: 0.15; }
-
-        .search-container { position: relative; max-width: 680px; margin: 0 auto; transform: translateY(50%); z-index: 10; }
-        .search-box { width: 100%; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); border-radius: 100px; padding: 22px 32px 22px 64px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 500; color: #111827; outline: none; transition: all .3s ease; box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(16,185,129,0.05); }
-        .search-box::placeholder { color: #94a3b8; }
-        .search-box:focus { border-color: #10b981; background: #ffffff; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15), 0 20px 40px -10px rgba(0, 0, 0, 0.1); }
-        .search-icon { position: absolute; left: 28px; top: 50%; transform: translateY(-50%); font-size: 22px; color: #10b981; pointer-events: none; }
-
-        .input-modern { width: 100%; padding: 14px 18px; background: #f8faf9; border: 1px solid #e2e8f0; border-radius: 12px; outline: none; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; color: #111827; transition: all 0.2s; font-weight: 500; }
-        .input-modern:focus { background: #fff; border-color: #059669; box-shadow: 0 0 0 4px rgba(5,150,105,0.1); }
-
-        .btn-green { background: #059669; color: #fff; border: none; cursor: pointer; border-radius: 50px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 14px; padding: 12px 28px; transition: all .2s ease; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
-        .btn-green:hover { background: #047857; transform: translateY(-1px); box-shadow: 0 8px 16px rgba(5, 150, 105, 0.25); }
-
-        .btn-ghost { background: rgba(255, 255, 255, 0.6); color: #334155; border: 1px solid rgba(0,0,0,0.05); cursor: pointer; border-radius: 50px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 14px; padding: 12px 28px; transition: all .2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-        .btn-ghost:hover { background: #ffffff; color: #0f172a; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-
-        .subtopic-tag { display: inline-block; background: #f1f5f9; color: #475569; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 50px; transition: all .2s; border: 1px solid transparent; }
-        .topic-card:hover .subtopic-tag { background: #ffffff; border-color: #e2e8f0; }
-
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; background: rgba(15, 23, 42, 0.35); backdrop-filter: blur(24px); display: flex; justify-content: center; align-items: center; padding: 60px 20px; animation: fadeIn .3s ease-out; }
-        
-        .modal-box { 
-          background: #ffffff; 
-          border-radius: 24px; 
-          width: 100%; 
-          max-width: 860px; 
-          max-height: 85vh; 
-          display: flex; 
-          flex-direction: column; 
-          position: relative; 
-          overflow: hidden; 
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255,255,255,0.2); 
-          animation: slideUp .4s cubic-bezier(0.16, 1, 0.3, 1); 
+        /* 🟢 HIGH-PERFORMANCE SCROLLBAR: Hardware accelerated */
+        .custom-scrollbar {
+          -webkit-overflow-scrolling: touch; 
+          transform: translateZ(0); 
+          will-change: scroll-position;
         }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.25); border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.5); }
         
-        .modal-scroll-area { 
-          overflow-y: auto; 
-          overflow-x: hidden; 
-          flex-grow: 1; 
-          width: 100%; 
-          word-break: break-word; 
-          overscroll-behavior: contain; 
-        }
-        .modal-scroll-area::-webkit-scrollbar { width: 6px; }
-        .modal-scroll-area::-webkit-scrollbar-track { background: transparent; }
-        .modal-scroll-area::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.25); border-radius: 4px; }
-        .modal-scroll-area::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.5); }
-
-        .modal-close-btn { position: absolute; top: 20px; right: 20px; z-index: 100; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(0, 0, 0, 0.05); color: #0f172a; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .modal-close-btn:hover { background: #ffffff; color: #059669; transform: scale(1.1); }
-
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         @keyframes slideUp { from{opacity:0;transform:translateY(40px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
-
-        .skeleton-container { 
-          font-family: 'Plus Jakarta Sans', sans-serif; 
-          width: 100%;
-        }
-
-        .skeleton-intro { 
-          font-size: 15px; 
-          color: #475569; 
-          line-height: 1.6; 
-          margin-bottom: 24px; 
-          font-weight: 500; 
-          text-align: justify; 
-        }
-
-        .skeleton-grid { 
-          display: flex;
-          flex-direction: column;
-          gap: 16px; 
-          width: 100%;
-        }
-
-        .skeleton-module {
-          background: #f8faf9; 
-          border: 1px solid #e2e8f0; 
-          border-radius: 16px; 
-          padding: 20px 24px; 
-          transition: transform 0.2s, box-shadow 0.2s;
-          width: 100%; 
-        }
-
-        .skeleton-module:hover { 
-          transform: translateY(-2px); 
-          box-shadow: 0 15px 30px -10px rgba(0,0,0,0.08); 
-          background: #ffffff; 
-        }
-
-        .module-header { 
-          display: flex; 
-          gap: 12px; 
-          align-items: center; 
-          margin-bottom: 12px; 
-          border-bottom: 1px solid rgba(0,0,0,0.04);
-          padding-bottom: 12px;
-        }
-
-        .module-number { 
-          font-family: 'Fraunces', serif; 
-          font-size: 24px; 
-          font-weight: 900; 
-          line-height: 1; 
-          opacity: 0.2; 
-          flex-shrink: 0;
-          white-space: nowrap;
-        }
-
-        .module-header h4 { 
-          font-size: 18px; 
-          font-weight: 800; 
-          color: #0f172a; 
-          line-height: 1.2; 
-        }
-
-        .module-main-desc { 
-          font-size: 14px; 
-          color: #334155; 
-          margin-bottom: 16px; 
-          line-height: 1.6; 
-          font-weight: 500;
-          text-align: justify;
-        }
-
-        .module-list { 
-          list-style: none; 
-          padding: 0; 
-          margin: 0; 
-          display: flex; 
-          flex-direction: column; 
-          gap: 12px; 
-        }
-
-        .sub-title { 
-          font-size: 15px; 
-          font-weight: 700; 
-          color: #1e293b; 
-          display: flex; 
-          align-items: flex-start; 
-          line-height: 1.4; 
-        }
-
-        .sub-desc { 
-          font-size: 14px; 
-          color: #64748b; 
-          line-height: 1.6; 
-          margin-left: 24px; 
-          margin-top: 4px; 
-          font-weight: 500; 
-          text-align: justify;
-        }
-
-        @media (max-width: 768px) {
-          .modal-overlay { padding: 16px !important; align-items: center !important; }
-          .modal-box { border-radius: 24px !important; max-height: 85vh !important; margin: auto; }
-          .modal-scroll-area { padding: 0 !important; }
-          .search-container { padding: 0 15px; }
-          main > div > div { grid-template-columns: 1fr !important; }
-          
-          .topic-header-compact { padding: 32px 20px 16px !important; }
-          .topic-body-compact { padding: 0 20px 32px !important; }
-          .topic-icon-large { width: 56px !important; height: 56px !important; font-size: 28px !important; margin-bottom: 16px !important; }
-          .topic-title-large { font-size: 24px !important; }
-          
-          .skeleton-intro, .module-main-desc, .sub-desc, .modal-article-content p {
-            font-size: 14.5px !important;
-            line-height: 1.65 !important;
-            text-align: justify !important;
-            margin-bottom: 12px !important;
-          }
-          .skeleton-module { padding: 16px !important; border-radius: 16px !important; }
-          .module-number { font-size: 20px !important; }
-          .module-header h4 { font-size: 16.5px !important; }
-          .module-header { margin-bottom: 8px !important; padding-bottom: 8px !important; gap: 8px !important; }
-          
-          .upload-scroll { padding: 24px 20px !important; }
-        }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
       `}</style>
 
-      <div style={{ paddingTop: 120, background: "transparent" }}>
-        <div style={{ maxWidth: 800, margin: "0 auto", padding: "20px 24px 0px", textAlign: "center" }}>
-          <span style={{ display:"inline-block", background:"rgba(255,255,255,0.6)", backdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,1)", color:"#059669", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, fontWeight:800, letterSpacing:".1em", textTransform:"uppercase", padding:"8px 20px", borderRadius:50, marginBottom:24, boxShadow:"0 4px 12px rgba(0,0,0,0.03)" }}>
+      {/* Background Gradients */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-green-50 via-amber-50 to-sky-50">
+        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-[radial-gradient(circle,rgba(16,185,129,0.15)_0%,transparent_70%)] blur-[60px]" />
+        <div className="absolute top-[40%] right-[-10%] w-[40vw] h-[40vw] bg-[radial-gradient(circle,rgba(250,204,21,0.12)_0%,transparent_70%)] blur-[60px]" />
+        <div className="absolute bottom-[-20%] left-[20%] w-[60vw] h-[60vw] bg-[radial-gradient(circle,rgba(56,189,248,0.12)_0%,transparent_70%)] blur-[80px]" />
+      </div>
+
+      {/* HERO SECTION */}
+      <div className="pt-[120px] bg-transparent">
+        <div className="max-w-[800px] mx-auto px-6 text-center">
+          <span className="inline-block bg-white/60 backdrop-blur-sm border border-white text-emerald-600 font-['Plus_Jakarta_Sans',sans-serif] text-xs font-extrabold tracking-[0.1em] uppercase px-5 py-2 rounded-full mb-6 shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
             Knowledge Hub
           </span>
-          <h1 className="fr" style={{ fontSize: "clamp(32px, 6vw, 60px)", fontWeight: 900, color: "#0f172a", lineHeight: 1.1, letterSpacing: "-1px" }}>
-            Explore agricultural <br/> <span style={{ color:"#059669" }}>disciplines.</span>
+          <h1 className="font-['Lora',serif] text-[clamp(32px,6vw,60px)] font-black text-slate-900 leading-[1.1] tracking-tight">
+            Explore agricultural <br/> <span className="text-emerald-600">disciplines.</span>
           </h1>
-          <p className="jk" style={{ marginTop: 20, fontSize: 16, color: "#475569", fontWeight: 500, lineHeight: 1.6, maxWidth: 600, margin: "20px auto 0" }}>
+          <p className="font-['Manrope',sans-serif] mt-5 text-base text-slate-600 font-medium leading-[1.6] max-w-[600px] mx-auto">
             Dive into specialized agricultural disciplines and explore our full curriculum structures.
           </p>
 
           {user && (
-            <div style={{ marginTop: "24px", animation: "fadeIn 0.5s ease" }}>
-              <button onClick={() => setShowUpload(true)} className="btn-green" style={{ padding: "14px 32px", fontSize: "16px", boxShadow: "0 8px 20px rgba(5, 150, 105, 0.3)" }}>
-                <span style={{ fontSize: "20px" }}>🌿</span> Create a Topic
+            <div className="mt-6 animate-[fadeIn_0.5s_ease]">
+              <button onClick={() => setShowUpload(true)} className="bg-emerald-600 text-white rounded-full font-['Plus_Jakarta_Sans',sans-serif] font-semibold text-base px-8 py-3.5 transition-all duration-300 inline-flex items-center gap-1.5 hover:bg-emerald-700 hover:-translate-y-[2px] shadow-[0_8px_20px_rgba(5,150,105,0.3)] active:scale-[0.98]">
+                <span className="text-[20px]">🌿</span> Create a Topic
               </button>
             </div>
           )}
 
-          <div className="search-container" style={{ marginTop: user ? "30px" : "0px" }}>
-            <span className="search-icon">🔍</span>
-            <input className="search-box" placeholder="Search topics or curriculums..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          {/* SEARCH BAR */}
+          <div className={`relative max-w-[680px] mx-auto translate-y-1/2 z-10 px-4 md:px-0 ${user ? 'mt-[30px]' : 'mt-0'}`}>
+            <span className="absolute left-11 md:left-7 top-1/2 -translate-y-1/2 text-[22px] text-emerald-500 pointer-events-none">🔍</span>
+            <input 
+              className="w-full bg-white/90 backdrop-blur-xl border border-white rounded-full py-[22px] pr-8 pl-[60px] md:pl-16 font-['Plus_Jakarta_Sans',sans-serif] text-[17px] font-medium text-slate-900 outline-none transition-all duration-300 shadow-[0_15px_35px_-5px_rgba(0,0,0,0.08),0_0_0_1px_rgba(16,185,129,0.05)] placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:shadow-[0_0_0_4px_rgba(16,185,129,0.15),0_20px_40px_-10px_rgba(0,0,0,0.1)]" 
+              placeholder="Search topics or curriculums..." 
+              value={search} 
+              onChange={(e) => setSearch(e.target.value)} 
+            />
           </div>
         </div>
       </div>
 
-      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "80px 20px 100px", position: "relative", zIndex: 5 }}>
+      {/* TOPIC GRID */}
+      <main className="max-w-[1200px] mx-auto pt-20 pb-[100px] px-5 relative z-0">
         {loading ? (
-          <div style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>Loading topics from database...</div>
+          <div className="text-center py-10 text-slate-500">Loading topics from database...</div>
         ) : (
           <>
             {search && (
-              <p className="jk" style={{ fontSize: 16, color: "#475569", marginBottom: 32, fontWeight: 600, background: "rgba(255,255,255,0.6)", padding: "8px 16px", borderRadius: "12px", display: "inline-block" }}>
-                Found <strong style={{ color: "#0f172a" }}>{filtered.length}</strong> topics for "{search}"
+              <p className="font-['Manrope',sans-serif] text-base text-slate-600 mb-8 font-semibold bg-white/60 px-4 py-2 rounded-xl inline-block">
+                Found <strong className="text-slate-900">{filtered.length}</strong> topics for "{search}"
               </p>
             )}
 
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+            <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6">
               {filtered.map((t) => (
-                <article key={t.id} className="topic-card" onClick={() => setSelected(t)} onMouseEnter={() => setHovered(t.id)} onMouseLeave={() => setHovered(null)}>
-                  <div className="glow" style={{ background: t.accent }} />
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
-                    <div style={{ width: 60, height: 60, borderRadius: "16px", background: hovered === t.id ? t.color : "#f8faf9", display: "flex", alignItems: "center", justify: "center", fontSize: 32, transition: "all .3s" }}>
+                <article key={t.id} className="group bg-white/85 backdrop-blur-md border border-white rounded-[20px] p-8 cursor-pointer relative overflow-hidden transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)] flex flex-col hover:-translate-y-2 hover:shadow-[0_25px_50px_-12px_rgba(16,185,129,0.25),0_0_0_2px_rgba(16,185,129,0.1)] hover:bg-white/95 active:scale-[0.98]" onClick={() => setSelected(t)} onMouseEnter={() => setHovered(t.id)} onMouseLeave={() => setHovered(null)}>
+                  
+                  {/* Glow overlay */}
+                  <div className="absolute -top-10 -right-10 w-[140px] h-[140px] rounded-full blur-[40px] opacity-0 transition-opacity duration-500 pointer-events-none group-hover:opacity-20" style={{ background: t.accent }} />
+                  
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="w-[60px] h-[60px] rounded-2xl flex items-center justify-center text-[32px] transition-all duration-300 group-hover:scale-110" style={{ background: hovered === t.id ? t.color : "#f8faf9" }}>
                       {t.icon}
                     </div>
                   </div>
 
-                  <h3 className="fr" style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", marginBottom: 12, lineHeight: 1.2, wordBreak: "break-word" }}>{t.label}</h3>
+                  <h3 className="font-['Lora',serif] text-[24px] font-extrabold text-slate-900 mb-3 leading-[1.2] break-words">{t.label}</h3>
                   
-                  <p className="jk" style={{ fontSize: 15, color: "#475569", lineHeight: 1.6, fontWeight: 500, marginBottom: 24, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word" }}>
+                  <p className="font-['Manrope',sans-serif] text-[15px] text-slate-600 leading-[1.6] font-medium mb-6 line-clamp-3 break-words">
                     {(t.desc || "").replace(/#|[-*]/g, "")}
                   </p>
 
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24, marginTop: "auto" }}>
+                  <div className="flex flex-wrap gap-2 mb-6 mt-auto">
                     {t.subtopics && t.subtopics.slice(0,3).map((s) => (
-                      <span key={s} className="subtopic-tag">{s}</span>
+                      <span key={s} className="inline-block bg-slate-100 text-slate-600 font-['Plus_Jakarta_Sans',sans-serif] text-xs font-semibold px-3.5 py-1.5 rounded-full transition-all duration-200 border border-transparent group-hover:bg-white group-hover:border-slate-200">{s}</span>
                     ))}
                     {t.subtopics && t.subtopics.length > 3 && (
-                      <span className="subtopic-tag" style={{ background: "transparent", color: "#94a3b8" }}>+{t.subtopics.length-3}</span>
+                      <span className="inline-block bg-transparent text-slate-400 font-['Plus_Jakarta_Sans',sans-serif] text-xs font-semibold px-3.5 py-1.5 rounded-full">+{t.subtopics.length-3}</span>
                     )}
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 20, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
-                    <div style={{ display: "flex", gap: 16 }}>
-                      <span className="jk" style={{ fontSize: 13, color: "#64748b", fontWeight: 600 }}>👀 {t.reads} Views</span>
+                  <div className="flex justify-between items-center pt-5 border-t border-black/5">
+                    <div className="flex gap-4">
+                      <span className="font-['Manrope',sans-serif] text-[13px] text-slate-500 font-semibold">👀 {t.reads} Views</span>
                     </div>
                   </div>
                 </article>
@@ -632,42 +423,36 @@ export default function Topics() {
             </div>
 
             {filtered.length === 0 && (
-              <div style={{ textAlign: "center", padding: "100px 0" }}>
-                <div style={{ fontSize: 64, marginBottom: 20 }}>🔍</div>
-                <h3 className="fr" style={{ fontSize: 28, color: "#0f172a", fontWeight: 800 }}>No topics found</h3>
-                <p className="jk" style={{ color: "#64748b", mt: 10, fontSize: 16 }}>We couldn't find anything matching your search.</p>
-                <button className="btn-ghost" style={{ marginTop: 24, background:"rgba(255,255,255,0.8)" }} onClick={() => setSearch("")}>Clear Search</button>
+              <div className="text-center py-24">
+                <div className="text-[64px] mb-5">🔍</div>
+                <h3 className="font-['Lora',serif] text-[28px] text-slate-900 font-extrabold">No topics found</h3>
+                <p className="font-['Manrope',sans-serif] text-slate-500 mt-2.5 text-base">We couldn't find anything matching your search.</p>
+                <button className="mt-6 bg-white/80 text-slate-700 border border-black/5 rounded-full font-['Plus_Jakarta_Sans',sans-serif] font-semibold text-sm px-7 py-3 transition-all hover:bg-white hover:text-slate-900 hover:shadow-sm active:scale-95" onClick={() => setSearch("")}>Clear Search</button>
               </div>
             )}
           </>
         )}
       </main>
 
-      {showUpload && (
-        <UploadTopicModal onClose={() => setShowUpload(false)} onSuccess={handleNewTopic} />
-      )}
+      {showUpload && <UploadTopicModal onClose={() => setShowUpload(false)} onSuccess={handleNewTopic} />}
 
+      {/* READING MODAL */}
       {selected && !showUpload && (
-        <div className="modal-overlay" onClick={() => setSelected(null)}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ '--accent-color': selected.accent }}>
-            <button className="modal-close-btn" onClick={() => setSelected(null)}>✕</button>
-            <div className="modal-scroll-area">
-              <div className="topic-header-compact" style={{ 
-                padding: "48px 24px 24px", 
-                background: `linear-gradient(180deg, ${selected.color} 0%, rgba(255,255,255,0) 100%)`, 
-                textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center"
-              }}>
-                <div className="topic-icon-large" style={{ 
-                  width: 72, height: 72, borderRadius: "20px", background: "#ffffff", 
-                  display: "flex", alignItems: "center", justify: "center", 
-                  fontSize: 36, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)", marginBottom: 20
-                }}>{selected.icon}</div>
-                <h2 className="fr topic-title-large" style={{ fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 900, color: "#0f172a", lineHeight: 1.1, marginBottom: 16, wordBreak: "break-word" }}>
+        <div className="fixed inset-0 z-[99999] bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4 md:p-16 animate-[fadeIn_0.3s_ease-out]" onClick={() => setSelected(null)}>
+          <div className="bg-white rounded-[24px] w-full max-w-[1100px] max-h-[85vh] flex flex-col relative overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.2)] animate-[slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)]" onClick={(e) => e.stopPropagation()}>
+            <button className="absolute top-5 right-5 z-[100] w-11 h-11 rounded-full bg-white/80 backdrop-blur-md border border-black/5 text-slate-900 text-xl flex items-center justify-center cursor-pointer transition-all duration-200 shadow-sm hover:bg-white hover:text-emerald-600 hover:scale-110 active:scale-95" onClick={() => setSelected(null)}>✕</button>
+            
+            <div className="overflow-y-auto overflow-x-hidden grow w-full break-words custom-scrollbar">
+              <div className="px-5 md:px-6 pt-8 md:pt-12 pb-4 md:pb-6 text-center flex flex-col items-center" style={{ background: `linear-gradient(180deg, ${selected.color} 0%, rgba(255,255,255,0) 100%)` }}>
+                <div className="w-[56px] md:w-[72px] h-[56px] md:h-[72px] rounded-[20px] bg-white flex items-center justify-center text-[28px] md:text-[36px] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1),0_0_0_1px_rgba(0,0,0,0.05)] mb-4 md:mb-5">
+                  {selected.icon}
+                </div>
+                <h2 className="font-['Lora',serif] text-[clamp(24px,4vw,36px)] font-black text-slate-900 leading-[1.1] mb-4 break-words">
                   {selected.label}
                 </h2>
               </div>
-              <div className="topic-body-compact" style={{ padding: "0 24px 48px" }}> 
-                <div className="modal-article-content">
+              <div className="px-5 md:px-6 pb-8 md:pb-12"> 
+                <div>
                   {renderTopicContent(selected.desc || "", selected.accent)}
                 </div>
               </div>

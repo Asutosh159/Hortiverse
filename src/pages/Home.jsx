@@ -1,6 +1,5 @@
 import { API_BASE_URL } from '../apiConfig';
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from "react";
 import Footer from '../components/Footer'; 
 
 /* ══════════════════════════════════════════════════
@@ -97,6 +96,14 @@ function Skel({ w="100%", h=20, r=8, mb=0, style={} }) {
    MAIN COMPONENT
 ══════════════════════════════════════════════════ */
 export default function Home() {
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
+
   const [visible,        setVisible]        = useState({});
   const [slideIdx,       setSlideIdx]       = useState(0);
   const [transitioning,  setTransitioning]  = useState(false);
@@ -131,14 +138,14 @@ export default function Home() {
     setTimeout(() => {
       setSlideIdx(next);
       setTransitioning(false);
-    }, 600);
+    }, 800); 
   };
 
   useEffect(() => {
     if (slides.length < 2) return;
     timerRef.current = setInterval(() => {
       goSlide((slideIdx + 1) % slides.length);
-    }, 5000);
+    }, 6000); 
     return () => clearInterval(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slides, slideIdx, transitioning]);
@@ -185,11 +192,10 @@ export default function Home() {
     setNlState("success");
   };
 
-  // 🟢 FIXED: Explicitly added style={{ textAlign: "justify" }} to all text elements in the modal
   const renderTopicContent = (text, accentColor) => {
     if (!text.includes("##")) {
       return text.split("\n\n").map((para, i) => (
-        <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} className="break-words text-[14px] md:text-[16px] text-slate-700 mb-5" style={{ textAlign: "justify", lineHeight: 1.8 }} />
+        <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} className="text-[14.5px] md:text-[15px] text-slate-600 leading-[1.65] font-medium text-justify mb-4 break-words font-['Plus_Jakarta_Sans',sans-serif]" />
       ));
     }
 
@@ -201,69 +207,61 @@ export default function Home() {
       const lines = modText.split("\n").filter(l => l.trim() !== "");
       const mainHeading = lines[0].trim();
       const items = [];
-      
       let currentSubheading = null;
       let mainDesc = [];
 
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
-        
-        // Match "- Subheading"
         const isSubheading = line.match(/^-\s+(.*)/);
-        // Match "* Bullet point"
         const isBulletPoint = line.match(/^\*\s+(.*)/);
         
         if (isSubheading) {
           if (currentSubheading) items.push(currentSubheading);
           currentSubheading = { title: isSubheading[1], desc: [], bullets: [] };
-        } 
-        else if (isBulletPoint) {
-          if (currentSubheading) {
-            currentSubheading.bullets.push(isBulletPoint[1]);
-          } else {
-            mainDesc.push(`• ${isBulletPoint[1]}`);
-          }
-        } 
-        else {
-          if (currentSubheading) {
-            currentSubheading.desc.push(line);
-          } else {
-            mainDesc.push(line); 
-          }
+        } else if (isBulletPoint) {
+          if (currentSubheading) currentSubheading.bullets.push(isBulletPoint[1]);
+          else mainDesc.push(`• ${isBulletPoint[1]}`);
+        } else {
+          if (currentSubheading) currentSubheading.desc.push(line);
+          else mainDesc.push(line); 
         }
       }
-      
       if (currentSubheading) items.push(currentSubheading);
-
       return { mainHeading, mainDesc: mainDesc.join(" "), items };
     });
 
     return (
-      <div className="skeleton-container">
-        {introText && <p className="skeleton-intro break-words text-[14px] md:text-[16px] text-slate-700 mb-6" style={{ textAlign: "justify", lineHeight: 1.8 }}>{introText}</p>}
-        <div className="skeleton-grid flex flex-col gap-4 md:gap-5">
+      <div className="w-full font-['Plus_Jakarta_Sans',sans-serif]">
+        {introText && <p className="text-[14.5px] md:text-[15px] text-slate-600 leading-[1.65] font-medium text-justify mb-6 break-words">{introText}</p>}
+        
+        <div className="flex flex-col gap-4 w-full">
           {modules.map((mod, idx) => (
-            <div key={idx} className="bg-white md:bg-[#f8faf9] border border-slate-200 rounded-[16px] p-5 md:p-8 w-full shadow-sm md:shadow-none" style={{ borderTop: `3px solid ${accentColor}` }}>
-              <div className="flex items-start gap-3 mb-3 border-b border-slate-100 pb-3">
-                <span className="font-['Fraunces'] text-[28px] md:text-[32px] font-black opacity-20 leading-none mt-0.5 shrink-0 whitespace-nowrap" style={{ color: accentColor }}>{String(idx + 1).padStart(2, '0')}</span>
-                <h4 className="text-[17px] md:text-[18px] font-extrabold text-slate-900 m-0 leading-snug break-words">{mod.mainHeading}</h4>
+            <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 md:p-6 transition-all duration-200 w-full hover:-translate-y-0.5 hover:shadow-[0_15px_30px_-10px_rgba(0,0,0,0.08)] hover:bg-white" style={{ borderTop: `3px solid ${accentColor}` }}>
+              
+              <div className="flex gap-2 md:gap-3 items-start mb-2 md:mb-3 pb-2 md:pb-3 border-b border-black/5">
+                <span className="font-['Fraunces',serif] text-[20px] md:text-[24px] font-black leading-none opacity-20 shrink-0 whitespace-nowrap mt-0.5" style={{ color: accentColor }}>{String(idx + 1).padStart(2, '0')}</span>
+                <h4 className="text-[16.5px] md:text-[18px] font-extrabold text-slate-900 leading-[1.2] break-words m-0">{mod.mainHeading}</h4>
               </div>
-              {mod.mainDesc && <p className="text-[14px] md:text-[15px] text-slate-600 mb-4 break-words" style={{ textAlign: "justify", lineHeight: 1.7 }}>{mod.mainDesc}</p>}
+              
+              {mod.mainDesc && <p className="text-[14.5px] md:text-[14px] text-slate-700 mb-4 leading-[1.65] font-medium text-justify break-words">{mod.mainDesc}</p>}
+              
               {mod.items.length > 0 && (
-                <ul className="flex flex-col gap-3 m-0 p-0 list-none">
+                <ul className="list-none p-0 m-0 flex flex-col gap-3">
                   {mod.items.map((item, sIdx) => (
-                    <li key={sIdx} style={{ marginBottom: item.bullets.length > 0 ? '16px' : '0' }}>
-                      <div className="flex items-start text-[14px] md:text-[15px] font-bold text-slate-800 leading-[1.4]">
-                        <span className="shrink-0" style={{ color: accentColor, marginRight: 8, marginTop: 2 }}>▹</span>
+                    <li key={sIdx} className={`${item.bullets.length > 0 ? 'mb-4' : 'mb-0'}`}>
+                      <div className="text-[15px] font-bold text-slate-800 flex items-start leading-[1.4]">
+                        <span style={{ color: accentColor }} className="mr-2 mt-[1px] shrink-0">▹</span>
                         <span className="break-words">{item.title}</span>
                       </div>
+                      
                       {item.desc.length > 0 && (
-                        <p className="text-[13px] md:text-[14.5px] text-slate-500 mt-1.5 ml-5 break-words" style={{ textAlign: "justify", lineHeight: 1.6 }}>{item.desc.join(" ")}</p>
+                        <p className="text-[14.5px] md:text-[14px] text-slate-500 leading-[1.65] ml-6 mt-1 font-medium text-justify break-words">{item.desc.join(" ")}</p>
                       )}
+
                       {item.bullets.length > 0 && (
-                        <ul style={{ listStyleType: 'disc', marginLeft: '38px', marginTop: '8px', color: '#475569', fontSize: '13px', fontWeight: 500 }}>
+                        <ul className="list-disc ml-[38px] mt-2 text-slate-600 text-[14px] leading-[1.6] font-medium">
                           {item.bullets.map((bullet, bIdx) => (
-                            <li key={bIdx} style={{ marginBottom: '4px', wordBreak: 'break-word', textAlign: 'justify', lineHeight: 1.6 }}>{bullet}</li>
+                            <li key={bIdx} className="mb-1 break-words">{bullet}</li>
                           ))}
                         </ul>
                       )}
@@ -281,6 +279,40 @@ export default function Home() {
   return (
     <div className="font-serif text-[#1a2e1a] w-full max-w-[100vw] overflow-x-hidden relative" style={{ background:"linear-gradient(to bottom, #f8fdf8 0%, #f0fbf0 100%)" }}>
 
+      <style>{`
+        html { scroll-behavior: smooth; }
+
+        .cinematic-slide {
+          position: absolute;
+          inset: 0;
+          background-size: cover;
+          background-position: center;
+          opacity: 0;
+          transform: scale(1.05);
+          transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 6s linear;
+          will-change: transform, opacity;
+        }
+        .cinematic-slide.active {
+          opacity: 1;
+          transform: scale(1);
+          z-index: 1;
+        }
+        .cinematic-slide.exiting {
+          opacity: 0;
+          z-index: 0;
+        }
+
+        /* 🟢 HIGH-PERFORMANCE SCROLLBAR: Removed layout thrashing properties */
+        .modal-scrollbar {
+          -webkit-overflow-scrolling: touch; 
+          transform: translateZ(0); 
+        }
+        .modal-scrollbar::-webkit-scrollbar { width: 6px; }
+        .modal-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .modal-scrollbar::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.25); border-radius: 4px; }
+        .modal-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.5); }
+      `}</style>
+
       {/* ══ HERO ══ */}
       <section
         ref={sliderRef}
@@ -291,12 +323,12 @@ export default function Home() {
         {ldSlides ? (
           <div className="absolute inset-0 bg-[#111]" />
         ) : slides.map((sl, i) => (
-          <div key={sl.id} className={`slide-img ${(transitioning && i === slideIdx) || (!transitioning && i !== slideIdx) ? "out" : ""}`}
+          <div 
+            key={sl.id} 
+            className={`cinematic-slide ${i === slideIdx ? "active" : (transitioning ? "exiting" : "")}`}
             style={{
-              position:"absolute", inset:0, zIndex: i === slideIdx ? 1 : 0,
-              backgroundImage:`url(${sl.url})`,
-              backgroundSize:"cover", backgroundPosition:"center",
-              filter:"brightness(0.45)", opacity: i === slideIdx ? 1 : 0,
+              backgroundImage: `url(${sl.url})`,
+              filter: "brightness(0.45)", 
             }}
           />
         ))}
@@ -426,7 +458,7 @@ export default function Home() {
       {/* ══ NEWSLETTER ══ */}
       <section className="px-4 sm:px-6 md:px-[52px] pb-16 md:pb-[100px] w-full overflow-hidden">
         <div className="max-w-7xl mx-auto rounded-[24px] md:rounded-[32px] overflow-hidden border border-white text-center relative px-4 py-10 md:p-[80px] shadow-[0_20px_60px_-15px_rgba(16,185,129,0.2)] w-full" style={{ background:"linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%)" }}>
-          <span className="absolute -top-6 -left-4 text-[120px] md:text-[180px] opacity/5 -rotate-15 pointer-events-none">🌿</span>
+          <span className="absolute -top-6 -left-4 text-[120px] md:text-[180px] opacity-5 -rotate-12 pointer-events-none">🌿</span>
           <div className="relative z-10">
             <span className="chip !bg-white">Join Us Today</span>
             <h2 className="fr text-[clamp(26px,6vw,56px)] font-extrabold text-[#0f172a] leading-[1.1] mb-4 md:mb-5">
@@ -436,21 +468,21 @@ export default function Home() {
               Get weekly plant care reminders, personalised tips, and connect with gardeners worldwide.
             </p>
             
-            <div className="flex flex-col md:flex-row max-w-[500px] mx-auto relative gap-3 md:gap-0 px-2 md:px-0">
+            <div className="flex max-w-[500px] mx-auto relative px-2 md:px-0">
               {nlState === "success" ? (
-                <div className="w-full h-[50px] flex items-center justify-center bg-white rounded-full shadow-[0_10px_30px_rgba(16,185,129,0.2)] text-[#059669] font-sans font-extrabold text-sm md:text-base" style={{ animation: "bounceTwist 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards" }}>
+                <div className="w-full h-[54px] flex items-center justify-center bg-white rounded-full shadow-[0_10px_30px_rgba(16,185,129,0.2)] text-[#059669] font-sans font-extrabold text-sm md:text-base" style={{ animation: "bounceTwist 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards" }}>
                   🎉 You're all set! ThankYou
                 </div>
               ) : (
                 <div className={`flex flex-col md:flex-row w-full gap-3 md:gap-0 transition-opacity duration-300 ${nlState === "loading" ? "opacity-80" : "opacity-100"}`}>
                   <input 
-                    className="nl-input w-full rounded-full md:rounded-r-none md:rounded-l-full shadow-sm md:shadow-none" 
+                    className="flex-1 w-full bg-white border border-transparent focus:border-[#059669] outline-none px-6 py-0 rounded-full md:rounded-r-none md:rounded-l-full shadow-sm font-['Plus_Jakarta_Sans'] text-[15px] h-[54px]" 
                     placeholder="Enter your email address…" 
                     value={nlEmail} 
                     onChange={e => setNlEmail(e.target.value)}
                     disabled={nlState === "loading"}
                   />
-                  <button className="btn-solid w-full md:w-auto rounded-full md:rounded-l-none md:rounded-r-full px-8 text-sm h-[50px] flex justify-center items-center shadow-md md:shadow-none" onClick={handleSubscribe} disabled={nlState === "loading"}>
+                  <button className="shrink-0 bg-[#059669] hover:bg-[#047857] text-white transition-colors w-full md:w-auto rounded-full md:rounded-l-none md:rounded-r-full px-8 text-[15px] font-bold h-[54px] flex justify-center items-center shadow-md md:shadow-none cursor-pointer" onClick={handleSubscribe} disabled={nlState === "loading"}>
                     {nlState === "loading" ? <div className="spinner mx-auto" /> : "Subscribe 🌱"}
                   </button>
                 </div>
@@ -463,13 +495,13 @@ export default function Home() {
 
       <Footer />
 
-      {/* 🟢 STORY MODAL OVERLAY */}
+      {/* 🟢 STORY MODAL OVERLAY (High Performance fixes) */}
       {activeStoryModal && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 md:p-12 animate-[fadeIn_.3s_ease-out]" onClick={() => setActiveStoryModal(null)}>
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 md:p-16 animate-[fadeIn_.3s_ease-out]" onClick={() => setActiveStoryModal(null)}>
           <div className="relative w-full max-w-[860px] max-h-[90vh] md:max-h-[85vh] bg-white rounded-[20px] md:rounded-[24px] shadow-2xl flex flex-col overflow-hidden animate-[slideUp_.4s_cubic-bezier(0.16,1,0.3,1)]" onClick={(e) => e.stopPropagation()}>
-            <button className="absolute top-4 right-4 z-50 w-10 h-10 bg-white/20 hover:bg-white border border-white/40 text-white hover:text-slate-900 rounded-full flex items-center justify-center transition-all shadow-md" onClick={() => setActiveStoryModal(null)}>✕</button>
+            <button className="absolute top-4 right-4 md:top-5 md:right-5 z-[100] w-10 h-10 md:w-11 md:h-11 bg-white/20 hover:bg-white border border-white/40 text-white hover:text-slate-900 rounded-full flex items-center justify-center transition-all shadow-md hover:scale-110 cursor-pointer" onClick={() => setActiveStoryModal(null)}>✕</button>
 
-            <div className="overflow-y-auto flex-1 w-full relative">
+            <div className="overflow-y-auto overflow-x-hidden flex-1 w-full relative modal-scrollbar">
               <div className="h-[200px] md:h-[320px] w-full shrink-0 relative">
                 <img src={activeStoryModal.img} alt={activeStoryModal.title} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/85 to-transparent" />
@@ -490,9 +522,9 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="modal-content-text">
+                <div className="font-['Plus_Jakarta_Sans',sans-serif]">
                   {(activeStoryModal.content || activeStoryModal.desc || "No full content available.").split("\n\n").map((para, i) => (
-                    <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} className="text-[14px] md:text-[16px] text-slate-700 mb-5" style={{ textAlign: "justify", lineHeight: 1.8 }} />
+                    <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} className="text-[14.5px] md:text-[15px] text-slate-700 leading-[1.65] font-medium text-justify mb-4 break-words" />
                   ))}
                 </div>
               </div>
@@ -501,25 +533,23 @@ export default function Home() {
         </div>
       )}
 
-      {/* 🟢 TOPIC MODAL OVERLAY */}
+      {/* 🟢 TOPIC MODAL OVERLAY (High Performance fixes) */}
       {activeTopicModal && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 md:p-12 animate-[fadeIn_.3s_ease-out]" onClick={() => setActiveTopicModal(null)}>
-          <div className="relative w-full max-w-[860px] max-h-[90vh] md:max-h-[85vh] bg-white rounded-[20px] md:rounded-[24px] shadow-2xl flex flex-col overflow-hidden animate-[slideUp_.4s_cubic-bezier(0.16,1,0.3,1)]" onClick={(e) => e.stopPropagation()} style={{ '--accent-color': activeTopicModal.accent }}>
-            <button className="absolute top-4 right-4 z-50 w-10 h-10 bg-black/5 hover:bg-black/10 rounded-full flex items-center justify-center text-slate-700 transition-colors" onClick={() => setActiveTopicModal(null)}>✕</button>
+        <div className="fixed inset-0 z-[99999] bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4 md:p-16 animate-[fadeIn_0.3s_ease-out]" onClick={() => setActiveTopicModal(null)}>
+          <div className="bg-white rounded-[24px] w-full max-w-[1100px] max-h-[85vh] flex flex-col relative overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.2)] animate-[slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)]" onClick={(e) => e.stopPropagation()}>
+            <button className="absolute top-5 right-5 z-[100] w-11 h-11 rounded-full bg-white/80 backdrop-blur-md border border-black/5 text-slate-900 text-xl flex items-center justify-center cursor-pointer transition-all duration-200 shadow-sm hover:bg-white hover:text-emerald-600 hover:scale-110" onClick={() => setActiveTopicModal(null)}>✕</button>
             
-            <div className="overflow-y-auto flex-1 w-full">
-              <div className="pt-10 px-5 pb-6 md:pt-12 md:px-12 md:pb-8" style={{ background: `linear-gradient(180deg, ${activeTopicModal.color} 0%, rgba(255,255,255,0) 100%)` }}>
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-[64px] h-[64px] md:w-[72px] md:h-[72px] rounded-[16px] md:rounded-[20px] bg-white flex items-center justify-center text-[32px] md:text-[36px] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1),0_0_0_1px_rgba(0,0,0,0.05)] mb-4 md:mb-5">
-                    {activeTopicModal.icon}
-                  </div>
-                  <h2 className="fr text-[24px] md:text-[36px] font-black text-[#0f172a] leading-[1.2] mb-2 px-2 break-words max-w-[80%]">
-                    {activeTopicModal.label}
-                  </h2>
+            <div className="overflow-y-auto overflow-x-hidden flex-1 w-full break-words modal-scrollbar">
+              <div className="px-5 md:px-6 pt-8 md:pt-12 pb-4 md:pb-6 text-center flex flex-col items-center" style={{ background: `linear-gradient(180deg, ${activeTopicModal.color} 0%, rgba(255,255,255,0) 100%)` }}>
+                <div className="w-[56px] md:w-[72px] h-[56px] md:h-[72px] rounded-[20px] bg-white flex items-center justify-center text-[28px] md:text-[36px] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1),0_0_0_1px_rgba(0,0,0,0.05)] mb-4 md:mb-5">
+                  {activeTopicModal.icon}
                 </div>
+                <h2 className="font-['Lora',serif] text-[clamp(24px,4vw,36px)] font-black text-slate-900 leading-[1.1] mb-4 break-words">
+                  {activeTopicModal.label}
+                </h2>
               </div>
-              <div className="px-5 pb-8 md:px-12 md:pb-12">
-                <div className="modal-article-content">
+              <div className="px-5 md:px-6 pb-8 md:pb-12"> 
+                <div>
                   {renderTopicContent(activeTopicModal.desc || "", activeTopicModal.accent)}
                 </div>
               </div>
