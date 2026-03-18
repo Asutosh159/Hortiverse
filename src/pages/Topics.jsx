@@ -29,6 +29,87 @@ function UploadTopicModal({ onClose, onSuccess }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uploadingImg, setUploadingImg] = useState(false); 
+  
+  const [imageMap, setImageMap] = useState({});
+  
+  const [activeImg, setActiveImg] = useState(null);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const textarea = document.getElementById('topic-desc-textarea');
+    const cursorPos = textarea ? textarea.selectionStart : description.length;
+    
+    setUploadingImg(true);
+    const formData = new FormData();
+    formData.append("image", file);
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/upload`, { 
+        method: "POST", 
+        body: formData 
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        setActiveImg({ 
+          url: data.imageUrl, 
+          desc: "Topic Asset", 
+          isNew: true, 
+          pos: cursorPos 
+        });
+      } else {
+        setError("Failed to upload image.");
+      }
+    } catch (err) {
+      console.error("Upload failed", err);
+      setError("Error uploading image to server.");
+    } finally {
+      setUploadingImg(false);
+      e.target.value = ""; 
+    }
+  };
+
+  const handleSaveImageContext = () => {
+    const shortcode = `[🖼️ Image Added: ${activeImg.desc.trim() || "Asset"}]`;
+
+    if (activeImg.isNew) {
+      setImageMap(prev => ({ ...prev, [shortcode]: activeImg.url }));
+      
+      const before = description.substring(0, activeImg.pos);
+      const after = description.substring(activeImg.pos);
+      setDescription(`${before}\n${shortcode}\n${after}`);
+    } else {
+      if (activeImg.oldCode !== shortcode) {
+        setImageMap(prev => {
+          const newMap = { ...prev };
+          delete newMap[activeImg.oldCode];
+          newMap[shortcode] = activeImg.url;
+          return newMap;
+        });
+        setDescription(prev => prev.replace(activeImg.oldCode, shortcode));
+      }
+    }
+    setActiveImg(null); 
+  };
+
+  const handleRemoveImage = async (codeToRemove, url) => {
+    setDescription(prev => prev.replace(`\n${codeToRemove}\n`, '').replace(codeToRemove, ''));
+    setImageMap(prev => {
+      const newMap = { ...prev };
+      delete newMap[codeToRemove];
+      return newMap;
+    });
+    setActiveImg(null); 
+
+    try {
+      await fetch(`${API_BASE_URL}/api/admin/resource/temp?url=${encodeURIComponent(url)}`, { method: 'DELETE' });
+    } catch (err) {
+      console.log("Cleanup request sent.");
+    }
+  };
 
   const handleSubmit = async () => {
     if (!label.trim() || !description.trim() || !icon.trim()) {
@@ -39,12 +120,19 @@ function UploadTopicModal({ onClose, onSuccess }) {
     setError("");
     setLoading(true);
 
+    let finalDescription = description;
+    Object.entries(imageMap).forEach(([code, url]) => {
+      // 🟢 FIXED: Extract the user's custom description from the shortcode and save it to the DB!
+      const userDesc = code.replace('[🖼️ Image Added: ', '').replace(']', '');
+      finalDescription = finalDescription.split(code).join(`![${userDesc}](${url})`);
+    });
+
     const subtopicsArray = subtopics.split(',').map(s => s.trim()).filter(s => s !== "");
     
     const payload = {
       label: label.trim(),
       icon: icon.trim(),
-      description: description.trim(),
+      description: finalDescription.trim(),
       subtopics: subtopicsArray,
       color: selectedTheme.bg,
       accent: selectedTheme.accent
@@ -77,6 +165,42 @@ function UploadTopicModal({ onClose, onSuccess }) {
     <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-[99999] bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4 md:p-10 animate-[fadeIn_0.3s_ease-out]">
       <div className="bg-white rounded-[24px] w-full max-w-[700px] max-h-[85vh] flex flex-col relative overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.2)] animate-[slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)]">
         
+        {activeImg && (
+          <div className="absolute inset-0 z-[200] bg-slate-900/40 backdrop-blur-[2px] flex justify-center items-center p-4">
+            <div className="bg-white rounded-2xl w-full max-w-[400px] shadow-2xl overflow-hidden animate-[popIn_0.2s_ease-out]">
+              <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h4 className="font-['Plus_Jakarta_Sans',sans-serif] font-bold text-slate-800">
+                  {activeImg.isNew ? "Image Details" : "Edit Image"}
+                </h4>
+                <button onClick={() => setActiveImg(null)} className="text-slate-400 hover:text-slate-700 font-bold">✕</button>
+              </div>
+              <div className="p-5">
+                <div className="w-full h-40 bg-slate-100 rounded-xl overflow-hidden mb-4 border border-slate-200">
+                   <img src={activeImg.url} className="w-full h-full object-contain" alt="preview" />
+                </div>
+                <label className="block font-['Plus_Jakarta_Sans',sans-serif] text-xs font-bold text-slate-700 tracking-[0.05em] uppercase mb-2">Image Description</label>
+                <input 
+                  autoFocus
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-['Plus_Jakarta_Sans',sans-serif] text-[14px] focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 transition-all"
+                  value={activeImg.desc} 
+                  onChange={e => setActiveImg({...activeImg, desc: e.target.value})}
+                  placeholder="e.g., Tomato Plant"
+                />
+              </div>
+              <div className="p-4 border-t border-slate-100 bg-slate-50 flex gap-3">
+                 {!activeImg.isNew && (
+                    <button onClick={() => handleRemoveImage(activeImg.oldCode, activeImg.url)} className="px-4 py-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl font-bold text-sm transition-colors flex-1">
+                       Remove
+                    </button>
+                 )}
+                 <button onClick={handleSaveImageContext} className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition-colors flex-1 shadow-sm">
+                    {activeImg.isNew ? "Insert Image" : "Save Changes"}
+                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <button className="absolute top-5 right-5 z-[100] w-11 h-11 rounded-full bg-white/80 backdrop-blur-md border border-black/5 text-slate-900 text-xl flex items-center justify-center cursor-pointer transition-all duration-200 shadow-sm hover:bg-white hover:text-emerald-600 hover:scale-110 active:scale-95" onClick={onClose}>✕</button>
 
         <div className="overflow-y-auto overflow-x-hidden grow w-full break-words custom-scrollbar p-6 md:p-12">
@@ -112,7 +236,6 @@ function UploadTopicModal({ onClose, onSuccess }) {
                 </div>
               </div>
 
-              {/* QUICK ICON SELECT */}
               <div className="mb-6">
                 <label className="block font-['Plus_Jakarta_Sans',sans-serif] text-xs font-bold text-slate-700 tracking-[0.05em] uppercase mb-2">Quick Icon Select</label>
                 <div className="flex gap-2 flex-wrap bg-slate-50 p-4 rounded-2xl border border-slate-200">
@@ -141,13 +264,50 @@ function UploadTopicModal({ onClose, onSuccess }) {
               </div>
 
               <div className="mb-5">
-                <label className="block font-['Plus_Jakarta_Sans',sans-serif] text-xs font-bold text-slate-700 tracking-[0.05em] uppercase mb-2">Skeleton / Content <span className="text-red-500">*</span></label>
-                <p className="text-xs text-slate-500 mb-2 font-['Plus_Jakarta_Sans',sans-serif] leading-[1.5]">
-                  💡 <strong>Pro Tip:</strong> Type <code>##</code> for a Main Heading, <code>-</code> for a Subheading, and <code>*</code> for Bullet Points!
-                </p>
-                <textarea className="w-full px-[18px] py-[14px] bg-slate-50 border border-slate-200 rounded-xl outline-none font-['Plus_Jakarta_Sans',sans-serif] text-[15px] text-slate-900 transition-all duration-200 font-medium focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 resize-y leading-[1.6] min-h-[220px] font-mono"
-                  placeholder={`## Raising Vegetable Nursery\n- Benefits of nursery\nThis is a description of the benefits...\n* Better germination rates\n* Healthier seedlings\n\n## Soil treatment`} 
-                  value={description} onChange={e=>setDescription(e.target.value)} />
+                <div className="flex justify-between items-end mb-2">
+                  <div>
+                    <label className="block font-['Plus_Jakarta_Sans',sans-serif] text-xs font-bold text-slate-700 tracking-[0.05em] uppercase mb-1">Skeleton / Content <span className="text-red-500">*</span></label>
+                    <p className="text-[11px] text-slate-500 font-['Plus_Jakarta_Sans',sans-serif] leading-[1.5]">
+                      💡 Type <code>##</code> for Heading, <code>-</code> for Subheading.
+                    </p>
+                  </div>
+                  <div>
+                    <input type="file" id="topicImgUpload" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                    <label htmlFor="topicImgUpload" className="cursor-pointer bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5 shadow-sm">
+                      {uploadingImg ? "⏳ Uploading..." : "🖼️ Insert Image"}
+                    </label>
+                  </div>
+                </div>
+                
+                <textarea 
+                  id="topic-desc-textarea"
+                  className="w-full px-[18px] py-[14px] bg-slate-50 border border-slate-200 rounded-xl outline-none font-['Plus_Jakarta_Sans',sans-serif] text-[15px] text-slate-900 transition-all duration-200 font-medium focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 resize-y leading-[1.6] min-h-[220px] font-mono"
+                  placeholder={`## Raising Vegetable Nursery\n- Benefits of nursery\nThis is a description...\n\n[🖼️ Image Added: Tomato Plant]\n\n* Better germination rates\n* Healthier seedlings`} 
+                  value={description} onChange={e=>setDescription(e.target.value)} 
+                />
+
+                {Object.keys(imageMap).length > 0 && (
+                  <div className="mt-4">
+                    <label className="block font-['Plus_Jakarta_Sans',sans-serif] text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Attached Images (Click to Edit)</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {Object.entries(imageMap).map(([code, url]) => (
+                        <div 
+                          key={code} 
+                          onClick={() => setActiveImg({ url, desc: code.replace('[🖼️ Image Added: ', '').replace(']', ''), isNew: false, oldCode: code })}
+                          className="relative group rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 cursor-pointer h-24 transition-all hover:shadow-md hover:-translate-y-0.5"
+                        >
+                          <img src={url} alt="preview" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                             <span className="text-white text-xs font-bold bg-black/40 px-3 py-1 rounded-full backdrop-blur-sm">Edit/Remove</span>
+                          </div>
+                          <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur text-[11px] font-bold truncate px-2 py-1 text-slate-700 border-t border-slate-200">
+                             {code.replace('[🖼️ Image Added: ', '').replace(']', '')}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="mb-8">
@@ -155,7 +315,7 @@ function UploadTopicModal({ onClose, onSuccess }) {
                 <input className="w-full px-[18px] py-[14px] bg-slate-50 border border-slate-200 rounded-xl outline-none font-['Plus_Jakarta_Sans',sans-serif] text-[15px] text-slate-900 transition-all duration-200 font-medium focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10" placeholder="e.g., Soil, Greenhouse, Seeds" value={subtopics} onChange={e=>setSubtopics(e.target.value)} />
               </div>
 
-              <button type="button" onClick={handleSubmit} disabled={loading} className="w-full justify-center bg-emerald-600 text-white rounded-full font-['Plus_Jakarta_Sans',sans-serif] font-semibold text-base px-7 py-4 transition-all duration-300 inline-flex items-center gap-1.5 hover:bg-emerald-700 hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(5,150,105,0.3)] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed">
+              <button type="button" onClick={handleSubmit} disabled={loading || uploadingImg} className="w-full justify-center bg-emerald-600 text-white rounded-full font-['Plus_Jakarta_Sans',sans-serif] font-semibold text-base px-7 py-4 transition-all duration-300 inline-flex items-center gap-1.5 hover:bg-emerald-700 hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(5,150,105,0.3)] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed">
                 {loading ? "Creating..." : "🌿 Launch Topic"}
               </button>
             </>
@@ -178,7 +338,6 @@ export default function Topics() {
   const [showUpload, setShowUpload] = useState(false);
   const user = JSON.parse(localStorage.getItem("hv_user"));
 
-  // 🟢 FIXED: Scroll to top and prevent browser memory restoration
   useEffect(() => {
     window.scrollTo(0, 0);
     if ('scrollRestoration' in window.history) {
@@ -209,7 +368,6 @@ export default function Topics() {
     fetchTopics();
   }, []);
 
-  // PREVENT BACKGROUND SCROLLING WHEN MODAL IS OPEN
   useEffect(() => {
     document.body.style.overflow = (selected || showUpload) ? "hidden" : "unset";
     return () => { document.body.style.overflow = "unset"; };
@@ -223,11 +381,37 @@ export default function Topics() {
 
   const handleNewTopic = (newTopic) => setTopics(prev => [newTopic, ...prev]);
 
-  // ADVANCED SKELETON PARSER
+  const parseContentWithImages = (text) => {
+    // 🟢 FIXED: The regex now captures the alt text (description) from the markdown and displays it in a <figcaption>
+    const refinedText = text.replace(
+      /!\[(.*?)\]\((https?:\/\/[^)]+)\)(?:[\s\n]*)!\[(.*?)\]\((https?:\/\/[^)]+)\)/gi,
+      '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-[85%] mx-auto my-6 border-b border-black/5 pb-5">' +
+        '<figure class="flex flex-col items-center m-0">' +
+          '<img src="$2" alt="$1" class="w-full h-auto max-h-[220px] object-contain rounded-xl shadow-sm border border-slate-200 block bg-slate-50" />' +
+          '<figcaption class="text-[12px] text-slate-500 font-medium leading-[1.5] mt-2 text-center">$1</figcaption>' +
+        '</figure>' +
+        '<figure class="flex flex-col items-center m-0">' +
+          '<img src="$4" alt="$3" class="w-full h-auto max-h-[220px] object-contain rounded-xl shadow-sm border border-slate-200 block bg-slate-50" />' +
+          '<figcaption class="text-[12px] text-slate-500 font-medium leading-[1.5] mt-2 text-center">$3</figcaption>' +
+        '</figure>' +
+      '</div>'
+    );
+
+    // 🟢 FIXED: The single image regex also captures the alt text and renders it beautifully below the image!
+    return refinedText
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") 
+      .replace(/!\[(.*?)\]\((https?:\/\/[^)]+)\)/gi, 
+        '<figure class="flex flex-col items-center my-6 m-0">' +
+          '<img src="$2" alt="$1" class="w-[80%] md:w-[45%] max-w-[350px] h-auto max-h-[260px] object-contain rounded-xl shadow-sm border border-slate-200 block bg-slate-50" />' +
+          '<figcaption class="text-[12px] text-slate-500 font-medium leading-[1.5] mt-2 text-center">$1</figcaption>' +
+        '</figure>'
+      );
+  };
+
   const renderTopicContent = (text, accentColor) => {
     if (!text.includes("##")) {
       return text.split("\n\n").map((para, i) => (
-        <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} className="text-[14.5px] md:text-[15px] text-slate-600 leading-[1.65] font-medium text-justify mb-4 break-words font-['Plus_Jakarta_Sans',sans-serif]" />
+        <p key={i} dangerouslySetInnerHTML={{ __html: parseContentWithImages(para) }} className="text-[14.5px] md:text-[15px] text-slate-600 leading-[1.65] font-medium text-justify mb-4 break-words font-['Plus_Jakarta_Sans',sans-serif]" />
       ));
     }
 
@@ -259,12 +443,12 @@ export default function Topics() {
         }
       }
       if (currentSubheading) items.push(currentSubheading);
-      return { mainHeading, mainDesc: mainDesc.join(" "), items };
+      return { mainHeading, mainDesc: mainDesc.join("\n"), items }; 
     });
 
     return (
       <div className="w-full font-['Plus_Jakarta_Sans',sans-serif]">
-        {introText && <p className="text-[14.5px] md:text-[15px] text-slate-600 leading-[1.65] font-medium text-justify mb-6 break-words">{introText}</p>}
+        {introText && <p dangerouslySetInnerHTML={{ __html: parseContentWithImages(introText) }} className="text-[14.5px] md:text-[15px] text-slate-600 leading-[1.65] font-medium text-justify mb-6 break-words" />}
         
         <div className="flex flex-col gap-4 w-full">
           {modules.map((mod, idx) => (
@@ -275,7 +459,7 @@ export default function Topics() {
                 <h4 className="text-[16.5px] md:text-[18px] font-extrabold text-slate-900 leading-[1.2] break-words m-0">{mod.mainHeading}</h4>
               </div>
               
-              {mod.mainDesc && <p className="text-[14.5px] md:text-[14px] text-slate-700 mb-4 leading-[1.65] font-medium text-justify break-words">{mod.mainDesc}</p>}
+              {mod.mainDesc && <p dangerouslySetInnerHTML={{ __html: parseContentWithImages(mod.mainDesc) }} className="text-[14.5px] md:text-[14px] text-slate-700 mb-4 leading-[1.65] font-medium text-justify break-words" />}
               
               {mod.items.length > 0 && (
                 <ul className="list-none p-0 m-0 flex flex-col gap-3">
@@ -287,13 +471,13 @@ export default function Topics() {
                       </div>
                       
                       {item.desc.length > 0 && (
-                        <p className="text-[14.5px] md:text-[14px] text-slate-500 leading-[1.65] ml-6 mt-1 font-medium text-justify break-words">{item.desc.join(" ")}</p>
+                        <p dangerouslySetInnerHTML={{ __html: parseContentWithImages(item.desc.join("\n")) }} className="text-[14.5px] md:text-[14px] text-slate-500 leading-[1.65] ml-6 mt-1 font-medium text-justify break-words" />
                       )}
 
                       {item.bullets.length > 0 && (
                         <ul className="list-disc ml-[38px] mt-2 text-slate-600 text-[14px] leading-[1.6] font-medium">
                           {item.bullets.map((bullet, bIdx) => (
-                            <li key={bIdx} className="mb-1 break-words">{bullet}</li>
+                            <li key={bIdx} className="mb-1 break-words" dangerouslySetInnerHTML={{ __html: parseContentWithImages(bullet) }} />
                           ))}
                         </ul>
                       )}
@@ -316,7 +500,7 @@ export default function Topics() {
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700;800&display=swap');
         html { scroll-behavior: smooth; }
 
-        /* 🟢 HIGH-PERFORMANCE SCROLLBAR: Hardware accelerated */
+        /* HIGH-PERFORMANCE SCROLLBAR: Hardware accelerated */
         .custom-scrollbar {
           -webkit-overflow-scrolling: touch; 
           transform: translateZ(0); 
@@ -389,7 +573,6 @@ export default function Topics() {
               {filtered.map((t) => (
                 <article key={t.id} className="group bg-white/85 backdrop-blur-md border border-white rounded-[20px] p-8 cursor-pointer relative overflow-hidden transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)] flex flex-col hover:-translate-y-2 hover:shadow-[0_25px_50px_-12px_rgba(16,185,129,0.25),0_0_0_2px_rgba(16,185,129,0.1)] hover:bg-white/95 active:scale-[0.98]" onClick={() => setSelected(t)} onMouseEnter={() => setHovered(t.id)} onMouseLeave={() => setHovered(null)}>
                   
-                  {/* Glow overlay */}
                   <div className="absolute -top-10 -right-10 w-[140px] h-[140px] rounded-full blur-[40px] opacity-0 transition-opacity duration-500 pointer-events-none group-hover:opacity-20" style={{ background: t.accent }} />
                   
                   <div className="flex justify-between items-start mb-6">
@@ -401,7 +584,7 @@ export default function Topics() {
                   <h3 className="font-['Lora',serif] text-[24px] font-extrabold text-slate-900 mb-3 leading-[1.2] break-words">{t.label}</h3>
                   
                   <p className="font-['Manrope',sans-serif] text-[15px] text-slate-600 leading-[1.6] font-medium mb-6 line-clamp-3 break-words">
-                    {(t.desc || "").replace(/#|[-*]/g, "")}
+                    {(t.desc || "").replace(/\[IMG:.*?\]|!\[.*?\]\(.*?\)|#|[-*]/g, "")}
                   </p>
 
                   <div className="flex flex-wrap gap-2 mb-6 mt-auto">

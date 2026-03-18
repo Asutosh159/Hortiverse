@@ -192,10 +192,35 @@ export default function Home() {
     setNlState("success");
   };
 
+  const parseContentWithImages = (text) => {
+    const refinedText = text.replace(
+      /(!\[(.*?)\]\((https?:\/\/[^)]+)\))(?:[\s\n]*)(!\[(.*?)\]\((https?:\/\/[^)]+)\))/gi,
+      '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-[85%] mx-auto my-6 border-b border-black/5 pb-5">' +
+        '<figure class="flex flex-col items-center m-0">' +
+          '<img src="$3" alt="$2" class="w-full h-auto max-h-[220px] object-contain rounded-xl shadow-sm border border-slate-200 block bg-slate-50" />' +
+          '<figcaption class="text-[12px] text-slate-500 font-medium leading-[1.5] mt-2 text-center">$2</figcaption>' +
+        '</figure>' +
+        '<figure class="flex flex-col items-center m-0">' +
+          '<img src="$6" alt="$5" class="w-full h-auto max-h-[220px] object-contain rounded-xl shadow-sm border border-slate-200 block bg-slate-50" />' +
+          '<figcaption class="text-[12px] text-slate-500 font-medium leading-[1.5] mt-2 text-center">$5</figcaption>' +
+        '</figure>' +
+      '</div>'
+    );
+
+    return refinedText
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") 
+      .replace(/!\[(.*?)\]\((https?:\/\/[^)]+)\)/gi, 
+        '<figure class="flex flex-col items-center my-6 m-0">' +
+          '<img src="$2" alt="$1" class="w-[80%] md:w-[45%] max-w-[350px] h-auto max-h-[260px] object-contain rounded-xl shadow-sm border border-slate-200 block bg-slate-50" />' +
+          '<figcaption class="text-[12px] text-slate-500 font-medium leading-[1.5] mt-2 text-center">$1</figcaption>' +
+        '</figure>'
+      );
+  };
+
   const renderTopicContent = (text, accentColor) => {
     if (!text.includes("##")) {
       return text.split("\n\n").map((para, i) => (
-        <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>") }} className="text-[14.5px] md:text-[15px] text-slate-600 leading-[1.65] font-medium text-justify mb-4 break-words font-['Plus_Jakarta_Sans',sans-serif]" />
+        <p key={i} dangerouslySetInnerHTML={{ __html: parseContentWithImages(para) }} className="text-[14.5px] md:text-[15px] text-slate-600 leading-[1.65] font-medium text-justify mb-4 break-words font-['Plus_Jakarta_Sans',sans-serif]" />
       ));
     }
 
@@ -227,12 +252,12 @@ export default function Home() {
         }
       }
       if (currentSubheading) items.push(currentSubheading);
-      return { mainHeading, mainDesc: mainDesc.join(" "), items };
+      return { mainHeading, mainDesc: mainDesc.join("\n"), items };
     });
 
     return (
       <div className="w-full font-['Plus_Jakarta_Sans',sans-serif]">
-        {introText && <p className="text-[14.5px] md:text-[15px] text-slate-600 leading-[1.65] font-medium text-justify mb-6 break-words">{introText}</p>}
+        {introText && <p dangerouslySetInnerHTML={{ __html: parseContentWithImages(introText) }} className="text-[14.5px] md:text-[15px] text-slate-600 leading-[1.65] font-medium text-justify mb-6 break-words" />}
         
         <div className="flex flex-col gap-4 w-full">
           {modules.map((mod, idx) => (
@@ -243,7 +268,7 @@ export default function Home() {
                 <h4 className="text-[16.5px] md:text-[18px] font-extrabold text-slate-900 leading-[1.2] break-words m-0">{mod.mainHeading}</h4>
               </div>
               
-              {mod.mainDesc && <p className="text-[14.5px] md:text-[14px] text-slate-700 mb-4 leading-[1.65] font-medium text-justify break-words">{mod.mainDesc}</p>}
+              {mod.mainDesc && <p dangerouslySetInnerHTML={{ __html: parseContentWithImages(mod.mainDesc) }} className="text-[14.5px] md:text-[14px] text-slate-700 mb-4 leading-[1.65] font-medium text-justify break-words" />}
               
               {mod.items.length > 0 && (
                 <ul className="list-none p-0 m-0 flex flex-col gap-3">
@@ -255,13 +280,13 @@ export default function Home() {
                       </div>
                       
                       {item.desc.length > 0 && (
-                        <p className="text-[14.5px] md:text-[14px] text-slate-500 leading-[1.65] ml-6 mt-1 font-medium text-justify break-words">{item.desc.join(" ")}</p>
+                        <p dangerouslySetInnerHTML={{ __html: parseContentWithImages(item.desc.join("\n")) }} className="text-[14.5px] md:text-[14px] text-slate-500 leading-[1.65] ml-6 mt-1 font-medium text-justify break-words" />
                       )}
 
                       {item.bullets.length > 0 && (
                         <ul className="list-disc ml-[38px] mt-2 text-slate-600 text-[14px] leading-[1.6] font-medium">
                           {item.bullets.map((bullet, bIdx) => (
-                            <li key={bIdx} className="mb-1 break-words">{bullet}</li>
+                            <li key={bIdx} className="mb-1 break-words" dangerouslySetInnerHTML={{ __html: parseContentWithImages(bullet) }} />
                           ))}
                         </ul>
                       )}
@@ -302,7 +327,7 @@ export default function Home() {
           z-index: 0;
         }
 
-        /* 🟢 HIGH-PERFORMANCE SCROLLBAR: Removed layout thrashing properties */
+        /* HIGH-PERFORMANCE SCROLLBAR */
         .modal-scrollbar {
           -webkit-overflow-scrolling: touch; 
           transform: translateZ(0); 
@@ -446,8 +471,10 @@ export default function Home() {
               >
                 <div className="topic-icon-wrap">{t.icon}</div>
                 <h3 className="fr text-xl md:text-2xl font-extrabold mb-2.5 text-[#0f172a] break-words px-2">{t.label}</h3>
-                <p className="jk text-[14px] md:text-[15px] text-[#64748b] leading-[1.7] font-medium break-words px-2">
-                  {(t.desc || "").replace(/#|-|\*/g, '').substring(0, 85)}...
+                
+                {/* 🟢 FIXED: `break-all` and `line-clamp-3` guarantee text never spills out of the card! */}
+                <p className="jk text-[14px] md:text-[15px] text-[#64748b] leading-[1.7] font-medium break-all line-clamp-3 px-2">
+                  {(t.desc || "").replace(/\[IMG:.*?\]|!\[.*?\]\(.*?\)|#|[-*]/g, "")}
                 </p>
               </div>
             )})}
@@ -474,15 +501,15 @@ export default function Home() {
                   🎉 You're all set! ThankYou
                 </div>
               ) : (
-                <div className={`flex flex-col md:flex-row w-full gap-3 md:gap-0 transition-opacity duration-300 ${nlState === "loading" ? "opacity-80" : "opacity-100"}`}>
+                <div className={`flex flex-row w-full transition-opacity duration-300 ${nlState === "loading" ? "opacity-80" : "opacity-100"}`}>
                   <input 
-                    className="flex-1 w-full bg-white border border-transparent focus:border-[#059669] outline-none px-6 py-0 rounded-full md:rounded-r-none md:rounded-l-full shadow-sm font-['Plus_Jakarta_Sans'] text-[15px] h-[54px]" 
+                    className="flex-1 min-w-0 w-full bg-white border border-transparent focus:border-[#059669] outline-none px-4 md:px-6 py-0 rounded-l-full rounded-r-none shadow-sm font-['Plus_Jakarta_Sans'] text-[14px] md:text-[15px] h-[54px]" 
                     placeholder="Enter your email address…" 
                     value={nlEmail} 
                     onChange={e => setNlEmail(e.target.value)}
                     disabled={nlState === "loading"}
                   />
-                  <button className="shrink-0 bg-[#059669] hover:bg-[#047857] text-white transition-colors w-full md:w-auto rounded-full md:rounded-l-none md:rounded-r-full px-8 text-[15px] font-bold h-[54px] flex justify-center items-center shadow-md md:shadow-none cursor-pointer" onClick={handleSubscribe} disabled={nlState === "loading"}>
+                  <button className="shrink-0 bg-[#059669] hover:bg-[#047857] text-white transition-colors w-auto rounded-l-none rounded-r-full px-5 md:px-8 text-[14px] md:text-[15px] font-bold h-[54px] flex justify-center items-center shadow-md md:shadow-none cursor-pointer" onClick={handleSubscribe} disabled={nlState === "loading"}>
                     {nlState === "loading" ? <div className="spinner mx-auto" /> : "Subscribe 🌱"}
                   </button>
                 </div>
@@ -495,7 +522,7 @@ export default function Home() {
 
       <Footer />
 
-      {/* 🟢 STORY MODAL OVERLAY (High Performance fixes) */}
+      {/* 🟢 STORY MODAL OVERLAY */}
       {activeStoryModal && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 md:p-16 animate-[fadeIn_.3s_ease-out]" onClick={() => setActiveStoryModal(null)}>
           <div className="relative w-full max-w-[860px] max-h-[90vh] md:max-h-[85vh] bg-white rounded-[20px] md:rounded-[24px] shadow-2xl flex flex-col overflow-hidden animate-[slideUp_.4s_cubic-bezier(0.16,1,0.3,1)]" onClick={(e) => e.stopPropagation()}>
@@ -533,7 +560,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* 🟢 TOPIC MODAL OVERLAY (High Performance fixes) */}
+      {/* 🟢 TOPIC MODAL OVERLAY */}
       {activeTopicModal && (
         <div className="fixed inset-0 z-[99999] bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4 md:p-16 animate-[fadeIn_0.3s_ease-out]" onClick={() => setActiveTopicModal(null)}>
           <div className="bg-white rounded-[24px] w-full max-w-[1100px] max-h-[85vh] flex flex-col relative overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.2)] animate-[slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)]" onClick={(e) => e.stopPropagation()}>

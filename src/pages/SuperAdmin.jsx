@@ -1,426 +1,3 @@
-// import { API_BASE_URL } from '../apiConfig';
-// import { useState, useEffect } from "react";
-
-// // 🟢 Helper Function for Drive Links
-// const getDirectImageUrl = (url) => {
-//   if (!url) return "https://via.placeholder.com/400x260?text=HortiVerse"; 
-
-//   if (url.includes("drive.google.com")) {
-//     let match = url.match(/\/d\/([a-zA-Z0-9_-]+)/); 
-//     if (!match) match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/); 
-    
-//     if (match && match[1]) {
-//       return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
-//     }
-//   }
-//   return url;
-// };
-
-// // Predefined Sticker Library
-// const PREDEFINED_ICONS = ["🌿", "🌱", "🌾", "🚜", "💧", "🌻", "🍎", "🍅", "🌳", "🔬", "🐛", "☀️", "🌧️", "👨‍🌾", "👩‍🌾", "🪴"];
-
-// export default function SuperAdmin() {
-//   const [stats, setStats] = useState({ users: 0, stories: 0, topics: 0, resources: 0 });
-//   const [users, setUsers] = useState([]);
-//   const [stories, setStories] = useState([]);
-//   const [topics, setTopics] = useState([]);
-//   const [resources, setResources] = useState([]);
-//   const [slides, setSlides] = useState([]);
-//   const [activeSection, setActiveSection] = useState("overview"); 
-//   const [loading, setLoading] = useState(true);
-//   const [editingItem, setEditingItem] = useState(null); 
-//   const [newSlide, setNewSlide] = useState({ url: "", caption: "", sub_text: "" });
-  
-//   // 🟢 State to control mobile sidebar drawer
-//   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-//   useEffect(() => { fetchData(); }, []);
-
-//   const fetchData = async () => {
-//     setLoading(true);
-//     try {
-//       const [uRes, stRes, tRes, rRes, sRes, slRes] = await Promise.all([
-//         fetch(`${API_BASE_URL}/api/admin/users`),
-//         fetch(`${API_BASE_URL}/api/stories`), 
-//         fetch(`${API_BASE_URL}/api/topics`),  
-//         fetch(`${API_BASE_URL}/api/resources`),
-//         fetch(`${API_BASE_URL}/api/stats`),
-//         fetch(`${API_BASE_URL}/api/slides`)
-//       ]);
-
-//       const uData = uRes.ok ? await uRes.json() : [];
-//       const stData = stRes.ok ? await stRes.json() : [];
-//       const tData = tRes.ok ? await tRes.json() : [];
-//       const rData = rRes.ok ? await rRes.json() : [];
-//       const sData = sRes.ok ? await sRes.json() : { users: 0, stories: 0, topics: 0, resources: 0 };
-//       const slData = slRes.ok ? await slRes.json() : [];
-
-//       setUsers(uData);
-//       setStories(stData);
-//       setTopics(tData);
-//       setResources(rData);
-//       setSlides(slData);
-      
-//       setStats({
-//         users: sData.users || uData.length,
-//         stories: sData.stories || stData.length,
-//         topics: sData.topics || tData.length,
-//         resources: sData.resources || rData.length
-//       });
-//     } catch (err) { 
-//       console.error("Fetch failed:", err); 
-//     } finally { 
-//       setLoading(false); 
-//     }
-//   };
-
-//   const deleteItem = async (type, id) => {
-//     if (!window.confirm(`Delete this ${type}?`)) return;
-//     const res = await fetch(`${API_BASE_URL}/api/admin/${type}/${id}`, { method: 'DELETE' });
-//     if (res.ok) fetchData();
-//   };
-
-//   const handleUpdate = async (e) => {
-//     e.preventDefault();
-//     const { type, data } = editingItem;
-    
-//     let endpoint = 'resources';
-//     if (type === 'story') endpoint = 'stories';
-//     if (type === 'topic') endpoint = 'topics';
-    
-//     const res = await fetch(`${API_BASE_URL}/api/admin/${endpoint}/${data.id}`, {
-//       method: 'PUT',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify(data)
-//     });
-
-//     if (res.ok) { 
-//       setEditingItem(null); 
-//       fetchData(); 
-//     } else {
-//       alert("Update failed. Check your server logs.");
-//     }
-//   };
-
-//   const addSlide = async () => {
-//     if(!newSlide.url.trim()) return alert("Please enter an image URL first!");
-    
-//     const res = await fetch(`${API_BASE_URL}/api/slides`, {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify({ 
-//         image_url: newSlide.url.trim(), 
-//         caption: newSlide.caption.trim() || "Explore HortiVerse", 
-//         sub_text: newSlide.sub_text.trim() || "Agricultural Knowledge Hub" 
-//       })
-//     });
-//     if (res.ok) { 
-//       setNewSlide({ url: "", caption: "", sub_text: "" }); 
-//       fetchData(); 
-//     } else {
-//       alert("Failed to add slide.");
-//     }
-//   };
-
-//   if (loading) return (
-//     <div style={{ display:'flex', height:'100vh', alignItems:'center', justify: 'center', background:'#f8faf9', color:'#0f172a' }}>
-//       <h2 className="fr" style={{ fontSize: 24 }}>Accessing Command Center...</h2>
-//     </div>
-//   );
-
-//   return (
-//     <div style={styles.dashboardWrapper}>
-//       <style>{`
-//         .fr { font-family: 'Fraunces', serif; }
-//         .jk { font-family: 'Plus Jakarta Sans', sans-serif; }
-        
-//         /* 🟢 FIXED: Changed top: 0 to top: 80px to sit below the Navbar */
-//         .sidebar { width: 280px; background: #ffffff; border-right: 1px solid #e2e8f0; padding: 40px 24px; position: fixed; top: 80px; bottom: 0; z-index: 1000; display: flex; flex-direction: column; gap: 8px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-//         .nav-item { padding: 14px 20px; border-radius: 12px; color: #64748b; cursor: pointer; transition: all 0.2s ease; font-weight: 600; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; display: flex; align-items: center; gap: 12px; }
-//         .nav-item:hover { background: #f1f5f9; color: #0f172a; }
-//         .nav-item.active { background: #ecfdf5; color: #059669; font-weight: 700; }
-        
-//         .main-content { margin-left: 280px; padding: 120px 40px 60px; flex: 1; background: #f8faf9; min-height: 100vh; transition: margin 0.3s ease; }
-        
-//         .stat-card { border-radius: 24px; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); color: white; position: relative; overflow: hidden; transition: transform 0.2s ease; }
-//         .stat-card:hover { transform: translateY(-4px); }
-//         .bg-users { background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); }
-//         .bg-stories { background: linear-gradient(135deg, #E11D48 0%, #db2777 100%); }
-//         .bg-topics { background: linear-gradient(135deg, #059669 0%, #10B981 100%); }
-//         .bg-resources { background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%); }
-        
-//         .table-responsive { display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 16px; border: 1px solid #e2e8f0; background: white; margin-top: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-//         table { width: 100%; border-collapse: collapse; min-width: 500px; }
-//         th { text-align: left; padding: 18px 24px; background: #f8faf9; color: #64748b; font-size: 12px; text-transform: uppercase; font-weight: 800; border-bottom: 1px solid #e2e8f0; letter-spacing: 0.5px; white-space: nowrap; }
-//         td { padding: 18px 24px; border-bottom: 1px solid #f1f5f9; font-size: 15px; color: #334155; font-family: 'Plus Jakarta Sans', sans-serif; }
-        
-//         .badge { display: inline-block; padding: 6px 12px; border-radius: 50px; font-size: 12px; font-weight: 800; text-transform: uppercase; }
-//         .badge-admin { background: #ecfdf5; color: #059669; }
-//         .badge-user { background: #f1f5f9; color: #64748b; }
-        
-//         .btn-act { padding: 8px 16px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; font-size: 13px; margin-right: 8px; transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; white-space: nowrap; }
-//         .btn-edit { background: #eff6ff; color: #2563eb; }
-//         .btn-del { background: #fef2f2; color: #dc2626; }
-        
-//         .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 20px; }
-//         .edit-card { background: #ffffff; width: 100%; max-width: 650px; border-radius: 24px; padding: 40px; position: relative; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
-        
-//         .form-label { display: block; font-size: 12px; font-weight: 800; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 20px; }
-//         .form-input { width: 100%; padding: 14px 18px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; color: #0f172a; transition: border-color 0.2s; outline: none; }
-        
-//         .slide-preview { position: relative; border-radius: 16px; overflow: hidden; height: 180px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-//         .slide-preview img { width: 100%; height: 100%; object-fit: cover; }
-//         .slide-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 20px; }
-//         .slide-del-btn { position: absolute; top: 12px; right: 12px; background: rgba(220,38,38,0.9); color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; }
-
-//         .mobile-toggle { display: none; position: fixed; bottom: 30px; right: 20px; width: 56px; height: 56px; border-radius: 18px; background: #059669; color: white; border: none; box-shadow: 0 10px 25px rgba(5,150,105,0.4); z-index: 100001; cursor: pointer; font-size: 24px; align-items: center; justify-content: center; transition: transform 0.2s ease; }
-
-//         @media (max-width: 1024px) {
-//           .sidebar { transform: translateX(${isSidebarOpen ? '0' : '-100%'}); box-shadow: 20px 0 50px rgba(0,0,0,0.1); padding-top: 40px; }
-//           .sidebar-header h2 { font-size: 18px !important; }
-//           .main-content { margin-left: 0; padding: 120px 20px 40px; width: 100vw; max-width: 100vw; overflow-x: hidden; }
-//           .mobile-toggle { display: flex; }
-//           .edit-card { padding: 24px; }
-//         }
-
-//         @media (max-width: 640px) {
-//           .stat-card { padding: 20px; }
-//           .stat-card div:last-child { font-size: 32px; }
-//           .fr { font-size: 30px !important; }
-          
-//           th { padding: 12px 16px; font-size: 11px; }
-//           td { padding: 12px 16px; font-size: 13.5px; }
-//           .btn-act { padding: 6px 12px; font-size: 12px; }
-//         }
-//       `}</style>
-
-//       {/* Mobile Menu Button (Bottom Right) */}
-//       <button className="mobile-toggle" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-//         {isSidebarOpen ? '✕' : '☰'}
-//       </button>
-
-//       {/* Overlay for mobile sidebar */}
-//       {isSidebarOpen && (
-//         <div 
-//           onClick={() => setIsSidebarOpen(false)}
-//           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(4px)', zIndex: 999 }}
-//         />
-//       )}
-
-//       <aside className="sidebar">
-//         <div className="sidebar-header" style={{ padding: "0 10px 20px", marginBottom: "20px", borderBottom: "1px solid #f1f5f9" }}>
-//           <h2 className="fr" style={{ color: "#0f172a", fontSize: 24, margin: 0 }}>SuperAdmin<span style={{ color: "#059669" }}>Center</span></h2>
-//           <p className="jk" style={{ color: "#94a3b8", fontSize: 13, margin: "4px 0 0", fontWeight: 500 }}>HortiVerse Admin</p>
-//         </div>
-        
-//         <div className={`nav-item ${activeSection === 'overview' ? 'active' : ''}`} onClick={() => { setActiveSection('overview'); setIsSidebarOpen(false); }}>📊 Dashboard</div>
-//         <div className={`nav-item ${activeSection === 'users' ? 'active' : ''}`} onClick={() => { setActiveSection('users'); setIsSidebarOpen(false); }}>👥 Users Registry</div>
-//         <div className={`nav-item ${activeSection === 'stories' ? 'active' : ''}`} onClick={() => { setActiveSection('stories'); setIsSidebarOpen(false); }}>✍️ Stories Manager</div>
-//         <div className={`nav-item ${activeSection === 'topics' ? 'active' : ''}`} onClick={() => { setActiveSection('topics'); setIsSidebarOpen(false); }}>🌿 Knowledge Hub</div>
-//         <div className={`nav-item ${activeSection === 'resources' ? 'active' : ''}`} onClick={() => { setActiveSection('resources'); setIsSidebarOpen(false); }}>📚 Resource Library</div>
-//         <div className={`nav-item ${activeSection === 'settings' ? 'active' : ''}`} onClick={() => { setActiveSection('settings'); setIsSidebarOpen(false); }}>🖼️ Slider Manager</div>
-//       </aside>
-
-//       <main className="main-content">
-//         <div style={{ marginBottom: 40 }}>
-//           <h1 className="fr" style={{ color: '#0f172a', fontSize: "clamp(32px, 5vw, 40px)", margin: 0 }}>
-//             {activeSection === 'overview' ? 'Dashboard' : activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
-//           </h1>
-//         </div>
-
-//         {activeSection === 'overview' && (
-//           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24 }}>
-//             <div className="stat-card bg-users">
-//               <div style={{ fontSize: 13, fontWeight: 800, opacity: 0.8, letterSpacing: 1 }}>TOTAL USERS</div>
-//               <div style={{ fontSize: 48, fontWeight: 900, marginTop: 8 }}>{stats.users}</div>
-//             </div>
-//             <div className="stat-card bg-stories">
-//               <div style={{ fontSize: 13, fontWeight: 800, opacity: 0.8, letterSpacing: 1 }}>STORIES PUBLISHED</div>
-//               <div style={{ fontSize: 48, fontWeight: 900, marginTop: 8 }}>{stats.stories}</div>
-//             </div>
-//             <div className="stat-card bg-topics">
-//               <div style={{ fontSize: 13, fontWeight: 800, opacity: 0.8, letterSpacing: 1 }}>KNOWLEDGE TOPICS</div>
-//               <div style={{ fontSize: 48, fontWeight: 900, marginTop: 8 }}>{stats.topics}</div>
-//             </div>
-//             <div className="stat-card bg-resources">
-//               <div style={{ fontSize: 13, fontWeight: 800, opacity: 0.8, letterSpacing: 1 }}>RESOURCES</div>
-//               <div style={{ fontSize: 48, fontWeight: 900, marginTop: 8 }}>{stats.resources}</div>
-//             </div>
-//           </div>
-//         )}
-
-//         {activeSection === 'users' && (
-//           <div className="table-responsive">
-//             <table>
-//               <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
-//               <tbody>
-//                 {users.map(u => (
-//                   <tr key={u.id}>
-//                     <td style={{ fontWeight: 700, color: '#0f172a' }}>{u.full_name}</td>
-//                     <td>{u.email}</td>
-//                     <td><span className={`badge ${u.role === 'admin' ? 'badge-admin' : 'badge-user'}`} style={{ background: u.role === 'admin' ? '#ecfdf5' : '#f1f5f9', color: u.role === 'admin' ? '#059669' : '#64748b', padding: '4px 10px', borderRadius: '50px', fontSize: '11px', fontWeight: '800' }}>{u.role}</span></td>
-//                     <td style={{ whiteSpace: 'nowrap' }}><button className="btn-act btn-del" onClick={() => deleteItem('user', u.id)}>Delete</button></td>
-//                   </tr>
-//                 ))}
-//               </tbody>
-//             </table>
-//           </div>
-//         )}
-
-//         {['stories', 'topics', 'resources'].includes(activeSection) && (
-//           <div className="table-responsive">
-//             <table>
-//               <thead><tr><th>Content Title</th><th>Actions</th></tr></thead>
-//               <tbody>
-//                 {(activeSection === 'stories' ? stories : activeSection === 'topics' ? topics : resources).map(item => {
-//                   const itemType = activeSection === 'stories' ? 'story' : activeSection === 'topics' ? 'topic' : 'resource';
-//                   return (
-//                     <tr key={item.id}>
-//                       <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.title || item.label}</td>
-//                       <td style={{ whiteSpace: 'nowrap' }}>
-//                         <button className="btn-act btn-edit" onClick={() => setEditingItem({ type: itemType, data: item })}>Edit</button>
-//                         <button className="btn-act btn-del" onClick={() => deleteItem(itemType, item.id)}>Delete</button>
-//                       </td>
-//                     </tr>
-//                   );
-//                 })}
-//               </tbody>
-//             </table>
-//           </div>
-//         )}
-
-//         {activeSection === 'settings' && (
-//           <div>
-//             <div style={{ background: '#ffffff', padding: "clamp(20px, 5vw, 32px)", borderRadius: 24, boxShadow: '0 4px 10px rgba(0,0,0,0.03)', border: '1px solid #e2e8f0', marginBottom: 40 }}>
-//               <h3 className="fr" style={{ color: '#0f172a', fontSize: 24, marginTop: 0, marginBottom: 24 }}>Upload New Background</h3>
-              
-//               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-//                 <div>
-//                   <label className="form-label" style={{ marginTop: 0 }}>Image URL (Direct Link)</label>
-//                   <input className="form-input" placeholder="https://images.unsplash.com/..." value={newSlide.url} onChange={e => setNewSlide({...newSlide, url: e.target.value})} />
-//                   <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, color:"#64748b", marginTop:6, fontWeight:500 }}>
-//                     💡 Works with direct image URLs (.jpg, .png) or public Google Drive links.
-//                   </p>
-//                 </div>
-
-//                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-//                   <div style={{ flex: '1 1 250px' }}>
-//                     <label className="form-label" style={{ marginTop: 0 }}>Main Heading (Caption)</label>
-//                     <input className="form-input" placeholder="e.g., Explore HortiVerse" value={newSlide.caption} onChange={e => setNewSlide({...newSlide, caption: e.target.value})} />
-//                   </div>
-//                   <div style={{ flex: '1 1 250px' }}>
-//                     <label className="form-label" style={{ marginTop: 0 }}>Sub-text</label>
-//                     <input className="form-input" placeholder="e.g., The best agriculture hub" value={newSlide.sub_text} onChange={e => setNewSlide({...newSlide, sub_text: e.target.value})} />
-//                   </div>
-//                 </div>
-                
-//                 <button onClick={addSlide} style={{ marginTop: 8, width: '100%', padding: '16px', background: 'linear-gradient(135deg, #059669 0%, #10B981 100%)', color: 'white', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: 16, cursor: 'pointer', boxShadow: '0 10px 25px rgba(5,150,105,0.3)' }}>+ Add Slide to Homepage</button>
-//               </div>
-//             </div>
-            
-//             <h3 className="fr" style={{ fontSize: 24, marginBottom: 20 , color:"black"}}>Active Slider Preview</h3>
-//             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
-//               {slides.map(s => (
-//                 <div key={s.id} className="slide-preview">
-//                   <img 
-//                     src={getDirectImageUrl(s.image_url)} 
-//                     alt="Slider Background" 
-//                     onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/400x260?text=Preview+Not+Available"; }}
-//                   />
-//                   <div className="slide-overlay">
-//                     <button className="slide-del-btn" onClick={() => deleteItem('slide', s.id)}>Remove Slide</button>
-//                     <h4 className="fr" style={{ color: 'white', fontSize: 20, margin: 0 }}>{s.caption}</h4>
-//                     <p className="jk" style={{ color: '#e2e8f0', fontSize: 12, margin: '4px 0 0' }}>{s.sub_text}</p>
-//                   </div>
-//                 </div>
-//               ))}
-//             </div>
-//           </div>
-//         )}
-//       </main>
-
-//       {/* 🟢 EDIT MODAL */}
-//       {editingItem && (
-//         <div className="modal-overlay" onClick={() => setEditingItem(null)}>
-//           <div className="edit-card" onClick={e => e.stopPropagation()}>
-//             <h2 className="fr" style={{ fontSize: 32, color: '#0f172a', marginTop: 0, marginBottom: 32 }}>Edit Content</h2>
-//             <form onSubmit={handleUpdate}>
-              
-//               <label className="form-label" style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>Title / Label</label>
-//               <input className="form-input" value={editingItem.data.title || editingItem.data.label || ""} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, [editingItem.data.label ? 'label' : 'title']: e.target.value}})} />
-              
-//               {editingItem.type === 'story' && (
-//                 <>
-//                   <label className="form-label" style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', marginTop: '20px' }}>Author</label>
-//                   <input className="form-input" value={editingItem.data.author} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, author: e.target.value}})} />
-                  
-//                   <label className="form-label" style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', marginTop: '20px' }}>Image URL</label>
-//                   <input className="form-input" value={editingItem.data.image_url || ""} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, image_url: e.target.value}})} />
-//                   <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:12, color:"#64748b", marginTop:4, fontWeight:500 }}>
-//                     💡 Works with direct image URLs or public Drive links.
-//                   </p>
-
-//                   <label className="form-label" style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', marginTop: '20px' }}>Story Content</label>
-//                   <textarea className="form-input" rows="6" value={editingItem.data.content} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, content: e.target.value}})} />
-//                 </>
-//               )}
-
-//               {editingItem.type === 'topic' && (
-//                 <>
-//                   <label className="form-label" style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', marginTop: '20px' }}>Icon (Emoji)</label>
-//                   <input className="form-input" style={{ marginBottom: '8px' }} value={editingItem.data.icon} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, icon: e.target.value}})} />
-                  
-//                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', background: '#f8faf9', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
-//                     <span style={{ width: '100%', fontSize: '12px', color: '#64748b', fontWeight: 600, marginBottom: '4px', fontFamily: 'Plus Jakarta Sans' }}>Choose Icon:</span>
-//                     {PREDEFINED_ICONS.map(icon => (
-//                       <div 
-//                         key={icon}
-//                         className="sticker-btn"
-//                         onClick={() => setEditingItem({...editingItem, data: {...editingItem.data, icon: icon}})}
-//                         style={{
-//                           fontSize: '24px', cursor: 'pointer', padding: '6px 10px', borderRadius: '8px',
-//                           background: editingItem.data.icon === icon ? '#dcfce7' : 'transparent',
-//                           border: editingItem.data.icon === icon ? '1px solid #10b981' : '1px solid transparent',
-//                         }}
-//                       >
-//                         {icon}
-//                       </div>
-//                     ))}
-//                   </div>
-
-//                   <label className="form-label" style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', marginTop: '20px' }}>Description</label>
-//                   <textarea className="form-input" rows="6" value={editingItem.data.description} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, description: e.target.value}})} />
-//                 </>
-//               )}
-
-//               {editingItem.type === 'resource' && (
-//                 <>
-//                   <label className="form-label">Google Drive Link</label>
-//                   <input className="form-input" value={editingItem.data.drive_link || ""} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, drive_link: e.target.value}})} />
-                  
-//                   <label className="form-label">Author / Source</label>
-//                   <input className="form-input" value={editingItem.data.author || ""} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, author: e.target.value}})} />
-                  
-//                   <label className="form-label">Description</label>
-//                   <textarea className="form-input" rows="4" value={editingItem.data.desc || ""} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, desc: e.target.value}})} />
-//                 </>
-//               )}
-
-//               <div style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap' }}>
-//                 <button type="submit" style={{ flex: '2 1 150px', padding: 16, background: '#059669', color: 'white', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>Save Changes</button>
-//                 <button type="button" onClick={() => setEditingItem(null)} style={{ flex: '1 1 100px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>Cancel</button>
-//               </div>
-//             </form>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-// const styles = {
-//   dashboardWrapper: { display: 'flex', minHeight: '100vh', background: '#f8faf9' }
-// };
 import { API_BASE_URL } from '../apiConfig';
 import { useState, useEffect, useRef } from "react";
 
@@ -438,13 +15,19 @@ export default function SuperAdmin() {
   const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState(null); 
   
-  // Slide Upload State
   const [newSlide, setNewSlide] = useState({ url: "", caption: "", sub_text: "" });
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
   
-  // Mobile Sidebar
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Topic Image Editor States
+  const [topicImageMap, setTopicImageMap] = useState({});
+  const [activeTopicImg, setActiveTopicImg] = useState(null);
+  const [isTopicUploading, setIsTopicUploading] = useState(false);
+
+  // Tracks temporary uploads to wipe them from Cloudinary if the admin clicks "Cancel"
+  const [sessionUploads, setSessionUploads] = useState([]);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -483,35 +66,137 @@ export default function SuperAdmin() {
     finally { setLoading(false); }
   };
 
+  // 🟢 FIXED: Await all Cloudinary deletions so the browser doesn't cancel the request!
   const deleteItem = async (type, id) => {
     if (!window.confirm(`Delete this ${type}?`)) return;
-    const res = await fetch(`${API_BASE_URL}/api/admin/${type}/${id}`, { method: 'DELETE' });
-    if (res.ok) fetchData();
+
+    try {
+        if (type === 'topic' || type === 'story') {
+            const list = type === 'topic' ? topics : stories;
+            const itemToSweep = list.find(item => item.id === id);
+            
+            if (itemToSweep) {
+                const content = itemToSweep.description || itemToSweep.content || "";
+                const imgUrls = [...content.matchAll(/!\[(.*?)\]\((https?:\/\/[^)]+)\)/gi)].map(m => m[2]);
+                
+                // FORCE React to wait for Cloudinary to confirm deletion before moving on
+                if (imgUrls.length > 0) {
+                    await Promise.all(imgUrls.map(url =>
+                        fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(url)}`, { method: 'DELETE' })
+                    ));
+                }
+            }
+        }
+
+        // Now safe to delete from database
+        const res = await fetch(`${API_BASE_URL}/api/admin/${type}/${id}`, { method: 'DELETE' });
+        
+        if (res.ok) {
+            fetchData();
+        } else {
+            const errData = await res.json();
+            alert(`Failed to delete from database: ${errData.error || 'Unknown Error'}`);
+        }
+    } catch (err) {
+        console.error(err);
+        alert(`Network Error: Could not delete item. ${err.message}`);
+    }
+  };
+
+  const handleEditClick = (item, itemType) => {
+    setSessionUploads([]); 
+    if (itemType === 'topic') {
+        const newMap = {};
+        let parsedDesc = item.description || "";
+        
+        const matches = [...parsedDesc.matchAll(/!\[(.*?)\]\((https?:\/\/[^)]+)\)/gi)];
+        matches.forEach((match, idx) => {
+            const desc = match[1];
+            const url = match[2];
+            const code = `[🖼️ Attached: ${desc} #${idx}]`; 
+            newMap[code] = url;
+            parsedDesc = parsedDesc.replace(match[0], code);
+        });
+        
+        setTopicImageMap(newMap);
+        setEditingItem({ type: itemType, data: { ...item, description: parsedDesc } });
+    } else {
+        setEditingItem({ type: itemType, data: item });
+    }
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
     const { type, data } = editingItem;
     
+    let payload = { ...data };
+
+    if (type === 'topic') {
+        let finalDesc = payload.description || "";
+        Object.entries(topicImageMap).forEach(([code, url]) => {
+            const match = code.match(/\[🖼️ Attached: (.*?) #\d+\]/);
+            const userDesc = match ? match[1] : "Asset";
+            finalDesc = finalDesc.split(code).join(`![${userDesc}](${url})`);
+        });
+        payload.description = finalDesc;
+    }
+
+    // 🟢 FIXED: Await orphan sweeps
+    const list = type === 'topic' ? topics : type === 'story' ? stories : [];
+    const originalItem = list.find(item => item.id === payload.id);
+    
+    if (originalItem) {
+        const oldContent = type === 'topic' ? (originalItem.description || "") : (originalItem.content || "");
+        const newContent = type === 'topic' ? (payload.description || "") : (payload.content || "");
+        
+        const oldUrls = [...oldContent.matchAll(/!\[(.*?)\]\((https?:\/\/[^)]+)\)/gi)].map(m => m[2]);
+        const newUrls = [...newContent.matchAll(/!\[(.*?)\]\((https?:\/\/[^)]+)\)/gi)].map(m => m[2]);
+        
+        const deletedUrls = oldUrls.filter(url => !newUrls.includes(url));
+        
+        if (deletedUrls.length > 0) {
+            await Promise.all(deletedUrls.map(url =>
+                fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(url)}`, { method: 'DELETE' })
+            ));
+        }
+    }
+
     let endpoint = 'resources';
     if (type === 'story') endpoint = 'stories';
     if (type === 'topic') endpoint = 'topics';
     
-    const res = await fetch(`${API_BASE_URL}/api/admin/${endpoint}/${data.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/${endpoint}/${payload.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
-    if (res.ok) { 
-      setEditingItem(null); 
-      fetchData(); 
-    } else {
-      alert("Update failed. Check your server logs.");
+        if (res.ok) { 
+          setEditingItem(null); 
+          setTopicImageMap({});
+          setSessionUploads([]); 
+          fetchData(); 
+        } else {
+          alert("Update failed. Check your server logs.");
+        }
+    } catch (err) {
+        alert("Network error: Could not save updates.");
     }
   };
 
-  // 🟢 FIXED: Renamed to handleFileUpload to handle both Images AND PDFs
+  // 🟢 FIXED: Await cancellation sweeps
+  const handleCancelEdit = async () => {
+    if (sessionUploads.length > 0) {
+        await Promise.all(sessionUploads.map(url =>
+            fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(url)}`, { method: 'DELETE' })
+        ));
+    }
+    setSessionUploads([]);
+    setEditingItem(null);
+    setTopicImageMap({});
+  };
+
   const handleFileUpload = async (event, callback) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -523,7 +208,6 @@ export default function SuperAdmin() {
 
     setIsUploading(true);
     const formData = new FormData();
-    // Keep 'image' as the key because your backend expects upload.single('image')
     formData.append("image", file); 
 
     try {
@@ -535,6 +219,7 @@ export default function SuperAdmin() {
       const data = await res.json();
       
       if (res.ok) {
+        setSessionUploads(prev => [...prev, data.imageUrl]); 
         callback(data.imageUrl); 
       } else {
         throw new Error(data.error || data.details || 'Upload failed');
@@ -545,6 +230,78 @@ export default function SuperAdmin() {
     } finally {
       setIsUploading(false);
       if (event.target) event.target.value = null; 
+    }
+  };
+
+  const handleTopicImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const textarea = document.getElementById('admin-topic-desc');
+    const cursorPos = textarea ? textarea.selectionStart : (editingItem.data.description || "").length;
+    
+    setIsTopicUploading(true);
+    const formData = new FormData();
+    formData.append("image", file);
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/upload`, { method: "POST", body: formData });
+      const data = await res.json();
+      
+      if (data.success) {
+        setSessionUploads(prev => [...prev, data.imageUrl]); 
+        setActiveTopicImg({ url: data.imageUrl, desc: "Topic Asset", isNew: true, pos: cursorPos });
+      } else {
+        alert("Failed to upload image.");
+      }
+    } catch (err) {
+      console.error("Upload failed", err);
+      alert("Error uploading image to server.");
+    } finally {
+      setIsTopicUploading(false);
+      e.target.value = ""; 
+    }
+  };
+
+  const handleSaveTopicImageContext = () => {
+    const uniqueId = activeTopicImg.isNew ? Date.now().toString().slice(-4) : (activeTopicImg.oldCode.match(/#(\d+)\]/) ? activeTopicImg.oldCode.match(/#(\d+)\]/)[1] : Date.now().toString().slice(-4));
+    const descText = activeTopicImg.desc.trim() || "Asset";
+    const shortcode = `[🖼️ Attached: ${descText} #${uniqueId}]`;
+
+    if (activeTopicImg.isNew) {
+      setTopicImageMap(prev => ({ ...prev, [shortcode]: activeTopicImg.url }));
+      const desc = editingItem.data.description || "";
+      const before = desc.substring(0, activeTopicImg.pos);
+      const after = desc.substring(activeTopicImg.pos);
+      setEditingItem(prev => ({ ...prev, data: { ...prev.data, description: `${before}\n${shortcode}\n${after}` } }));
+    } else {
+      if (activeTopicImg.oldCode !== shortcode) {
+        setTopicImageMap(prev => {
+          const newMap = { ...prev };
+          delete newMap[activeTopicImg.oldCode];
+          newMap[shortcode] = activeTopicImg.url;
+          return newMap;
+        });
+        setEditingItem(prev => ({ ...prev, data: { ...prev.data, description: prev.data.description.replace(activeTopicImg.oldCode, shortcode) } }));
+      }
+    }
+    setActiveTopicImg(null); 
+  };
+
+  // 🟢 FIXED: Await the specific image removal sweep
+  const handleRemoveTopicImage = async (codeToRemove, url) => {
+    setEditingItem(prev => ({ ...prev, data: { ...prev.data, description: prev.data.description.replace(`\n${codeToRemove}\n`, '').replace(codeToRemove, '') } }));
+    setTopicImageMap(prev => {
+      const newMap = { ...prev };
+      delete newMap[codeToRemove];
+      return newMap;
+    });
+    setActiveTopicImg(null); 
+
+    try {
+      await fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(url)}`, { method: 'DELETE' });
+    } catch (err) {
+      console.log("Cleanup failed.", err);
     }
   };
 
@@ -704,7 +461,7 @@ export default function SuperAdmin() {
                     <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-5 font-bold text-slate-900">{item.title || item.label}</td>
                       <td className="px-6 py-5 flex gap-2">
-                        <button onClick={() => setEditingItem({ type: itemType, data: item })} className="px-4 py-2 bg-sky-50 text-sky-600 font-bold text-xs rounded-xl hover:bg-sky-100 transition-colors">Edit</button>
+                        <button onClick={() => handleEditClick(item, itemType)} className="px-4 py-2 bg-sky-50 text-sky-600 font-bold text-xs rounded-xl hover:bg-sky-100 transition-colors">Edit</button>
                         <button onClick={() => deleteItem(itemType, item.id)} className="px-4 py-2 bg-red-50 text-red-600 font-bold text-xs rounded-xl hover:bg-red-100 transition-colors">Delete</button>
                       </td>
                     </tr>
@@ -732,7 +489,12 @@ export default function SuperAdmin() {
                       accept="image/*" 
                       ref={fileInputRef}
                       className="hidden"
-                      onChange={(e) => handleFileUpload(e, (url) => setNewSlide({...newSlide, url}))}
+                      onChange={async (e) => handleFileUpload(e, async (url) => {
+                        if (newSlide.url && newSlide.url.includes('cloudinary.com')) {
+                          await fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(newSlide.url)}`, { method: 'DELETE' }).catch(console.error);
+                        }
+                        setNewSlide({...newSlide, url});
+                      })}
                     />
                     
                     <button 
@@ -747,9 +509,18 @@ export default function SuperAdmin() {
                     {newSlide.url && (
                       <div className="h-16 w-24 rounded-xl border border-slate-200 overflow-hidden shadow-sm relative group">
                         <img src={newSlide.url} alt="Preview" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">Ready ✅</span>
-                        </div>
+                        <button 
+                          type="button" 
+                          onClick={async () => {
+                            if (newSlide.url.includes('cloudinary.com')) {
+                                await fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(newSlide.url)}`, { method: 'DELETE' }).catch(console.error);
+                            }
+                            setNewSlide({...newSlide, url: ""});
+                          }}
+                          className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold cursor-pointer border-none"
+                        >
+                          Remove ✕
+                        </button>
                       </div>
                     )}
                   </div>
@@ -809,8 +580,46 @@ export default function SuperAdmin() {
 
       {/* 🟢 EDIT MODAL */}
       {editingItem && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-200" onClick={() => setEditingItem(null)}>
-          <div className="bg-white w-full max-w-2xl rounded-[2rem] p-8 md:p-10 relative overflow-y-auto max-h-[90vh] shadow-2xl animate-in slide-in-from-bottom-8 duration-300" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-200" onClick={handleCancelEdit}>
+          <div className="bg-white w-full max-w-2xl rounded-[2rem] p-8 md:p-10 relative overflow-y-auto max-h-[90vh] shadow-2xl animate-in slide-in-from-bottom-8 duration-300 custom-scrollbar" onClick={e => e.stopPropagation()}>
+            
+            {/* Top-level Image Editor Popup for Topics */}
+            {activeTopicImg && (
+              <div className="absolute inset-0 z-[100000] bg-slate-900/40 backdrop-blur-[2px] flex justify-center items-center p-4 rounded-[2rem]">
+                <div className="bg-white rounded-2xl w-full max-w-[400px] shadow-2xl overflow-hidden animate-[popIn_0.2s_ease-out]">
+                  <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                    <h4 className="font-sans font-bold text-slate-800">
+                      {activeTopicImg.isNew ? "Image Details" : "Edit Image"}
+                    </h4>
+                    <button type="button" onClick={() => setActiveTopicImg(null)} className="text-slate-400 hover:text-slate-700 font-bold">✕</button>
+                  </div>
+                  <div className="p-5">
+                    <div className="w-full h-40 bg-slate-100 rounded-xl overflow-hidden mb-4 border border-slate-200">
+                       <img src={activeTopicImg.url} className="w-full h-full object-contain" alt="preview" />
+                    </div>
+                    <label className="block text-xs font-bold text-slate-700 tracking-[0.05em] uppercase mb-2">Image Description</label>
+                    <input 
+                      autoFocus
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-[14px] focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 transition-all"
+                      value={activeTopicImg.desc} 
+                      onChange={e => setActiveTopicImg({...activeTopicImg, desc: e.target.value})}
+                      placeholder="e.g., Tomato Plant"
+                    />
+                  </div>
+                  <div className="p-4 border-t border-slate-100 bg-slate-50 flex gap-3">
+                     {!activeTopicImg.isNew && (
+                        <button type="button" onClick={() => handleRemoveTopicImage(activeTopicImg.oldCode, activeTopicImg.url)} className="px-4 py-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl font-bold text-sm transition-colors flex-1">
+                           Remove
+                        </button>
+                     )}
+                     <button type="button" onClick={handleSaveTopicImageContext} className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition-colors flex-1 shadow-sm">
+                        {activeTopicImg.isNew ? "Insert Image" : "Save Changes"}
+                     </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-slate-900 mb-8">Edit Content</h2>
             
             <form onSubmit={handleUpdate} className="space-y-6">
@@ -838,7 +647,12 @@ export default function SuperAdmin() {
                         accept="image/*" 
                         id="story-file-upload"
                         className="hidden"
-                        onChange={(e) => handleFileUpload(e, (url) => setEditingItem({...editingItem, data: {...editingItem.data, image_url: url}}))}
+                        onChange={async (e) => handleFileUpload(e, async (url) => {
+                          if (editingItem.data.image_url && editingItem.data.image_url.includes('cloudinary.com')) {
+                              await fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(editingItem.data.image_url)}`, { method: 'DELETE' }).catch(console.error);
+                          }
+                          setEditingItem({...editingItem, data: {...editingItem.data, image_url: url}})
+                        })}
                       />
                       <button 
                         type="button"
@@ -854,7 +668,12 @@ export default function SuperAdmin() {
                           <img src={editingItem.data.image_url} alt="Cover Preview" className="w-full h-full object-cover" />
                           <button 
                             type="button" 
-                            onClick={() => setEditingItem({...editingItem, data: {...editingItem.data, image_url: ""}})}
+                            onClick={async () => {
+                                if (editingItem.data.image_url.includes('cloudinary.com')) {
+                                    await fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(editingItem.data.image_url)}`, { method: 'DELETE' }).catch(console.error);
+                                }
+                                setEditingItem({...editingItem, data: {...editingItem.data, image_url: ""}})
+                            }}
                             className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 flex justify-center items-center rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             ✕
@@ -891,13 +710,50 @@ export default function SuperAdmin() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-2">Description</label>
-                    <textarea className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all min-h-[120px]" value={editingItem.data.description} onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, description: e.target.value}})} />
+                    <div className="flex justify-between items-end mb-2">
+                      <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-widest">Description</label>
+                      
+                      <div>
+                        <input type="file" id="adminTopicImgUpload" className="hidden" accept="image/*" onChange={handleTopicImageUpload} />
+                        <label htmlFor="adminTopicImgUpload" className="cursor-pointer bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5 shadow-sm">
+                          {isTopicUploading ? "⏳ Uploading..." : "🖼️ Insert Image"}
+                        </label>
+                      </div>
+                    </div>
+                    
+                    <textarea 
+                      id="admin-topic-desc"
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all min-h-[200px] font-mono" 
+                      value={editingItem.data.description || ""} 
+                      onChange={e => setEditingItem({...editingItem, data: {...editingItem.data, description: e.target.value}})} 
+                    />
+
+                    {Object.keys(topicImageMap).length > 0 && (
+                      <div className="mt-4">
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Attached Images (Click to Edit)</label>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          {Object.entries(topicImageMap).map(([code, url]) => (
+                            <div 
+                              key={code} 
+                              onClick={() => setActiveTopicImg({ url, desc: code.match(/\[🖼️ Attached: (.*?) #\d+\]/)[1], isNew: false, oldCode: code })}
+                              className="relative group rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 cursor-pointer h-20 transition-all hover:shadow-md hover:-translate-y-0.5"
+                            >
+                              <img src={url} alt="preview" className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                 <span className="text-white text-[10px] font-bold bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm">Edit</span>
+                              </div>
+                              <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur text-[10px] font-bold truncate px-2 py-0.5 text-slate-700 border-t border-slate-200">
+                                 {code.match(/\[🖼️ Attached: (.*?) #\d+\]/)[1]}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
 
-              {/* 🟢 FIXED: RESOURCE SECTION FILE UPLOAD */}
               {editingItem.type === 'resource' && (
                 <>
                   <div>
@@ -911,7 +767,12 @@ export default function SuperAdmin() {
                         accept="image/*,application/pdf" 
                         id="resource-file-upload"
                         className="hidden"
-                        onChange={(e) => handleFileUpload(e, (url) => setEditingItem({...editingItem, data: {...editingItem.data, drive_link: url}}))}
+                        onChange={async (e) => handleFileUpload(e, async (url) => {
+                          if (editingItem.data.drive_link && editingItem.data.drive_link.includes('cloudinary.com')) {
+                              await fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(editingItem.data.drive_link)}`, { method: 'DELETE' }).catch(console.error);
+                          }
+                          setEditingItem({...editingItem, data: {...editingItem.data, drive_link: url}})
+                        })}
                       />
                       <button 
                         type="button"
@@ -940,7 +801,12 @@ export default function SuperAdmin() {
                           </div>
                           <button 
                             type="button" 
-                            onClick={() => setEditingItem({...editingItem, data: {...editingItem.data, drive_link: ""}})}
+                            onClick={async () => {
+                                if (editingItem.data.drive_link.includes('cloudinary.com')) {
+                                    await fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(editingItem.data.drive_link)}`, { method: 'DELETE' }).catch(console.error);
+                                }
+                                setEditingItem({...editingItem, data: {...editingItem.data, drive_link: ""}})
+                            }}
                             className="text-slate-400 hover:text-red-500 font-bold text-lg ml-3"
                             title="Remove File"
                           >
@@ -972,7 +838,7 @@ export default function SuperAdmin() {
                 </button>
                 <button 
                   type="button" 
-                  onClick={() => setEditingItem(null)} 
+                  onClick={handleCancelEdit} 
                   className="flex-1 whitespace-nowrap px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold rounded-2xl transition-all"
                 >
                   CANCEL
