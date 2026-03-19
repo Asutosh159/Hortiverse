@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../apiConfig';
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Footer from '../components/Footer';
 
 // Pre-defined themes
@@ -72,8 +72,11 @@ function UploadTopicModal({ onClose, onSuccess }) {
     }
   };
 
+  // 🟢 FIX: Generate Unique Shortcodes so images don't overwrite each other
   const handleSaveImageContext = () => {
-    const shortcode = `[🖼️ Image Added: ${activeImg.desc.trim() || "Asset"}]`;
+    const uniqueId = activeImg.isNew ? Date.now().toString().slice(-4) : (activeImg.oldCode.match(/#(\d+)\]/) ? activeImg.oldCode.match(/#(\d+)\]/)[1] : Date.now().toString().slice(-4));
+    const descText = activeImg.desc.trim() || "Asset";
+    const shortcode = `[🖼️ Image Added: ${descText} #${uniqueId}]`;
 
     if (activeImg.isNew) {
       setImageMap(prev => ({ ...prev, [shortcode]: activeImg.url }));
@@ -111,6 +114,7 @@ function UploadTopicModal({ onClose, onSuccess }) {
     }
   };
 
+  // 🟢 FIX: Parse the new unique shortcodes cleanly into Markdown before saving
   const handleSubmit = async () => {
     if (!label.trim() || !description.trim() || !icon.trim()) {
       setError("Please fill out the icon, title, and description.");
@@ -122,7 +126,8 @@ function UploadTopicModal({ onClose, onSuccess }) {
 
     let finalDescription = description;
     Object.entries(imageMap).forEach(([code, url]) => {
-      const userDesc = code.replace('[🖼️ Image Added: ', '').replace(']', '');
+      const match = code.match(/\[🖼️ Image Added: (.*?) #\d+\]/);
+      const userDesc = match ? match[1] : "Asset";
       finalDescription = finalDescription.split(code).join(`![${userDesc}](${url})`);
     });
 
@@ -292,7 +297,8 @@ function UploadTopicModal({ onClose, onSuccess }) {
                       {Object.entries(imageMap).map(([code, url]) => (
                         <div 
                           key={code} 
-                          onClick={() => setActiveImg({ url, desc: code.replace('[🖼️ Image Added: ', '').replace(']', ''), isNew: false, oldCode: code })}
+                          // 🟢 FIX: Extract the description specifically from the new hashtag format
+                          onClick={() => setActiveImg({ url, desc: code.match(/\[🖼️ Image Added: (.*?) #\d+\]/)?.[1] || "Asset", isNew: false, oldCode: code })}
                           className="relative group rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 cursor-pointer h-24 transition-all hover:shadow-md hover:-translate-y-0.5"
                         >
                           <img src={url} alt="preview" className="w-full h-full object-cover" />
@@ -300,7 +306,7 @@ function UploadTopicModal({ onClose, onSuccess }) {
                              <span className="text-white text-xs font-bold bg-black/40 px-3 py-1 rounded-full backdrop-blur-sm">Edit/Remove</span>
                           </div>
                           <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur text-[11px] font-bold truncate px-2 py-1 text-slate-700 border-t border-slate-200">
-                             {code.replace('[🖼️ Image Added: ', '').replace(']', '')}
+                             {code.match(/\[🖼️ Image Added: (.*?) #\d+\]/)?.[1] || "Asset"}
                           </div>
                         </div>
                       ))}

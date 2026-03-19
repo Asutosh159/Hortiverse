@@ -30,6 +30,14 @@ function UploadModal({ onClose, onSuccess, user }) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
 
+  // 🟢 FIXED: Auto-sweep abandoned files if user closes modal without saving
+  const handleClose = async () => {
+    if (!success && link && link.includes('cloudinary.com')) {
+      await fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(link)}`, { method: 'DELETE' }).catch(console.error);
+    }
+    onClose();
+  };
+
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -107,12 +115,12 @@ function UploadModal({ onClose, onSuccess, user }) {
     }
   };
 
-  const handleOverlay = (e) => { if (e.target === e.currentTarget) onClose(); };
+  const handleOverlay = (e) => { if (e.target === e.currentTarget) handleClose(); };
 
   return (
     <div onClick={handleOverlay} className="modal-overlay">
       <div className="modal-box" style={{ maxWidth: 540 }}>
-        <button className="modal-close-btn" onClick={onClose}>✕</button>
+        <button className="modal-close-btn" onClick={handleClose}>✕</button>
 
         <div className="modal-scroll-area" style={{ padding: "40px 48px" }}>
           {success ? (
@@ -129,8 +137,8 @@ function UploadModal({ onClose, onSuccess, user }) {
             <>
               {/* header */}
               <div style={{ marginBottom: 32 }}>
-                <span className="tag-badge" style={{ background:"rgba(5,150,105,0.1)", color:"#059669", marginBottom:12 }}>Contribution</span>
-                <h2 className="fr" style={{ fontSize: "clamp(28px, 4vw, 36px)", fontWeight:900, color:"#0f172a", lineHeight:1.1, marginBottom:8 }}>
+                <span className="tag-badge" style={{ background:"rgba(5,150,105,0.1)", color:"#059669", marginBottom:12, display: "inline-block", padding: "4px 12px", borderRadius: 50, fontSize: 12, fontWeight: 700 }}>Contribution</span>
+                <h2 className="fr" style={{ fontSize: "clamp(24px, 4vw, 32px)", fontWeight:900, color:"#0f172a", lineHeight:1.1, marginBottom:8 }}>
                   Share a <span style={{ color:"#059669" }}>Publication</span>
                 </h2>
                 <p className="jk" style={{ fontSize:15, color:"#64748b", fontWeight:500 }}>
@@ -226,7 +234,12 @@ function UploadModal({ onClose, onSuccess, user }) {
                       </div>
                       <button 
                         type="button" 
-                        onClick={() => setLink("")}
+                        onClick={async () => {
+                          if (link.includes('cloudinary.com')) {
+                              await fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(link)}`, { method: 'DELETE' }).catch(console.error);
+                          }
+                          setLink("");
+                        }}
                         style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: 16, fontWeight: 700, marginLeft: 12, padding: "0 4px" }}
                         title="Remove File"
                       >
@@ -492,21 +505,27 @@ export default function Resources() {
           display: inline-flex; align-items: center; gap: 6px;
         }
 
+        /* 🟢 FIXED: MODAL STRUCTURE FOR COMPACT MOBILE & SMOOTH SCROLLING */
         .modal-overlay {
-          position: fixed; top: 72px; left: 0; right: 0; bottom: 0;
-          z-index: 900; background: rgba(15, 23, 42, 0.4); 
-          backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-          display: flex; justify-content: center; align-items: center; 
+          position: fixed; inset: 0;
+          z-index: 99999; background: rgba(15, 23, 42, 0.6); 
+          backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+          display: flex; justify-content: center; align-items: flex-start; 
           padding: 40px 20px; animation: fadeIn .3s ease-out;
+          overflow-y: auto; -webkit-overflow-scrolling: touch;
         }
         .modal-box {
           background: #ffffff; border-radius: 24px; width: 100%;
-          max-height: 100%; display: flex; flex-direction: column;
+          display: flex; flex-direction: column;
           position: relative; overflow: hidden; 
           box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255,255,255,0.2);
           animation: slideUp .4s cubic-bezier(0.16, 1, 0.3, 1);
+          margin: auto; max-height: 90vh;
         }
-        .modal-scroll-area { overflow-y: auto; flex-grow: 1; width: 100%; }
+        .modal-scroll-area { 
+          overflow-y: auto; flex-grow: 1; width: 100%; 
+          -webkit-overflow-scrolling: touch;
+        }
         .modal-scroll-area::-webkit-scrollbar { width: 6px; }
         .modal-scroll-area::-webkit-scrollbar-track { background: transparent; }
         .modal-scroll-area::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.25); border-radius: 4px; }
@@ -525,10 +544,10 @@ export default function Resources() {
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         @keyframes slideUp { from{opacity:0;transform:translateY(40px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
 
-        /* 📱 MOBILE RESPONSIVENESS OVERRIDES */
+        /* 📱 COMPACT MOBILE RESPONSIVENESS OVERRIDES */
         @media (max-width: 768px) {
-          .modal-overlay { padding: 10px !important; align-items: flex-end; }
-          .modal-box { border-radius: 24px 24px 0 0 !important; max-height: 90vh !important; }
+          .modal-overlay { padding: 16px !important; align-items: flex-start !important; }
+          .modal-box { border-radius: 24px !important; max-height: 90vh !important; margin: auto !important; }
           .modal-scroll-area { padding: 24px 20px !important; }
           .search-container { padding: 0 15px; }
           
@@ -573,6 +592,7 @@ export default function Resources() {
         body.dark-mode .modal-box { background: #1e293b !important; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.05) !important; }
         body.dark-mode .modal-close-btn { background: rgba(15, 23, 42, 0.8) !important; color: #f8faf9 !important; border-color: rgba(255, 255, 255, 0.1) !important; }
         body.dark-mode .modal-close-btn:hover { background: #334155 !important; }
+        body.dark-mode .preview-header { background: linear-gradient(180deg, rgba(30, 41, 59, 1) 0%, rgba(30, 41, 59, 0) 100%) !important; }
         
         body.dark-mode .input-modern { background: #0f172a !important; border-color: rgba(255,255,255,0.1) !important; color: #f8faf9 !important; }
         body.dark-mode .input-modern:focus { background: #020617 !important; border-color: #10b981 !important; }
@@ -741,7 +761,8 @@ export default function Resources() {
               <button className="modal-close-btn" onClick={() => setSelectedResource(null)}>✕</button>
               
               <div className="modal-scroll-area">
-                <div style={{ padding: "48px 24px 32px", background: `linear-gradient(180deg, ${cfg.bg} 0%, rgba(255,255,255,0) 100%)` }}>
+                {/* 🟢 FIXED: Added preview-header class for precise Dark Mode background targeting */}
+                <div className="preview-header" style={{ padding: "48px 24px 32px", background: `linear-gradient(180deg, ${cfg.bg} 0%, rgba(255,255,255,0) 100%)` }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
                     <div style={{ width: 64, height: 64, borderRadius: 16, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)" }}>
                       {cfg.icon}

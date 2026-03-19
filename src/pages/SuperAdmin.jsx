@@ -31,6 +31,16 @@ export default function SuperAdmin() {
 
   useEffect(() => { fetchData(); }, []);
 
+  // 🟢 Prevent Background Scrolling when Modal is Open
+  useEffect(() => {
+    if (editingItem) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [editingItem]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -66,7 +76,6 @@ export default function SuperAdmin() {
     finally { setLoading(false); }
   };
 
-  // 🟢 FIXED: Await all Cloudinary deletions so the browser doesn't cancel the request!
   const deleteItem = async (type, id) => {
     if (!window.confirm(`Delete this ${type}?`)) return;
 
@@ -79,16 +88,14 @@ export default function SuperAdmin() {
                 const content = itemToSweep.description || itemToSweep.content || "";
                 const imgUrls = [...content.matchAll(/!\[(.*?)\]\((https?:\/\/[^)]+)\)/gi)].map(m => m[2]);
                 
-                // FORCE React to wait for Cloudinary to confirm deletion before moving on
                 if (imgUrls.length > 0) {
                     await Promise.all(imgUrls.map(url =>
-                        fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(url)}`, { method: 'DELETE' })
+                        fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(url)}`, { method: 'DELETE' }).catch(console.error)
                     ));
                 }
             }
         }
 
-        // Now safe to delete from database
         const res = await fetch(`${API_BASE_URL}/api/admin/${type}/${id}`, { method: 'DELETE' });
         
         if (res.ok) {
@@ -125,12 +132,13 @@ export default function SuperAdmin() {
     }
   };
 
+  // 🟢 FIXED: Safely compute exact Cloudinary deletions upon SAVE
   const handleUpdate = async (e) => {
     e.preventDefault();
     const { type, data } = editingItem;
-    
     let payload = { ...data };
 
+    // 1. Swap Topic shortcodes back to Markdown before saving
     if (type === 'topic') {
         let finalDesc = payload.description || "";
         Object.entries(topicImageMap).forEach(([code, url]) => {
@@ -141,26 +149,52 @@ export default function SuperAdmin() {
         payload.description = finalDesc;
     }
 
-    // 🟢 FIXED: Await orphan sweeps
-    const list = type === 'topic' ? topics : type === 'story' ? stories : [];
+    // 2. Safely figure out what needs to be deleted from Cloudinary
+    let urlsToDelete = [];
+    const list = type === 'topic' ? topics : type === 'story' ? stories : type === 'resource' ? resources : [];
     const originalItem = list.find(item => item.id === payload.id);
     
     if (originalItem) {
+        // Evaluate markdown images for Topics and Stories
         const oldContent = type === 'topic' ? (originalItem.description || "") : (originalItem.content || "");
         const newContent = type === 'topic' ? (payload.description || "") : (payload.content || "");
         
         const oldUrls = [...oldContent.matchAll(/!\[(.*?)\]\((https?:\/\/[^)]+)\)/gi)].map(m => m[2]);
         const newUrls = [...newContent.matchAll(/!\[(.*?)\]\((https?:\/\/[^)]+)\)/gi)].map(m => m[2]);
         
-        const deletedUrls = oldUrls.filter(url => !newUrls.includes(url));
-        
-        if (deletedUrls.length > 0) {
-            await Promise.all(deletedUrls.map(url =>
-                fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(url)}`, { method: 'DELETE' })
-            ));
+        // Delete original images no longer in the text, AND session uploads that never made it
+        urlsToDelete.push(...oldUrls.filter(url => !newUrls.includes(url)));
+        urlsToDelete.push(...sessionUploads.filter(url => !newUrls.includes(url)));
+
+        // Evaluate Cover Images / Resource Links
+        if (type === 'story') {
+            if (originalItem.image_url && originalItem.image_url !== payload.image_url) {
+                urlsToDelete.push(originalItem.image_url);
+            }
+            if (payload.image_url) urlsToDelete.push(...sessionUploads.filter(url => url !== payload.image_url));
+            else urlsToDelete.push(...sessionUploads);
+        }
+
+        if (type === 'resource') {
+            if (originalItem.drive_link && originalItem.drive_link !== payload.drive_link) {
+                urlsToDelete.push(originalItem.drive_link);
+            }
+            if (payload.drive_link) urlsToDelete.push(...sessionUploads.filter(url => url !== payload.drive_link));
+            else urlsToDelete.push(...sessionUploads);
         }
     }
 
+    // Filter duplicates and ensure Cloudinary URL
+    urlsToDelete = [...new Set(urlsToDelete)].filter(url => url && url.includes('cloudinary.com'));
+
+    // 3. Fire all safe deletions at once
+    if (urlsToDelete.length > 0) {
+        await Promise.all(urlsToDelete.map(url =>
+            fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(url)}`, { method: 'DELETE' }).catch(console.error)
+        ));
+    }
+
+    // 4. Update Database
     let endpoint = 'resources';
     if (type === 'story') endpoint = 'stories';
     if (type === 'topic') endpoint = 'topics';
@@ -185,11 +219,11 @@ export default function SuperAdmin() {
     }
   };
 
-  // 🟢 FIXED: Await cancellation sweeps
+  // 🟢 FIXED: Cancel sweeps up all un-saved session uploads cleanly
   const handleCancelEdit = async () => {
     if (sessionUploads.length > 0) {
         await Promise.all(sessionUploads.map(url =>
-            fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(url)}`, { method: 'DELETE' })
+            fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(url)}`, { method: 'DELETE' }).catch(console.error)
         ));
     }
     setSessionUploads([]);
@@ -288,7 +322,7 @@ export default function SuperAdmin() {
     setActiveTopicImg(null); 
   };
 
-  // 🟢 FIXED: Await the specific image removal sweep
+  // 🟢 FIXED: Removed immediate destructive fetch. Handled safely upon Save/Cancel.
   const handleRemoveTopicImage = async (codeToRemove, url) => {
     setEditingItem(prev => ({ ...prev, data: { ...prev.data, description: prev.data.description.replace(`\n${codeToRemove}\n`, '').replace(codeToRemove, '') } }));
     setTopicImageMap(prev => {
@@ -297,12 +331,6 @@ export default function SuperAdmin() {
       return newMap;
     });
     setActiveTopicImg(null); 
-
-    try {
-      await fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(url)}`, { method: 'DELETE' });
-    } catch (err) {
-      console.log("Cleanup failed.", err);
-    }
   };
 
   const addSlide = async () => {
@@ -336,7 +364,6 @@ export default function SuperAdmin() {
   return (
     <div className="flex min-h-screen bg-transparent font-sans selection:bg-emerald-200">
       
-      {/* 🟢 NEW: Uniform Background Gradients for the Super Admin Page! */}
       <div className="superadmin-bg" style={{
         position: "fixed", inset: 0, zIndex: -1,
         background: "linear-gradient(135deg, #f0fdf4 0%, #fffbeb 50%, #f0f9ff 100%)",
@@ -651,10 +678,16 @@ export default function SuperAdmin() {
         )}
       </main>
 
-      {/* 🟢 EDIT MODAL */}
+      {/* 🟢 EDIT MODAL - SCROLLING FIXED */}
       {editingItem && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-200" onClick={handleCancelEdit}>
-          <div className="modal-box bg-white w-full max-w-2xl rounded-[2rem] p-8 md:p-10 relative overflow-y-auto max-h-[90vh] shadow-2xl animate-in slide-in-from-bottom-8 duration-300 custom-scrollbar" onClick={e => e.stopPropagation()}>
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999] overflow-y-auto flex justify-center items-start p-4 md:p-8 animate-in fade-in duration-200 custom-scrollbar" 
+          onClick={handleCancelEdit}
+        >
+          <div 
+            className="modal-box bg-white w-full max-w-2xl rounded-[2rem] p-6 md:p-10 relative shadow-2xl animate-in slide-in-from-bottom-8 duration-300 my-auto sm:my-8 pointer-events-auto" 
+            onClick={e => e.stopPropagation()}
+          >
             
             {/* Top-level Image Editor Popup for Topics */}
             {activeTopicImg && (
@@ -721,9 +754,7 @@ export default function SuperAdmin() {
                         id="story-file-upload"
                         className="hidden"
                         onChange={async (e) => handleFileUpload(e, async (url) => {
-                          if (editingItem.data.image_url && editingItem.data.image_url.includes('cloudinary.com')) {
-                              await fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(editingItem.data.image_url)}`, { method: 'DELETE' }).catch(console.error);
-                          }
+                          // 🟢 FIXED: Safely append new URL, do NOT immediately delete old one here
                           setEditingItem({...editingItem, data: {...editingItem.data, image_url: url}})
                         })}
                       />
@@ -742,9 +773,7 @@ export default function SuperAdmin() {
                           <button 
                             type="button" 
                             onClick={async () => {
-                                if (editingItem.data.image_url.includes('cloudinary.com')) {
-                                    await fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(editingItem.data.image_url)}`, { method: 'DELETE' }).catch(console.error);
-                                }
+                                // 🟢 FIXED: Safely clear state. Deletion handles on SAVE or CANCEL
                                 setEditingItem({...editingItem, data: {...editingItem.data, image_url: ""}})
                             }}
                             className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 flex justify-center items-center rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity"
@@ -841,9 +870,7 @@ export default function SuperAdmin() {
                         id="resource-file-upload"
                         className="hidden"
                         onChange={async (e) => handleFileUpload(e, async (url) => {
-                          if (editingItem.data.drive_link && editingItem.data.drive_link.includes('cloudinary.com')) {
-                              await fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(editingItem.data.drive_link)}`, { method: 'DELETE' }).catch(console.error);
-                          }
+                          // 🟢 FIXED: Safely append new URL, do NOT immediately delete old one here
                           setEditingItem({...editingItem, data: {...editingItem.data, drive_link: url}})
                         })}
                       />
@@ -875,9 +902,7 @@ export default function SuperAdmin() {
                           <button 
                             type="button" 
                             onClick={async () => {
-                                if (editingItem.data.drive_link.includes('cloudinary.com')) {
-                                    await fetch(`${API_BASE_URL}/api/admin/cloudinary/delete?url=${encodeURIComponent(editingItem.data.drive_link)}`, { method: 'DELETE' }).catch(console.error);
-                                }
+                                // 🟢 FIXED: Safely clear state. Deletion handles on SAVE or CANCEL
                                 setEditingItem({...editingItem, data: {...editingItem.data, drive_link: ""}})
                             }}
                             className="text-slate-400 hover:text-red-500 font-bold text-lg ml-3"
