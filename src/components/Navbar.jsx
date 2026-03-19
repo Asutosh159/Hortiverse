@@ -7,8 +7,13 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   
-  // 🟢 NEW: State to control the mobile menu
+  // State to control the mobile menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // 🟢 NEW: State to control Light/Dark Mode across the app
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem("hv_theme") === "dark";
+  });
 
   useEffect(() => {
     const storedUser = localStorage.getItem("hv_user");
@@ -16,6 +21,17 @@ export default function Navbar() {
       setUser(JSON.parse(storedUser));
     }
   }, []);
+
+  // 🟢 NEW: Effect to apply the dark-mode CSS class globally
+  useEffect(() => {
+    if (isDarkMode) {
+      document.body.classList.add("dark-mode");
+      localStorage.setItem("hv_theme", "dark");
+    } else {
+      document.body.classList.remove("dark-mode");
+      localStorage.setItem("hv_theme", "light");
+    }
+  }, [isDarkMode]);
 
   const handleLogout = () => {
     localStorage.removeItem("hv_user");
@@ -30,7 +46,7 @@ export default function Navbar() {
     { label: "Stories",   path: "/stories" },
     { label: "Topics",    path: "/topics" },
     { label: "Community", path: "/UnderDevelopment" },
-    { label: "Resources", path: "/resources" },
+    { label: "Publication", path: "/resources" },
   ];
 
   // 2. DYNAMICALLY ADD ADMIN LINK
@@ -85,6 +101,16 @@ export default function Navbar() {
 
           {/* ── RIGHT: Desktop Auth / Profile ── */}
           <div className="hidden lg:flex items-center gap-3.5">
+            
+            {/* 🟢 NEW: Dark Mode Toggle Button (Desktop) */}
+            <button 
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors shadow-sm font-bold text-lg border border-slate-200 shrink-0 mr-1"
+              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDarkMode ? "☀️" : "🌙"}
+            </button>
+
             {user ? (
               <div className="flex items-center gap-3 bg-[#f0fdf4] py-1.5 pl-1.5 pr-4 rounded-full border border-[#dcfce7]">
                 <div className="w-8 h-8 rounded-full bg-[#2e7d32] text-white flex items-center justify-center font-bold text-[13px] font-['Plus_Jakarta_Sans']" title={user.role === 'admin' || user.role === 'superadmin' ? 'Admin' : 'Student'}>
@@ -157,6 +183,15 @@ export default function Navbar() {
               </Link>
             );
           })}
+
+          {/* 🟢 NEW: Dark Mode Toggle Button (Mobile) */}
+          <button 
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className="flex items-center justify-between px-4 py-3 mt-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 font-bold transition-colors hover:bg-slate-100"
+          >
+            <span>{isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}</span>
+            <span className="text-xl leading-none">{isDarkMode ? "☀️" : "🌙"}</span>
+          </button>
 
           <hr className="border-gray-200 my-4" />
 

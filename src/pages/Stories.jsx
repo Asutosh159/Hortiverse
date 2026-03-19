@@ -31,16 +31,13 @@ function UploadStoryModal({ onClose, onSuccess, user }) {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // 🟢 NEW: State and Ref for Image Uploading
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  // 🟢 NEW: Handle Cloudinary Image Upload with 4MB Limit
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Strict 4MB Limit Check
     if (file.size > 4 * 1024 * 1024) {
       alert("File is too large! Please select an image under 4MB.");
       return;
@@ -59,7 +56,7 @@ function UploadStoryModal({ onClose, onSuccess, user }) {
       const data = await res.json();
       
       if (res.ok) {
-        setImgUrl(data.imageUrl); // Save the Cloudinary URL to state
+        setImgUrl(data.imageUrl);
       } else {
         throw new Error(data.error || data.details || 'Upload failed');
       }
@@ -84,7 +81,7 @@ function UploadStoryModal({ onClose, onSuccess, user }) {
     const payload = {
       title: title.trim(),
       author: author.trim() || "Community Member",
-      content: content.trim(), // 🟢 Excerpt is gone!
+      content: content.trim(), 
       tag: tag,
       image_url: imgUrl.trim() || "https://images.unsplash.com/photo-1592982537447-6f2a6a0c5c4f?auto=format&fit=crop&w=800&q=80",
       read_time: Math.max(1, Math.ceil(content.split(" ").length / 200)) + " min read"
@@ -117,8 +114,8 @@ function UploadStoryModal({ onClose, onSuccess, user }) {
 
   return (
     <div onClick={handleOverlay} className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 md:p-10 animate-[fadeIn_0.3s_ease-out]">
-      <div className="relative w-full max-w-[640px] max-h-[90vh] md:max-h-[85vh] bg-white rounded-[24px] shadow-2xl flex flex-col overflow-hidden animate-[slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)]">
-        <button className="absolute top-4 right-4 md:top-5 md:right-5 z-[100] w-10 h-10 md:w-11 md:h-11 bg-white/50 hover:bg-white border border-slate-200 text-slate-700 hover:text-emerald-600 rounded-full flex items-center justify-center transition-all shadow-sm hover:scale-110 cursor-pointer" onClick={onClose}>✕</button>
+      <div className="modal-box relative w-full max-w-[640px] max-h-[90vh] md:max-h-[85vh] bg-white rounded-[24px] shadow-2xl flex flex-col overflow-hidden animate-[slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)]">
+        <button className="modal-close-btn-upload absolute top-4 right-4 md:top-5 md:right-5 z-[100] w-10 h-10 md:w-11 md:h-11 bg-white/50 hover:bg-white border border-slate-200 text-slate-700 hover:text-emerald-600 rounded-full flex items-center justify-center transition-all shadow-sm hover:scale-110 cursor-pointer" onClick={onClose}>✕</button>
 
         <div className="overflow-y-auto overflow-x-hidden flex-1 w-full break-words modal-scrollbar p-6 md:p-12">
           {success ? (
@@ -165,7 +162,6 @@ function UploadStoryModal({ onClose, onSuccess, user }) {
                   <input className="w-full px-[18px] py-[14px] bg-slate-50 border border-slate-200 rounded-xl outline-none font-['Plus_Jakarta_Sans',sans-serif] text-[15px] text-slate-900 transition-all duration-200 font-medium focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10" placeholder="Your name…" value={author} onChange={e=>setAuthor(e.target.value)} />
                 </div>
                 
-                {/* 🟢 NEW: File Upload UI replaces text input */}
                 <div className="flex-1 min-w-[200px]">
                   <label className="block font-['Plus_Jakarta_Sans',sans-serif] text-xs font-bold text-slate-700 tracking-[0.05em] uppercase mb-2">
                     Cover Image <span className="text-slate-400 font-medium normal-case tracking-normal">(optional)</span>
@@ -235,7 +231,6 @@ export default function Stories() {
   const visitorId = localStorage.getItem("hv_visitor_id") || "guest_fallback";
   const loggedInUser = JSON.parse(localStorage.getItem("hv_user"));
 
-  // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
     if ('scrollRestoration' in window.history) {
@@ -262,7 +257,6 @@ export default function Stories() {
             likes: s.likes,
             comments: s.comments, 
             img: getDirectImageUrl(s.image_url),
-            // 🟢 Create a short 120-character preview on the fly!
             excerpt: s.content ? s.content.substring(0, 120) + "..." : "", 
             content: s.content,
             hasLiked: s.has_liked === 1 
@@ -368,11 +362,14 @@ export default function Stories() {
   return (
     <div className="relative min-h-screen text-slate-900 overflow-hidden font-serif">
 
-      {/* Background Gradients */}
-      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-green-50 via-amber-50 to-sky-50">
-        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-[radial-gradient(circle,rgba(16,185,129,0.15)_0%,transparent_70%)] blur-[60px]" />
-        <div className="absolute top-[40%] right-[-10%] w-[40vw] h-[40vw] bg-[radial-gradient(circle,rgba(250,204,21,0.12)_0%,transparent_70%)] blur-[60px]" />
-        <div className="absolute bottom-[-20%] left-[20%] w-[60vw] h-[60vw] bg-[radial-gradient(circle,rgba(56,189,248,0.12)_0%,transparent_70%)] blur-[80px]" />
+      {/* 🟢 FIXED: Exact same background effect as Topics/Resources */}
+      <div className="stories-bg" style={{
+        position: "fixed", inset: 0, zIndex: -1,
+        background: "linear-gradient(135deg, #f0fdf4 0%, #fffbeb 50%, #f0f9ff 100%)",
+      }}>
+        <div style={{ position: "absolute", top: "-10%", left: "-10%", width: "50vw", height: "50vw", background: "radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%)", filter: "blur(60px)" }} />
+        <div style={{ position: "absolute", top: "40%", right: "-10%", width: "40vw", height: "40vw", background: "radial-gradient(circle, rgba(250,204,21,0.12) 0%, transparent 70%)", filter: "blur(60px)" }} />
+        <div style={{ position: "absolute", bottom: "-20%", left: "20%", width: "60vw", height: "60vw", background: "radial-gradient(circle, rgba(56,189,248,0.12) 0%, transparent 70%)", filter: "blur(80px)" }} />
       </div>
 
       <style>{`
@@ -391,6 +388,30 @@ export default function Stories() {
         @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(40px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        /* ══════════════════════════════════════════════════
+           🌙 DARK MODE OVERRIDES FOR STORIES PAGE
+        ══════════════════════════════════════════════════ */
+        body.dark-mode .stories-bg { background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #020617 100%) !important; }
+        body.dark-mode .text-\\[\\#112a0f\\] { color: #f8faf9 !important; }
+        
+        body.dark-mode .bg-white\\/90 { background-color: rgba(30, 41, 59, 0.9) !important; border-color: rgba(255,255,255,0.1) !important; }
+        body.dark-mode .bg-white\\/85 { background-color: rgba(30, 41, 59, 0.85) !important; border-color: rgba(255,255,255,0.1) !important; }
+        body.dark-mode .bg-white\\/85:hover { background-color: rgba(30, 41, 59, 0.95) !important; box-shadow: 0 25px 50px -12px rgba(16,185,129,0.15), 0 0 0 2px rgba(16,185,129,0.2) !important; }
+        body.dark-mode .bg-white\\/60 { background-color: rgba(30, 41, 59, 0.6) !important; color: #cbd5e1 !important; }
+        body.dark-mode .bg-slate-50 { background-color: #1e293b !important; border-color: rgba(255,255,255,0.1) !important; }
+        body.dark-mode .bg-white { background-color: #1e293b !important; border-color: rgba(255,255,255,0.1) !important; }
+        
+        body.dark-mode .text-slate-900 { color: #f8faf9 !important; }
+        body.dark-mode .text-slate-600, body.dark-mode .text-slate-500, body.dark-mode .text-slate-400 { color: #94a3b8 !important; }
+        body.dark-mode .border-slate-200, body.dark-mode .border-black\\/5 { border-color: rgba(255,255,255,0.1) !important; }
+        
+        body.dark-mode input, body.dark-mode textarea, body.dark-mode select { background-color: #0f172a !important; color: #f8faf9 !important; border-color: rgba(255,255,255,0.2) !important; }
+        body.dark-mode .bg-white\\/50 { background-color: rgba(15,23,42,0.5) !important; color: #f8faf9 !important; border-color: rgba(255,255,255,0.1) !important; }
+        body.dark-mode .bg-white\\/50:hover { background-color: rgba(15,23,42,0.8) !important; }
+        
+        /* Story Card specific tweaks */
+        body.dark-mode .story-card .tag { background: rgba(30, 41, 59, 0.9) !important; color: #34d399 !important; }
       `}</style>
 
       {/* ══ PAGE HEADER ══ */}

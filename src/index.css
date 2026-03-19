@@ -17,6 +17,7 @@ body {
   overflow-x: hidden;
   font-family: 'Plus Jakarta Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* 🟢 4. CUSTOM PREMIUM SCROLLBAR */
@@ -84,8 +85,31 @@ body {
 .chip { display:inline-block; background:rgba(16, 185, 129, 0.12); color:#047857; font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:8px 20px; border-radius:50px; margin-bottom:16px; }
 .tag { background:rgba(255,255,255,.95); backdrop-filter:blur(8px); color:#047857; font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; padding:6px 16px; border-radius:50px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 .avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:13px; color:#fff; flex-shrink:0; }
-.nl-input { flex:1; min-width:0; background:rgba(255,255,255,.9); backdrop-filter:blur(12px); border:1.5px solid rgba(255,255,255,.95); color:#1a2e1a; padding:16px 24px; border-radius:50px; font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; outline:none; transition:all .3s; font-weight: 500; }
-.nl-input:focus { border-color:rgba(16, 185, 129, 0.6); }
+
+/* 🟢 UPDATED: Newsletter Unified Styles */
+.nl-form-container { 
+  background: #ffffff; 
+  border-radius: 50px; 
+  transition: all 0.3s ease; 
+  border: 1.5px solid transparent;
+  overflow: hidden;
+}
+.nl-input { 
+  flex: 1; 
+  min-width: 0; 
+  background: transparent !important; 
+  border: none !important; 
+  color: #1a2e1a; 
+  padding: 16px 24px; 
+  font-family: 'Plus Jakarta Sans', sans-serif; 
+  font-size: 15px; 
+  outline: none !important; 
+  font-weight: 500; 
+}
+.nl-form-container:focus-within {
+  border-color: rgba(16, 185, 129, 0.6);
+}
+
 .spinner { width:20px; height:20px; border:2px solid rgba(255, 255, 255, 0.3); border-top-color:#ffffff; border-radius:50%; animation:spin .7s linear infinite; }
 @keyframes spin { to{transform:rotate(360deg)} }
 
@@ -115,17 +139,197 @@ body {
 .sub-title { font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: flex-start; line-height: 1.4; }
 .sub-desc { font-size: 14px; color: #64748b; line-height: 1.6; margin-left: 24px; margin-top: 4px; font-weight: 500; }
 
-/* 📱 MOBILE RESPONSIVENESS OVERRIDES */
-@media (max-width: 768px) {
-  .nl-input { border-radius: 50px !important; margin-bottom: 12px; }
-  .btn-solid { border-radius: 50px !important; width: 100%; justify-content: center; }
-  .modal-overlay { padding: 10px !important; align-items: flex-end; }
-  .modal-box { border-radius: 24px 24px 0 0 !important; max-height: 90vh !important; }
-  .modal-scroll-area { padding: 24px 20px !important; }
+/* ══════════════════════════════════════════════════
+   🌙 DARK MODE GLOBAL OVERRIDES
+══════════════════════════════════════════════════ */
+
+/* Main Backgrounds & Text */
+body.dark-mode {
+  background-color: #0f172a !important; 
+  color: #f8faf9 !important; 
 }
 
+/* Force Tailwind & Specific inline texts to Light Colors */
+body.dark-mode h1, 
+body.dark-mode h2, 
+body.dark-mode h3, 
+body.dark-mode h4,
+body.dark-mode .text-slate-900,
+body.dark-mode .text-gray-900 {
+  color: #f8faf9 !important;
+}
 
+body.dark-mode p,
+body.dark-mode .text-slate-600,
+body.dark-mode .text-slate-500,
+body.dark-mode .text-gray-600,
+body.dark-mode .text-gray-500 {
+  color: #94a3b8 !important;
+}
 
+/* Override White Containers / Backgrounds */
+body.dark-mode .bg-white,
+body.dark-mode .bg-slate-50,
+body.dark-mode .bg-gray-50 {
+  background-color: #1e293b !important; 
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 🟢 UPDATED: Dark Mode Newsletter Pill Fix */
+body.dark-mode .nl-form-container {
+  background-color: #0f172a !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+body.dark-mode .nl-input {
+  color: #f8faf9 !important;
+  background: transparent !important;
+}
+
+/* 🟢 UPDATED: Modern Dark Mode Navbar */
+body.dark-mode nav {
+  background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%) !important; 
+  border-color: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Make the Logo Text Glow slightly in dark mode */
+body.dark-mode nav span.font-extrabold {
+  color: #ffffff !important;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+}
+
+/* Navbar specific text colors */
+body.dark-mode nav a {
+  color: #e7e7e7 !important; 
+}
+body.dark-mode nav a:hover {
+  color: #34d399 !important; 
+}
+
+/* User Info Box in Navbar */
+body.dark-mode nav .rounded-full.border {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
+}
+body.dark-mode nav .rounded-full.border span {
+  color: #f1f5f9 !important; 
+}
+
+/* Mobile Menu Dark Mode */
+body.dark-mode nav > div:last-child {
+  background: #1e293b !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Modals */
+body.dark-mode .modal-box {
+  background: #1e293b !important;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.05) !important;
+}
+
+body.dark-mode .modal-close-btn {
+  background: rgba(15, 23, 42, 0.8) !important;
+  color: #f8faf9 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+body.dark-mode .modal-close-btn:hover {
+  background: #334155 !important;
+}
+
+/* Cards */
+body.dark-mode .story-card {
+  background: transparent !important;
+}
+
+body.dark-mode .topic-card {
+  background: #1e293b !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+}
+body.dark-mode .topic-card:hover {
+  box-shadow: 0 15px 40px rgba(16,185,129,0.15) !important;
+}
+
+body.dark-mode .res-card {
+  background: rgba(30, 41, 59, 0.7) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+body.dark-mode .res-card:hover {
+  background: rgba(30, 41, 59, 0.95) !important;
+  box-shadow: 0 10px 30px rgba(16,185,129,0.15) !important;
+}
+
+/* Form Inputs & Skeletons */
+body.dark-mode input,
+body.dark-mode textarea {
+  background-color: #0f172a !important;
+  color: #f8faf9 !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+body.dark-mode .skeleton-module {
+  background: #0f172a !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+body.dark-mode .skeleton-module:hover {
+  background: #1e293b !important;
+}
+
+/* Glass Elements */
+body.dark-mode .glass {
+  background: rgba(15, 23, 42, 0.75) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 📱 MOBILE RESPONSIVENESS OVERRIDES */
 /* ══════════════════════════════════════════════════
-   STORIES PAGES 
+   📱 MODERN MOBILE DRAWER (DARK MODE)
 ══════════════════════════════════════════════════ */
+
+/* The main Drawer Background */
+body.dark-mode nav > div:last-child {
+  background: #0f172a !important; /* Deep Navy base */
+  border-left: 1px solid rgba(255, 255, 255, 0.05) !important;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 🟢 FIX: The "White Effect" Link/Pill */
+/* Instead of bg-white, use a subtle emerald tint with a border */
+body.dark-mode nav .bg-white, 
+body.dark-mode nav .bg-slate-50,
+body.dark-mode nav [class*="active-link-class"] { 
+  background: rgba(16, 185, 129, 0.1) !important; /* Semi-transparent Green */
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  color: #34d399 !important; /* Bright Emerald Text */
+}
+
+/* Handle the text color inside active/hover pills */
+body.dark-mode nav .bg-white span,
+body.dark-mode nav .bg-white h4 {
+  color: #34d399 !important;
+}
+
+/* 🟢 FIX: The Bottom Logout/User Box */
+/* Make it look like a subtle glass panel instead of a white box */
+body.dark-mode nav .rounded-2xl.bg-white,
+body.dark-mode nav .rounded-xl.bg-white {
+  background: rgba(30, 41, 59, 0.5) !important; 
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(10px);
+}
+
+/* Logout Button Adjustment */
+body.dark-mode nav .bg-white button {
+  background: rgba(220, 38, 38, 0.1) !important; /* Subtle Red tint */
+  border: 1px solid rgba(220, 38, 38, 0.2) !important;
+  color: #f87171 !important;
+}
+
+/* Links that are NOT active */
+body.dark-mode nav a:not(.active) {
+  color: #94a3b8 !important; /* Muted slate */
+}
+
+body.dark-mode nav a:hover {
+  background: rgba(255, 255, 255, 0.03) !important;
+  color: #ffffff !important;
+}

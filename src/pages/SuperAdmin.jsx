@@ -1,7 +1,7 @@
 import { API_BASE_URL } from '../apiConfig';
 import { useState, useEffect, useRef } from "react";
 
-const PREDEFINED_ICONS = ["🌿", "🌱", "🌾", "🚜", "💧", "🌻", "🍎", "🍅", "🌳", "🔬", "🐛", "☀️", "🌧️", "👨‍🌾", "👩‍🌾", "🪴"];
+const PREDEFINED_ICONS = ["🌿", "🌱", "🌾", "🚜", "💧", "🌻", "🍎", "🍅", "🥦", "🌲", "🍄", "🌍", "🔬", "📚", "⚙️", "🌤️", "🔥", "📊"];
 
 export default function SuperAdmin() {
   const [stats, setStats] = useState({ users: 0, stories: 0, topics: 0, resources: 0 });
@@ -326,15 +326,88 @@ export default function SuperAdmin() {
   };
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 text-slate-900">
+    <div className="flex flex-col items-center justify-center min-h-screen text-slate-900 bg-transparent">
+      <div className="superadmin-bg fixed inset-0 -z-10" style={{ background: "linear-gradient(135deg, #f0fdf4 0%, #fffbeb 50%, #f0f9ff 100%)" }} />
       <div className="text-5xl animate-bounce mb-6">....</div>
       <h2 className="font-serif text-3xl font-bold animate-pulse text-slate-700">Loading dashboard...</h2>
     </div>
   );
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans selection:bg-emerald-200">
+    <div className="flex min-h-screen bg-transparent font-sans selection:bg-emerald-200">
       
+      {/* 🟢 NEW: Uniform Background Gradients for the Super Admin Page! */}
+      <div className="superadmin-bg" style={{
+        position: "fixed", inset: 0, zIndex: -1,
+        background: "linear-gradient(135deg, #f0fdf4 0%, #fffbeb 50%, #f0f9ff 100%)",
+      }}>
+        <div style={{ position: "absolute", top: "-10%", left: "-10%", width: "50vw", height: "50vw", background: "radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%)", filter: "blur(60px)" }} />
+        <div style={{ position: "absolute", top: "40%", right: "-10%", width: "40vw", height: "40vw", background: "radial-gradient(circle, rgba(250,204,21,0.12) 0%, transparent 70%)", filter: "blur(60px)" }} />
+        <div style={{ position: "absolute", bottom: "-20%", left: "20%", width: "60vw", height: "60vw", background: "radial-gradient(circle, rgba(56,189,248,0.12) 0%, transparent 70%)", filter: "blur(80px)" }} />
+      </div>
+
+      <style>{`
+        /* Custom Scrollbar for SuperAdmin */
+        .custom-scrollbar { -webkit-overflow-scrolling: touch; transform: translateZ(0); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.25); border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.5); }
+        
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes slideUp { from{opacity:0;transform:translateY(40px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* ══════════════════════════════════════════════════
+            🌙 DARK MODE OVERRIDES FOR SUPER ADMIN
+        ══════════════════════════════════════════════════ */
+        body.dark-mode .superadmin-bg { background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #020617 100%) !important; }
+        
+        body.dark-mode .bg-white { background-color: #1e293b !important; border-color: rgba(255,255,255,0.05) !important; }
+        body.dark-mode .bg-slate-50 { background-color: #0f172a !important; border-color: rgba(255,255,255,0.05) !important; }
+        body.dark-mode .bg-slate-100 { background-color: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.05) !important; }
+        
+        body.dark-mode .text-slate-900, body.dark-mode .text-slate-800 { color: #f8faf9 !important; }
+        body.dark-mode .text-slate-700, body.dark-mode .text-slate-600 { color: #cbd5e1 !important; }
+        body.dark-mode .text-slate-500, body.dark-mode .text-slate-400 { color: #94a3b8 !important; }
+        
+        body.dark-mode .border-slate-200, body.dark-mode .border-slate-100, body.dark-mode .border-slate-50 { border-color: rgba(255,255,255,0.05) !important; }
+        body.dark-mode .border-b { border-color: rgba(255,255,255,0.05) !important; }
+        body.dark-mode .border-r { border-color: rgba(255,255,255,0.05) !important; }
+        body.dark-mode .border-t { border-color: rgba(255,255,255,0.05) !important; }
+        
+        /* Table Specifics */
+        body.dark-mode th { color: #94a3b8 !important; }
+        body.dark-mode tr:hover > td { background-color: rgba(255,255,255,0.02) !important; }
+        
+        /* Inputs and Textareas */
+        body.dark-mode input, body.dark-mode textarea, body.dark-mode select { background-color: #0f172a !important; color: #f8faf9 !important; border-color: rgba(255,255,255,0.2) !important; }
+        body.dark-mode input:focus, body.dark-mode textarea:focus, body.dark-mode select:focus { background-color: #020617 !important; border-color: #10b981 !important; box-shadow: 0 0 0 2px rgba(16,185,129,0.2) !important; }
+        
+        /* Buttons and Pills */
+        body.dark-mode .bg-emerald-50 { background-color: rgba(16,185,129,0.1) !important; color: #34d399 !important; border-color: rgba(16,185,129,0.2) !important; }
+        body.dark-mode .text-emerald-600, body.dark-mode .text-emerald-700 { color: #34d399 !important; }
+        body.dark-mode .hover\\:bg-emerald-100:hover { background-color: rgba(16,185,129,0.2) !important; }
+        
+        body.dark-mode .bg-sky-50 { background-color: rgba(14,165,233,0.1) !important; color: #38bdf8 !important; }
+        body.dark-mode .text-sky-600 { color: #38bdf8 !important; }
+        body.dark-mode .hover\\:bg-sky-100:hover { background-color: rgba(14,165,233,0.2) !important; }
+
+        body.dark-mode .bg-red-50 { background-color: rgba(239,68,68,0.1) !important; color: #f87171 !important; }
+        body.dark-mode .text-red-600 { color: #f87171 !important; }
+        body.dark-mode .hover\\:bg-red-100:hover { background-color: rgba(239,68,68,0.2) !important; }
+
+        body.dark-mode .hover\\:bg-slate-100:hover, body.dark-mode .hover\\:bg-slate-50\\/50:hover { background-color: rgba(255,255,255,0.03) !important; }
+        body.dark-mode .hover\\:text-slate-900:hover { color: #f8faf9 !important; }
+        body.dark-mode .hover\\:bg-slate-200:hover { background-color: rgba(255,255,255,0.1) !important; }
+
+        /* Modals Overlay Overrides */
+        body.dark-mode .bg-slate-900\\/60 { background-color: rgba(15,23,42,0.85) !important; }
+        body.dark-mode .bg-slate-900\\/40 { background-color: rgba(15,23,42,0.7) !important; }
+        body.dark-mode .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05) !important; }
+        body.dark-mode .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.5) !important; }
+      `}</style>
+
       {/* Mobile Menu Toggle */}
       <button 
         className="lg:hidden fixed bottom-8 right-6 w-14 h-14 flex items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-xl shadow-emerald-600/30 z-[100001] transition-transform active:scale-95 text-2xl"
@@ -581,7 +654,7 @@ export default function SuperAdmin() {
       {/* 🟢 EDIT MODAL */}
       {editingItem && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-200" onClick={handleCancelEdit}>
-          <div className="bg-white w-full max-w-2xl rounded-[2rem] p-8 md:p-10 relative overflow-y-auto max-h-[90vh] shadow-2xl animate-in slide-in-from-bottom-8 duration-300 custom-scrollbar" onClick={e => e.stopPropagation()}>
+          <div className="modal-box bg-white w-full max-w-2xl rounded-[2rem] p-8 md:p-10 relative overflow-y-auto max-h-[90vh] shadow-2xl animate-in slide-in-from-bottom-8 duration-300 custom-scrollbar" onClick={e => e.stopPropagation()}>
             
             {/* Top-level Image Editor Popup for Topics */}
             {activeTopicImg && (

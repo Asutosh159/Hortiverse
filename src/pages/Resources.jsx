@@ -1,15 +1,17 @@
 import { API_BASE_URL } from '../apiConfig';
 import { useState, useEffect, useRef } from "react";
-import Footer from '../components/Footer'; // Adjust this path if your folder structure is different!
+import Footer from '../components/Footer';
 
+// 🟢 Pre-defined themes and icons for Resources
 const TYPE_CONFIG = {
   "Research Paper":  { icon: "📄", accent: "#0284c7", bg: "#e0f2fe" },
-  "Book":            { icon: "📚", accent: "#d97706", bg: "#fef3c7" },
+  "Review Paper":    { icon: "📑", accent: "#8b5cf6", bg: "#ede9fe" },
   "Popular Article": { icon: "📰", accent: "#059669", bg: "#ecfdf5" },
+  "Book":            { icon: "📚", accent: "#d97706", bg: "#fef3c7" },
   "Other":           { icon: "📋", accent: "#be185d", bg: "#fce7f3" },
 };
 
-const FILTERS = ["All", "Research Paper", "Book", "Popular Article", "Other"];
+const FILTERS = ["All", "Research Paper", "Review Paper", "Popular Article", "Book", "Other"];
 const SORTS   = ["Most Recent", "A–Z"];
 
 /* ─── UPLOAD MODAL ──────────────────────────────────────── */
@@ -17,7 +19,7 @@ function UploadModal({ onClose, onSuccess, user }) {
   const [type,    setType]    = useState("Research Paper");
   const [title,   setTitle]   = useState("");
   const [desc,    setDesc]    = useState("");
-  const [link,    setLink]    = useState(""); // Will now hold the Cloudinary URL
+  const [link,    setLink]    = useState(""); 
   
   const [author,  setAuthor]  = useState(user ? user.full_name : "");
   
@@ -25,11 +27,9 @@ function UploadModal({ onClose, onSuccess, user }) {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // 🟢 NEW: File Upload States
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  // 🟢 NEW: Handle Cloudinary File Upload
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -52,8 +52,8 @@ function UploadModal({ onClose, onSuccess, user }) {
       const data = await res.json();
       
       if (res.ok) {
-        setLink(data.imageUrl); // Save Cloudinary URL
-        setError(""); // Clear any previous errors
+        setLink(data.imageUrl); 
+        setError(""); 
       } else {
         throw new Error(data.error || data.details || 'Upload failed');
       }
@@ -68,7 +68,6 @@ function UploadModal({ onClose, onSuccess, user }) {
 
   const handleSubmit = async () => {
     if (!title.trim())      { setError("Please enter a title."); return; }
-    // 🟢 FIXED: Adjusted error message for direct upload
     if (!link.trim())       { setError("Please upload a resource file."); return; }
     
     setError("");
@@ -82,7 +81,7 @@ function UploadModal({ onClose, onSuccess, user }) {
       year: new Date().getFullYear(),
       tags: [], 
       desc: desc.trim() || "No description provided.",
-      drive_link: link.trim(), // Storing the Cloudinary URL in the drive_link column
+      drive_link: link.trim(), 
     };
 
     try {
@@ -132,7 +131,7 @@ function UploadModal({ onClose, onSuccess, user }) {
               <div style={{ marginBottom: 32 }}>
                 <span className="tag-badge" style={{ background:"rgba(5,150,105,0.1)", color:"#059669", marginBottom:12 }}>Contribution</span>
                 <h2 className="fr" style={{ fontSize: "clamp(28px, 4vw, 36px)", fontWeight:900, color:"#0f172a", lineHeight:1.1, marginBottom:8 }}>
-                  Share a <span style={{ color:"#059669" }}>Resource</span>
+                  Share a <span style={{ color:"#059669" }}>Publication</span>
                 </h2>
                 <p className="jk" style={{ fontSize:15, color:"#64748b", fontWeight:500 }}>
                   Upload a document to expand the community library.
@@ -148,7 +147,7 @@ function UploadModal({ onClose, onSuccess, user }) {
 
               {/* resource type */}
               <div style={{ marginBottom:24 }}>
-                <label style={LABEL}>Resource Type</label>
+                <label style={LABEL}>Publication Type</label>
                 <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
                   {Object.entries(TYPE_CONFIG).map(([t, cfg]) => (
                     <button key={t} onClick={() => setType(t)} style={{
@@ -159,8 +158,10 @@ function UploadModal({ onClose, onSuccess, user }) {
                       fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:13, fontWeight:700,
                       display:"flex", alignItems:"center", gap:6, transition:"all .2s",
                       boxShadow: type===t ? `0 4px 12px ${cfg.accent}22` : "none",
+                      whiteSpace: "nowrap"
                     }}>
-                      <span style={{ fontSize: 16 }}>{cfg.icon}</span> {t}
+                      <span style={{ fontSize: 16, display: 'flex', alignItems: 'center', lineHeight: 1 }}>{cfg.icon}</span> 
+                      <span>{t}</span>
                     </button>
                   ))}
                 </div>
@@ -169,7 +170,7 @@ function UploadModal({ onClose, onSuccess, user }) {
               {/* title */}
               <div style={{ marginBottom:20 }}>
                 <label style={LABEL}>Title <span style={{ color:"#ef4444" }}>*</span></label>
-                <input className="input-modern" placeholder="Enter the resource title…"
+                <input className="input-modern" placeholder="Enter the Publication/Resources title…"
                   value={title} onChange={e=>{setTitle(e.target.value);setError("");}}
                 />
               </div>
@@ -186,14 +187,14 @@ function UploadModal({ onClose, onSuccess, user }) {
               <div style={{ marginBottom:20 }}>
                 <label style={LABEL}>Description <span style={{ color:"#94a3b8", fontWeight:500, textTransform:"none", letterSpacing:0 }}>(optional)</span></label>
                 <textarea className="input-modern" style={{ resize:"vertical", lineHeight:1.6, minHeight: "100px" }}
-                  placeholder="Briefly describe what this resource covers…"
+                  placeholder="Briefly describe what this publication covers…"
                   value={desc} onChange={e=>setDesc(e.target.value)}
                 />
               </div>
 
-              {/* 🟢 NEW: File Upload Section */}
+              {/* File Upload Section */}
               <div style={{ marginBottom:32 }}>
-                <label style={LABEL}>Resource File (PDF or Image) <span style={{ color:"#ef4444" }}>*</span></label>
+                <label style={LABEL}>Publication/Resource File (PDF or Image) <span style={{ color:"#ef4444" }}>*</span></label>
                 <div style={{ display:"flex", alignItems:"center", gap: 16, flexWrap: "wrap" }}>
                   <input 
                     type="file" 
@@ -283,7 +284,7 @@ export default function Resources() {
         const data = await res.json();
         setResources(data);
       } catch (err) {
-        console.error("Failed to load resources:", err);
+        console.error("Failed to load publication/resources:", err);
       } finally {
         setLoading(false);
       }
@@ -332,7 +333,7 @@ export default function Resources() {
   return (
     <div style={{ position: "relative", minHeight: "100vh", color: "#111827", overflow: "hidden" }}>
 
-      <div style={{
+      <div className="res-bg" style={{
         position: "fixed", inset: 0, zIndex: -1,
         background: "linear-gradient(135deg, #f0fdf4 0%, #fffbeb 50%, #f0f9ff 100%)",
       }}>
@@ -460,6 +461,7 @@ export default function Resources() {
           padding: 8px 20px; border-radius: 50px; cursor: pointer;
           font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px;
           font-weight: 600; transition: all .2s; display: flex; align-items: center; gap: 8px;
+          white-space: nowrap; 
         }
         .fpill:hover { background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .fpill.on { background: #059669; color: #fff; border-color: transparent; box-shadow: 0 4px 16px rgba(5,150,105,0.3); }
@@ -540,6 +542,54 @@ export default function Resources() {
           
           .cards-grid { grid-template-columns: 1fr !important; }
         }
+
+        /* ══════════════════════════════════════════════════
+           🌙 DARK MODE OVERRIDES FOR RESOURCES PAGE
+        ══════════════════════════════════════════════════ */
+        body.dark-mode .res-bg { background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #020617 100%) !important; }
+        
+        body.dark-mode .res-card { background: rgba(30, 41, 59, 0.65) !important; border-color: rgba(255, 255, 255, 0.1) !important; }
+        body.dark-mode .res-card:hover { background: rgba(30, 41, 59, 0.95) !important; box-shadow: 0 20px 35px -10px rgba(16, 185, 129, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.1) !important; }
+        
+        body.dark-mode .search-box { background: rgba(30, 41, 59, 0.9) !important; border-color: rgba(255,255,255,0.1) !important; color: #f8faf9 !important; }
+        body.dark-mode .search-box:focus { background: #0f172a !important; border-color: #10b981 !important; }
+        
+        body.dark-mode .fpill { background: rgba(30, 41, 59, 0.6) !important; border-color: rgba(255,255,255,0.1) !important; color: #cbd5e1 !important; }
+        body.dark-mode .fpill:hover { background: rgba(30, 41, 59, 0.9) !important; }
+        body.dark-mode .fpill.on { background: #059669 !important; color: #fff !important; }
+        body.dark-mode .fpill.on .pc { background: rgba(255,255,255,0.2) !important; }
+        
+        body.dark-mode .pc { background: rgba(255,255,255,0.1) !important; color: #cbd5e1 !important; }
+        body.dark-mode .sort-b { color: #cbd5e1 !important; }
+        body.dark-mode .sort-b:hover { background: rgba(255,255,255,0.1) !important; color: #f8faf9 !important; }
+        body.dark-mode .sort-b.on { background: rgba(5,150,105,0.2) !important; color: #34d399 !important; }
+        
+        body.dark-mode .btn-ghost { background: rgba(30, 41, 59, 0.8) !important; color: #cbd5e1 !important; border-color: rgba(255,255,255,0.1) !important; }
+        body.dark-mode .btn-ghost:hover { background: #1e293b !important; color: #f8faf9 !important; }
+        
+        body.dark-mode .btn-load-more { background: rgba(30, 41, 59, 0.8) !important; border-color: rgba(16, 185, 129, 0.4) !important; color: #34d399 !important; }
+        body.dark-mode .btn-load-more:hover { background: #1e293b !important; }
+        
+        body.dark-mode .modal-box { background: #1e293b !important; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.05) !important; }
+        body.dark-mode .modal-close-btn { background: rgba(15, 23, 42, 0.8) !important; color: #f8faf9 !important; border-color: rgba(255, 255, 255, 0.1) !important; }
+        body.dark-mode .modal-close-btn:hover { background: #334155 !important; }
+        
+        body.dark-mode .input-modern { background: #0f172a !important; border-color: rgba(255,255,255,0.1) !important; color: #f8faf9 !important; }
+        body.dark-mode .input-modern:focus { background: #020617 !important; border-color: #10b981 !important; }
+        
+        body.dark-mode .res-tag { background: rgba(255,255,255,0.05) !important; color: #cbd5e1 !important; }
+        body.dark-mode .res-card:hover .res-tag { background: rgba(255,255,255,0.1) !important; }
+        
+        body.dark-mode [style*="color: #0f172a"], body.dark-mode [style*="color: rgb(15, 23, 42)"] { color: #f8faf9 !important; }
+        body.dark-mode [style*="color: #475569"], body.dark-mode [style*="color: rgb(71, 85, 105)"] { color: #cbd5e1 !important; }
+        body.dark-mode [style*="color: #64748b"], body.dark-mode [style*="color: rgb(100, 116, 139)"] { color: #94a3b8 !important; }
+        body.dark-mode [style*="color: #111827"] { color: #f8faf9 !important; }
+        body.dark-mode [style*="background: #ffffff"], body.dark-mode [style*="background: rgb(255, 255, 255)"] { background: #1e293b !important; }
+        body.dark-mode [style*="background: #f8faf9"] { background: #0f172a !important; }
+        body.dark-mode [style*="background: rgba(255,255,255,0.6)"] { background: rgba(30, 41, 59, 0.6) !important; }
+        body.dark-mode [style*="background: rgba(255,255,255,0.8)"] { background: rgba(30, 41, 59, 0.8) !important; }
+        body.dark-mode [style*="border: 1px solid rgba(255,255,255,1)"] { border-color: rgba(255,255,255,0.1) !important; }
+        body.dark-mode [style*="background: rgba(255,255,255,0.7)"] { background: rgba(30, 41, 59, 0.7) !important; }
       `}</style>
 
       <div style={{ paddingTop: 120, background: "transparent" }}>
@@ -551,7 +601,7 @@ export default function Resources() {
             Curated Research & <br/> <span style={{ color:"#059669" }}>Tools.</span>
           </h1>
           <p className="jk" style={{ marginTop: 20, fontSize: 18, color: "#475569", fontWeight: 500, lineHeight: 1.6, maxWidth: 600, margin: "20px auto 0" }}>
-            Access academic papers, guidebooks, and community-uploaded tools. Everything a horticulture student needs.
+            Access publications, academic papers, guidebooks, and community-uploaded tools. Everything a horticulture student needs.
           </p>
 
           {user && (
@@ -561,7 +611,7 @@ export default function Resources() {
                 className="btn-green"
                 style={{ padding: "14px 32px", fontSize: "16px", boxShadow: "0 8px 20px rgba(5, 150, 105, 0.3)" }}
               >
-                <span style={{ fontSize: "20px" }}>➕</span> Share a Resource
+                <span style={{ fontSize: "20px" }}>➕</span> Share a Publication
               </button>
             </div>
           )}
@@ -590,8 +640,8 @@ export default function Resources() {
               <div className="filters-wrapper" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 {FILTERS.map(f => (
                   <button key={f} className={`fpill ${activeFilter===f?"on":""}`} onClick={() => setActiveFilter(f)}>
-                    {f !== "All" && <span style={{ fontSize: 16 }}>{TYPE_CONFIG[f].icon}</span>}
-                    {f}
+                    {f !== "All" && <span style={{ fontSize: 16, display: 'flex', alignItems: 'center', lineHeight: 1 }}>{TYPE_CONFIG[f].icon}</span>}
+                    <span>{f}</span>
                     <span className="pc">{counts[f]}</span>
                   </button>
                 ))}
@@ -640,7 +690,7 @@ export default function Resources() {
                         {r.institution && ` · ${r.institution}`}
                       </p>
 
-                      <p className="jk" style={{ fontSize: 14, color: "#64748b", lineHeight: 1.5, fontWeight: 500, marginBottom: 20, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                      <p className="jk" style={{ fontSize: 14, color: "#64748b", lineHeight: 1.5, fontWeight: 500, marginBottom: 20, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-all" }}>
                         {r.desc || "No description available."}
                       </p>
 
@@ -717,7 +767,8 @@ export default function Resources() {
                 <div style={{ padding: "0 24px 48px" }}>
                   <div style={{ marginBottom: 40 }}>
                     <h4 className="jk" style={{ fontSize: 14, textTransform: "uppercase", letterSpacing: ".1em", color: "#94a3b8", fontWeight: 800, marginBottom: 12 }}>Description</h4>
-                    <p className="jk" style={{ fontSize: 16, color: "#334155", lineHeight: 1.8, whiteSpace: "pre-wrap" }}>
+                    
+                    <p className="jk" style={{ fontSize: 16, color: "#334155", lineHeight: 1.8, whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
                       {selectedResource.desc || "No description provided for this resource."}
                     </p>
                   </div>

@@ -80,16 +80,16 @@ const API = {
 const AVATAR_COLORS = ["#4caf50","#2e7d32","#66bb6a","#388e3c","#81c784","#1b5e20"];
 
 const TOPIC_THEMES = [
-  { bg: "#ecfdf5", shadow: "rgba(16, 185, 129, 0.18)", text: "#047857" },
-  { bg: "#e0f2fe", shadow: "rgba(2, 132, 199, 0.15)",  text: "#0369a1" },
-  { bg: "#fef3c7", shadow: "rgba(217, 119, 6, 0.15)",  text: "#b45309" },
-  { bg: "#f3e8ff", shadow: "rgba(147, 51, 234, 0.15)", text: "#7e22ce" },
+  { bg: "#a0e8c6", shadow: "rgba(16, 185, 129, 0.18)", text: "#047857" },
+  { bg: "#a0d1f1", shadow: "rgba(2, 132, 199, 0.15)",  text: "#0369a1" },
+  { bg: "#f2e19f", shadow: "rgba(217, 119, 6, 0.15)",  text: "#b45309" },
+  { bg: "#d4b3f7", shadow: "rgba(147, 51, 234, 0.15)", text: "#7e22ce" },
   { bg: "#fce7f3", shadow: "rgba(225, 29, 72, 0.15)",  text: "#be185d" },
-  { bg: "#e0e7ff", shadow: "rgba(67, 56, 202, 0.15)",  text: "#4338ca" }
+  { bg: "#98acee", shadow: "rgba(67, 56, 202, 0.15)",  text: "#4338ca" }
 ];
 
 function Skel({ w="100%", h=20, r=8, mb=0, style={} }) {
-  return <div style={{ width:w, height:h, borderRadius:r, marginBottom:mb, background:"linear-gradient(90deg,#e8f5e8 25%,#d0ead0 50%,#e8f5e8 75%)", backgroundSize:"200% 100%", animation:"shimmer 1.4s infinite", flexShrink:0, ...style }} />;
+  return <div className="skel-loader" style={{ width:w, height:h, borderRadius:r, marginBottom:mb, ...style }} />;
 }
 
 /* ══════════════════════════════════════════════════
@@ -197,11 +197,15 @@ export default function Home() {
       /(!\[(.*?)\]\((https?:\/\/[^)]+)\))(?:[\s\n]*)(!\[(.*?)\]\((https?:\/\/[^)]+)\))/gi,
       '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-[85%] mx-auto my-6 border-b border-black/5 pb-5">' +
         '<figure class="flex flex-col items-center m-0">' +
-          '<img src="$3" alt="$2" class="w-full h-auto max-h-[220px] object-contain rounded-xl shadow-sm border border-slate-200 block bg-slate-50" />' +
+          '<a href="$3" target="_blank" rel="noopener noreferrer" style="display:contents" class="cursor-zoom-in">' +
+            '<img src="$3" alt="$2" class="w-full h-auto max-h-[220px] object-contain rounded-xl shadow-sm border border-slate-200 block bg-slate-50 hover:opacity-90 transition-opacity" />' +
+          '</a>' +
           '<figcaption class="text-[12px] text-slate-500 font-medium leading-[1.5] mt-2 text-center">$2</figcaption>' +
         '</figure>' +
         '<figure class="flex flex-col items-center m-0">' +
-          '<img src="$6" alt="$5" class="w-full h-auto max-h-[220px] object-contain rounded-xl shadow-sm border border-slate-200 block bg-slate-50" />' +
+          '<a href="$6" target="_blank" rel="noopener noreferrer" style="display:contents" class="cursor-zoom-in">' +
+            '<img src="$6" alt="$5" class="w-full h-auto max-h-[220px] object-contain rounded-xl shadow-sm border border-slate-200 block bg-slate-50 hover:opacity-90 transition-opacity" />' +
+          '</a>' +
           '<figcaption class="text-[12px] text-slate-500 font-medium leading-[1.5] mt-2 text-center">$5</figcaption>' +
         '</figure>' +
       '</div>'
@@ -211,7 +215,9 @@ export default function Home() {
       .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") 
       .replace(/!\[(.*?)\]\((https?:\/\/[^)]+)\)/gi, 
         '<figure class="flex flex-col items-center my-6 m-0">' +
-          '<img src="$2" alt="$1" class="w-[80%] md:w-[45%] max-w-[350px] h-auto max-h-[260px] object-contain rounded-xl shadow-sm border border-slate-200 block bg-slate-50" />' +
+          '<a href="$2" target="_blank" rel="noopener noreferrer" style="display:contents" class="cursor-zoom-in">' +
+            '<img src="$2" alt="$1" class="w-[80%] md:w-[45%] max-w-[350px] h-auto max-h-[260px] object-contain rounded-xl shadow-sm border border-slate-200 block bg-slate-50 hover:opacity-90 transition-opacity" />' +
+          '</a>' +
           '<figcaption class="text-[12px] text-slate-500 font-medium leading-[1.5] mt-2 text-center">$1</figcaption>' +
         '</figure>'
       );
@@ -302,40 +308,75 @@ export default function Home() {
   };
 
   return (
-    <div className="font-serif text-[#1a2e1a] w-full max-w-[100vw] overflow-x-hidden relative" style={{ background:"linear-gradient(to bottom, #f8fdf8 0%, #f0fbf0 100%)" }}>
+    <div className="home-wrapper font-serif w-full max-w-[100vw] overflow-x-hidden relative">
+
+      {/* 🟢 NEW: Uniform Background Gradients for the Home Page! */}
+      <div className="home-bg" style={{
+        position: "fixed", inset: 0, zIndex: -1,
+        background: "linear-gradient(135deg, #f0fdf4 0%, #fffbeb 50%, #f0f9ff 100%)",
+      }}>
+        <div style={{ position: "absolute", top: "-10%", left: "-10%", width: "50vw", height: "50vw", background: "radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%)", filter: "blur(60px)" }} />
+        <div style={{ position: "absolute", top: "40%", right: "-10%", width: "40vw", height: "40vw", background: "radial-gradient(circle, rgba(250,204,21,0.12) 0%, transparent 70%)", filter: "blur(60px)" }} />
+        <div style={{ position: "absolute", bottom: "-20%", left: "20%", width: "60vw", height: "60vw", background: "radial-gradient(circle, rgba(56,189,248,0.12) 0%, transparent 70%)", filter: "blur(80px)" }} />
+      </div>
 
       <style>{`
         html { scroll-behavior: smooth; }
 
+        /* 🟢 CLEANED: Converted inline backgrounds to classes for Dark Mode support */
+        .home-wrapper { color: #1a2e1a; }
+        .newsletter-box { background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%); }
+        .topic-modal-header { background: linear-gradient(180deg, var(--topic-color) 0%, rgba(255,255,255,0) 100%); }
+        .skel-loader { background: linear-gradient(90deg,#e8f5e8 25%,#d0ead0 50%,#e8f5e8 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; flex-shrink: 0; }
+
         .cinematic-slide {
-          position: absolute;
-          inset: 0;
-          background-size: cover;
-          background-position: center;
-          opacity: 0;
-          transform: scale(1.05);
-          transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 6s linear;
+          position: absolute; inset: 0; background-size: cover; background-position: center;
+          opacity: 0; transform: scale(1.05); transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 6s linear;
           will-change: transform, opacity;
         }
-        .cinematic-slide.active {
-          opacity: 1;
-          transform: scale(1);
-          z-index: 1;
-        }
-        .cinematic-slide.exiting {
-          opacity: 0;
-          z-index: 0;
-        }
+        .cinematic-slide.active { opacity: 1; transform: scale(1); z-index: 1; }
+        .cinematic-slide.exiting { opacity: 0; z-index: 0; }
 
-        /* HIGH-PERFORMANCE SCROLLBAR */
-        .modal-scrollbar {
-          -webkit-overflow-scrolling: touch; 
-          transform: translateZ(0); 
-        }
+        .modal-scrollbar { -webkit-overflow-scrolling: touch; transform: translateZ(0); }
         .modal-scrollbar::-webkit-scrollbar { width: 6px; }
         .modal-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .modal-scrollbar::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.25); border-radius: 4px; }
         .modal-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.5); }
+
+        /* ══════════════════════════════════════════════════
+           🌙 DARK MODE OVERRIDES (Triggers when body has .dark-mode)
+        ══════════════════════════════════════════════════ */
+        body.dark-mode .home-bg { background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #020617 100%) !important; }
+        body.dark-mode .home-wrapper { color: #f8faf9 !important; }
+        
+        body.dark-mode .newsletter-box { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important; box-shadow: 0 20px 60px -15px rgba(0,0,0,0.5) !important; }
+        body.dark-mode .newsletter-box input { background: #0f172a !important; color: #f8faf9 !important; border-color: #334155 !important; }
+        body.dark-mode .skel-loader { background: linear-gradient(90deg,#1e293b 25%,#334155 50%,#1e293b 75%) !important; background-size: 200% 100% !important; }
+        
+        body.dark-mode .bg-white,
+        body.dark-mode .bg-slate-50 { background-color: #1e293b !important; border-color: rgba(255,255,255,0.1) !important; }
+        body.dark-mode .bg-white\\/90 { background-color: rgba(30, 41, 59, 0.9) !important; }
+        body.dark-mode .bg-white\\/60 { background-color: rgba(30, 41, 59, 0.6) !important; }
+        body.dark-mode .border-white { border-color: rgba(255,255,255,0.1) !important; }
+        body.dark-mode .border-black\\/5 { border-color: rgba(255,255,255,0.1) !important; }
+        
+        body.dark-mode .text-\\[\\#0f172a\\], body.dark-mode .text-slate-900, body.dark-mode h1, body.dark-mode h2, body.dark-mode h3 { color: #f8faf9 !important; }
+        body.dark-mode .text-\\[\\#334155\\], body.dark-mode .text-\\[\\#475569\\], body.dark-mode .text-\\[\\#64748b\\], body.dark-mode .text-slate-500, body.dark-mode .text-slate-600, body.dark-mode .text-slate-700, body.dark-mode p { color: #94a3b8 !important; }
+        
+        body.dark-mode .topic-card { --card-bg: #1e293b !important; --card-shadow: rgba(0,0,0,0.4) !important; --card-text: #34d399 !important; }
+        body.dark-mode .topic-icon-wrap { background: rgba(0,0,0,0.2) !important; color: #34d399 !important; box-shadow: inset 2px 2px 4px rgba(255,255,255,0.05), inset -2px -2px 4px rgba(0,0,0,0.5) !important; border: 1px solid rgba(255,255,255,0.05); }
+        body.dark-mode .topic-card:hover .topic-icon-wrap { background: rgba(0,0,0,0.4) !important; }
+        
+        body.dark-mode .story-card .tag { background: rgba(30,41,59,0.9) !important; color: #34d399 !important; }
+        body.dark-mode .chip { background: rgba(16, 185, 129, 0.2) !important; color: #34d399 !important; }
+        body.dark-mode .btn-outline { color: #34d399 !important; border-color: rgba(52, 211, 153, 0.4) !important; }
+        body.dark-mode .btn-outline:hover { background: rgba(16, 185, 129, 0.2) !important; }
+        
+        body.dark-mode .topic-modal-header { background: linear-gradient(180deg, rgba(30,41,59,1) 0%, rgba(30,41,59,0) 100%) !important; }
+        body.dark-mode .topic-modal-header > div { background: #0f172a !important; box-shadow: none !important; border: 1px solid rgba(255,255,255,0.1) !important; }
+        body.dark-mode .hover\\:bg-white:hover { background-color: #334155 !important; }
+        body.dark-mode .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+        body.dark-mode .text-slate-800 { color: #f8faf9 !important; }
       `}</style>
 
       {/* ══ HERO ══ */}
@@ -414,7 +455,7 @@ export default function Home() {
               <span className="chip">Real Experiences</span>
               <h2 className="fr text-[clamp(28px,6vw,56px)] font-extrabold text-[#0f172a] leading-[1.1]">Featured Stories</h2>
             </div>
-            <a href="/stories" className="btn-outline !bg-transparent !text-[#047857] w-full sm:w-auto justify-center">View All Stories</a>
+            <a href="/stories" className="btn-outline w-full sm:w-auto justify-center">View All Stories</a>
           </div>
 
           <div id="stories-grid" ref={setRef("stories-grid")} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-y-[60px] md:gap-x-[40px] w-full">
@@ -452,7 +493,7 @@ export default function Home() {
               <span className="chip">Knowledge Hub</span>
               <h2 className="fr text-[clamp(28px,6vw,56px)] font-extrabold text-[#0f172a] leading-[1.1]">Explore Topics</h2>
             </div>
-            <a href="/topics" className="btn-outline !bg-transparent !text-[#047857] w-full sm:w-auto justify-center">View All Topics</a>
+            <a href="/topics" className="btn-outline w-full sm:w-auto justify-center">View All Topics</a>
           </div>
 
           <div id="topics-grid" ref={setRef("topics-grid")} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-y-[30px] md:gap-x-[40px] w-full">
@@ -472,7 +513,6 @@ export default function Home() {
                 <div className="topic-icon-wrap">{t.icon}</div>
                 <h3 className="fr text-xl md:text-2xl font-extrabold mb-2.5 text-[#0f172a] break-words px-2">{t.label}</h3>
                 
-                {/* 🟢 FIXED: `break-all` and `line-clamp-3` guarantee text never spills out of the card! */}
                 <p className="jk text-[14px] md:text-[15px] text-[#64748b] leading-[1.7] font-medium break-all line-clamp-3 px-2">
                   {(t.desc || "").replace(/\[IMG:.*?\]|!\[.*?\]\(.*?\)|#|[-*]/g, "")}
                 </p>
@@ -484,7 +524,7 @@ export default function Home() {
 
       {/* ══ NEWSLETTER ══ */}
       <section className="px-4 sm:px-6 md:px-[52px] pb-16 md:pb-[100px] w-full overflow-hidden">
-        <div className="max-w-7xl mx-auto rounded-[24px] md:rounded-[32px] overflow-hidden border border-white text-center relative px-4 py-10 md:p-[80px] shadow-[0_20px_60px_-15px_rgba(16,185,129,0.2)] w-full" style={{ background:"linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%)" }}>
+        <div className="newsletter-box max-w-7xl mx-auto rounded-[24px] md:rounded-[32px] overflow-hidden border border-white text-center relative px-4 py-10 md:p-[80px] shadow-[0_20px_60px_-15px_rgba(16,185,129,0.2)] w-full">
           <span className="absolute -top-6 -left-4 text-[120px] md:text-[180px] opacity-5 -rotate-12 pointer-events-none">🌿</span>
           <div className="relative z-10">
             <span className="chip !bg-white">Join Us Today</span>
@@ -498,29 +538,32 @@ export default function Home() {
             <div className="flex max-w-[500px] mx-auto relative px-2 md:px-0">
               {nlState === "success" ? (
                 <div className="w-full h-[54px] flex items-center justify-center bg-white rounded-full shadow-[0_10px_30px_rgba(16,185,129,0.2)] text-[#059669] font-sans font-extrabold text-sm md:text-base" style={{ animation: "bounceTwist 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards" }}>
-                  🎉 You're all set! ThankYou
+                  🎉 You're all set! Thank You
                 </div>
               ) : (
-                <div className={`flex flex-row w-full transition-opacity duration-300 ${nlState === "loading" ? "opacity-80" : "opacity-100"}`}>
+                /* 🟢 FIX: The nl-form-container now acts as the single 'pill' wrapper */
+                <div className={`nl-form-container flex flex-row items-center w-full bg-white border border-slate-200 focus-within:border-[#059669] focus-within:ring-1 focus-within:ring-[#059669] rounded-full p-1 transition-all duration-300 shadow-sm ${nlState === "loading" ? "opacity-80" : "opacity-100"}`}>
                   <input 
-                    className="flex-1 min-w-0 w-full bg-white border border-transparent focus:border-[#059669] outline-none px-4 md:px-6 py-0 rounded-l-full rounded-r-none shadow-sm font-['Plus_Jakarta_Sans'] text-[14px] md:text-[15px] h-[54px]" 
+                    className="nl-input flex-1 min-w-0 bg-transparent border-none outline-none px-4 md:px-6 py-0 font-['Plus_Jakarta_Sans'] text-[14px] md:text-[15px] h-[46px] text-slate-900" 
                     placeholder="Enter your email address…" 
                     value={nlEmail} 
                     onChange={e => setNlEmail(e.target.value)}
                     disabled={nlState === "loading"}
                   />
-                  <button className="shrink-0 bg-[#059669] hover:bg-[#047857] text-white transition-colors w-auto rounded-l-none rounded-r-full px-5 md:px-8 text-[14px] md:text-[15px] font-bold h-[54px] flex justify-center items-center shadow-md md:shadow-none cursor-pointer" onClick={handleSubscribe} disabled={nlState === "loading"}>
+                  <button 
+                    className="shrink-0 bg-[#059669] hover:bg-[#047857] text-white transition-colors rounded-full px-5 md:px-8 text-[14px] md:text-[15px] font-bold h-[46px] flex justify-center items-center cursor-pointer shadow-md md:shadow-none" 
+                    onClick={handleSubscribe} 
+                    disabled={nlState === "loading"}
+                  >
                     {nlState === "loading" ? <div className="spinner mx-auto" /> : "Subscribe 🌱"}
                   </button>
                 </div>
               )}
             </div>
-
           </div>
         </div>
       </section>
-
-      <Footer />
+    <Footer />
 
       {/* 🟢 STORY MODAL OVERLAY */}
       {activeStoryModal && (
@@ -567,7 +610,7 @@ export default function Home() {
             <button className="absolute top-5 right-5 z-[100] w-11 h-11 rounded-full bg-white/80 backdrop-blur-md border border-black/5 text-slate-900 text-xl flex items-center justify-center cursor-pointer transition-all duration-200 shadow-sm hover:bg-white hover:text-emerald-600 hover:scale-110" onClick={() => setActiveTopicModal(null)}>✕</button>
             
             <div className="overflow-y-auto overflow-x-hidden flex-1 w-full break-words modal-scrollbar">
-              <div className="px-5 md:px-6 pt-8 md:pt-12 pb-4 md:pb-6 text-center flex flex-col items-center" style={{ background: `linear-gradient(180deg, ${activeTopicModal.color} 0%, rgba(255,255,255,0) 100%)` }}>
+              <div className="px-5 md:px-6 pt-8 md:pt-12 pb-4 md:pb-6 text-center flex flex-col items-center topic-modal-header" style={{ '--topic-color': activeTopicModal.color }}>
                 <div className="w-[56px] md:w-[72px] h-[56px] md:h-[72px] rounded-[20px] bg-white flex items-center justify-center text-[28px] md:text-[36px] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1),0_0_0_1px_rgba(0,0,0,0.05)] mb-4 md:mb-5">
                   {activeTopicModal.icon}
                 </div>

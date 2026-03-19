@@ -101,7 +101,7 @@ export default function Footer() {
             <h4 className="font-['Plus_Jakarta_Sans'] text-[11px] md:text-xs tracking-[.15em] text-emerald-400 mb-3 uppercase font-extrabold">Explore</h4>
             <a href="/stories" className="font-['Plus_Jakarta_Sans'] block text-slate-300 no-underline text-[14px] md:text-sm mb-2 font-medium transition-colors hover:text-white">Stories</a>
             <a href="/topics" className="font-['Plus_Jakarta_Sans'] block text-slate-300 no-underline text-[14px] md:text-sm mb-2 font-medium transition-colors hover:text-white">Topics</a>
-            <a href="/resources" className="font-['Plus_Jakarta_Sans'] block text-slate-300 no-underline text-[14px] md:text-sm mb-2 font-medium transition-colors hover:text-white">Resources</a>
+            <a href="/resources" className="font-['Plus_Jakarta_Sans'] block text-slate-300 no-underline text-[14px] md:text-sm mb-2 font-medium transition-colors hover:text-white">Publication</a>
           </div>
 
           {/* ── RIGHT COLUMN: Support ── */}
