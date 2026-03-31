@@ -227,6 +227,9 @@ export default function Stories() {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [guestName, setGuestName] = useState("");
+  
+  // 🟢 FIXED: State to track which stories are currently being liked to prevent spam clicking
+  const [isLiking, setIsLiking] = useState({});
 
   const visitorId = localStorage.getItem("hv_visitor_id") || "guest_fallback";
   const loggedInUser = JSON.parse(localStorage.getItem("hv_user"));
@@ -284,8 +287,13 @@ export default function Stories() {
            s.tag.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
+  // 🟢 FIXED: Anti-Spam Like Function
   const toggleLike = async (id, e) => {
     e.stopPropagation();
+    
+    if (isLiking[id]) return; // Stop rapid clicks
+
+    setIsLiking(prev => ({ ...prev, [id]: true })); // Lock the button
     
     setStories(prevStories => prevStories.map(story => {
       if (story.id === id) {
@@ -306,7 +314,11 @@ export default function Stories() {
       await fetch(`${API_BASE_URL}/api/stories/${id}/like`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ visitorId })
       });
-    } catch (err) { console.error("Failed to save like:", err); }
+    } catch (err) { 
+      console.error("Failed to save like:", err); 
+    } finally {
+      setIsLiking(prev => ({ ...prev, [id]: false })); // Unlock the button
+    }
   };
 
   const loadComments = async (storyId) => {
@@ -362,7 +374,6 @@ export default function Stories() {
   return (
     <div className="relative min-h-screen text-slate-900 overflow-hidden font-serif">
 
-      {/* 🟢 FIXED: Exact same background effect as Topics/Resources */}
       <div className="stories-bg" style={{
         position: "fixed", inset: 0, zIndex: -1,
         background: "linear-gradient(135deg, #f0fdf4 0%, #fffbeb 50%, #f0f9ff 100%)",
@@ -496,7 +507,11 @@ export default function Stories() {
                           </div>
                         </div>
                         
-                        <button className={`font-['Manrope',sans-serif] px-3.5 py-1.5 rounded-full flex items-center gap-1.5 transition-all text-sm font-bold border ${s.hasLiked ? 'bg-red-50 border-red-200 text-red-500' : 'bg-slate-50 border-slate-200 text-slate-600 group-hover:bg-red-50 group-hover:border-red-200 group-hover:text-red-500'}`} onClick={(e) => toggleLike(s.id, e)}>
+                        <button 
+                          disabled={isLiking[s.id]}
+                          className={`font-['Manrope',sans-serif] px-3.5 py-1.5 rounded-full flex items-center gap-1.5 transition-all text-sm font-bold border disabled:opacity-70 disabled:cursor-not-allowed ${s.hasLiked ? 'bg-red-50 border-red-200 text-red-500' : 'bg-slate-50 border-slate-200 text-slate-600 group-hover:bg-red-50 group-hover:border-red-200 group-hover:text-red-500'}`} 
+                          onClick={(e) => toggleLike(s.id, e)}
+                        >
                           {s.hasLiked ? "❤️" : "🤍"} {s.likes}
                         </button>
                       </div>
@@ -553,7 +568,8 @@ export default function Stories() {
 
                   <div className="flex flex-row w-full md:w-auto gap-2 md:gap-3">
                     <button 
-                      className={`flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 md:py-2 rounded-full font-['Plus_Jakarta_Sans',sans-serif] font-semibold text-[13px] md:text-[14px] transition-all duration-200 whitespace-nowrap ${selectedStory.hasLiked ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-emerald-600 text-white border border-transparent shadow-[0_4px_12px_rgba(5,150,105,0.3)] hover:bg-emerald-700 hover:-translate-y-[1px]'}`}
+                      disabled={isLiking[selectedStory.id]}
+                      className={`flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 md:py-2 rounded-full font-['Plus_Jakarta_Sans',sans-serif] font-semibold text-[13px] md:text-[14px] transition-all duration-200 whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed ${selectedStory.hasLiked ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-emerald-600 text-white border border-transparent shadow-[0_4px_12px_rgba(5,150,105,0.3)] hover:bg-emerald-700 hover:-translate-y-[1px]'}`}
                       onClick={(e) => toggleLike(selectedStory.id, e)}
                     >
                       {selectedStory.hasLiked ? "❤️ Loved it" : "🤍 Applaud"} · {selectedStory.likes}
